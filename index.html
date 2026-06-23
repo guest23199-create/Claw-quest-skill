@@ -171,6 +171,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <button class="act-btn" onclick="window.showMap()">🗺️ Map</button>
     <button class="act-btn" onclick="window.saveGame()">💾 Save</button>
     <button class="act-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()">⚙️</button>
+    <button class="act-btn" onclick="window.quickTravel()">⛵ Travel</button>
 	    <button class="act-btn" id="pebble-btn" onclick="window.togglePebble()">📚 Gọi Pebble</button>
 		    <button class="act-btn" id="farm-btn" onclick="window.farmAction()" style="display:none">🌱</button>
     <button class="act-btn" id="cow-btn" onclick="window.cowAction()" style="display:none">🐄</button>
@@ -594,7 +595,7 @@ const GS = {
   resources:{wood:0,stone:0,food:0,gold:0},
   silverCoins:0,
   currentIsland:"starter_isle",
-  unlockedIslands:["starter_isle"],
+  unlockedIslands:["starter_isle","ember_isle","crystal_atoll","stormpeak","fire_island","ice_island","cloud_island","sunken_temple","golden_plains"],
   defeatedBosses:[],
   islands:{},
   buildMode:null,
@@ -1077,7 +1078,7 @@ function loadGame(){
     // Copy other game state
     GS.resources=loaded.resources||{wood:0,stone:0,food:0,gold:0};
     GS.currentIsland=loaded.currentIsland||"starter_isle";
-    GS.unlockedIslands=loaded.unlockedIslands||["starter_isle"];
+    if(!loaded.unlockedIslands||loaded.unlockedIslands.length<=1){GS.unlockedIslands=["starter_isle","ember_isle","crystal_atoll","stormpeak","fire_island","ice_island","cloud_island","sunken_temple","golden_plains"];}else{GS.unlockedIslands=loaded.unlockedIslands;}
     GS.islands=loaded.islands||{};
     for(const id of ISLAND_ORDER) getIslandData(id);
     // Validate all island maps: clear corrupt ones so they regenerate fresh on scene entry
@@ -1514,6 +1515,10 @@ function interactWithBuilding(building){
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 10: TRAVEL & MAP
 // ═══════════════════════════════════════════════════════════════════
+window.quickTravel = function(){
+  const conn = ISLAND_CONNECTIONS[GS.currentIsland] || [];
+  openTravelModal(conn);
+};
 function travelToIsland(id){
   if(id===GS.currentIsland) return;
   if(!GS.unlockedIslands.includes(id)){showToast("🔒 Not unlocked!");return;}
