@@ -2199,7 +2199,7 @@ k.scene("game", ()=>{
   // ─── Free-roam helper: sniff animation (tiny bounce + overhead exclamation) ───
   let sniffMark = null;
   function doSniffAnimation() {
-    if (!sniffMark || !k.exists(sniffMark)) {
+    if (!sniffMark || !sniffMark.exists()) {
       sniffMark = k.add([k.text("!", {size: 14}), k.pos(0, 0), k.z(15), k.opacity(0)]);
     }
     if (pebbleObj) {
@@ -2208,7 +2208,7 @@ k.scene("game", ()=>{
     }
   }
   function hideSniffMarker() {
-    if (sniffMark && k.exists(sniffMark)) {
+    if (sniffMark && sniffMark.exists()) {
       sniffMark.opacity = 0;
     }
   }
@@ -3202,7 +3202,7 @@ k.scene("game", ()=>{
     if(enemySpawnTimer>8&&enemyObjs.length<5+Math.floor(def.diff*0.5)){enemySpawnTimer=0;spawnEnemy();}
 
     // Boss AI
-    if (activeBoss && k.exists(activeBoss) && playerObj) {
+    if (activeBoss && activeBoss.exists() && playerObj) {
       const bd = activeBoss.pos.dist(playerObj.pos);
       if (bd > 300) {
         activeBoss.pos = k.vec2(playerObj.pos.x + 200 + Math.random() * 100, playerObj.pos.y + 200 + Math.random() * 100);
@@ -3220,7 +3220,7 @@ k.scene("game", ()=>{
     }
 
     // Boss damage from player
-    if (activeBoss && k.exists(activeBoss) && playerObj) {
+    if (activeBoss && activeBoss.exists() && playerObj) {
       const bDist = activeBoss.pos.dist(playerObj.pos);
       if (bDist < 48 && !window._bossHitCooldown) {
         window._bossHitCooldown = true;
@@ -3232,7 +3232,7 @@ k.scene("game", ()=>{
         // Flash effect
         activeBoss.color = k.rgb(255, 255, 255);
         setTimeout(() => {
-          if (k.exists(activeBoss)) activeBoss.color = k.rgb(activeBoss.c[0]||0,activeBoss.c[1]||0,activeBoss.c[2]||0);
+          if (activeBoss.exists()) activeBoss.color = k.rgb(activeBoss.c[0]||0,activeBoss.c[1]||0,activeBoss.c[2]||0);
         }, 100);
 
         // Boss defeated
@@ -3521,7 +3521,7 @@ k.scene("game", ()=>{
 
   // Boss HP bar (rendered on top of everything)
   k.onDraw(()=>{
-    if (activeBoss && k.exists(activeBoss)) {
+    if (activeBoss && activeBoss.exists()) {
       const bh = 4;
       const bw = 40;
       const bx = activeBoss.pos.x - bw/2;
@@ -3973,8 +3973,8 @@ k.scene("slot_machine", ()=>{
     k.onUpdate(()=>{fe+=k.dt();flash.opacity=Math.sin(fe*8)*0.2;if(fe>1.5)flash.opacity=0;});
     const pu=k.onUpdate(()=>{
       jackpotTimer+=k.dt();
-      for(const p of jackpotParticles){if(k.exists(p)){p.pos.x+=Math.cos(p.angle)*p.speed*k.dt();p.pos.y+=Math.sin(p.angle)*p.speed*k.dt();p.life-=k.dt();p.opacity=Math.max(0,p.life/2);if(p.life<=0)k.destroy(p);}}
-      if(jackpotTimer>3){jackpotActive=false;pu.cancel();for(const p of jackpotParticles){if(k.exists(p))k.destroy(p);}jackpotParticles=[];}
+      for(const p of jackpotParticles){if(p.exists()){p.pos.x+=Math.cos(p.angle)*p.speed*k.dt();p.pos.y+=Math.sin(p.angle)*p.speed*k.dt();p.life-=k.dt();p.opacity=Math.max(0,p.life/2);if(p.life<=0)k.destroy(p);}}
+      if(jackpotTimer>3){jackpotActive=false;pu.cancel();for(const p of jackpotParticles){if(p.exists())k.destroy(p);}jackpotParticles=[];}
     });
   }
 
