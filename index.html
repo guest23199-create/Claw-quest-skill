@@ -640,7 +640,7 @@ function getPebbleStats(){
 function generateStarterIsland() {
   const g = Array.from({length: ROWS}, () => Array(COLS).fill(0)); // Start all grass
   const cx = COLS / 2, cy = ROWS / 2;
-  const rx = 22, ry = 16; // Bigger radius → land covers most of map
+  const rx = 30, ry = 22; // Bigger radius → land covers most of map
 
   // Generate main island: water only at edges
   for (let y = 0; y < ROWS; y++) {
@@ -1021,13 +1021,13 @@ function scatterResources(map, id, densityMultiplier = 1) {
 window.saveGame = function(){
   try{
     GS.gameTicks++;
-    localStorage.setItem("clawquest_v12", JSON.stringify(GS));
+    localStorage.setItem("clawquest_v13", JSON.stringify(GS));
     showToast("💾 Saved!");
   }catch(e){console.warn("Save fail",e);}
 };
 function loadGame(){
   try{
-    const raw = localStorage.getItem("clawquest_v12") || localStorage.getItem("clawquest_v11");
+    const raw = localStorage.getItem("clawquest_v13") || localStorage.getItem("clawquest_v11");
     if (!raw) return false;
     const loaded = JSON.parse(raw);
     // If GS.player already exists (new save), just merge
@@ -1764,7 +1764,7 @@ k.scene("game", ()=>{
   if(idata.map) {
     let treeCount = 0;
     for(let r = 0; r < ROWS; r++) for(let c = 0; c < COLS; c++) if(getTile(r, c, idata.map) === 4) treeCount++;
-    if(treeCount > 250) { idata.map = genIslandMap(islandId); console.log("Regenerated overcrowded map"); }
+    if(treeCount > 180) { idata.map = genIslandMap(islandId); console.log("Regenerated overcrowded map"); }
   }
   const map=idata.map;
 
@@ -2695,6 +2695,9 @@ k.scene("game", ()=>{
         window.farmAction();
         return;
       }
+      // Click to move
+      movePlayerTo(pos.x, pos.y);
+      return;
     }
   });
 
