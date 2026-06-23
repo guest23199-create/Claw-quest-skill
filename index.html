@@ -3334,6 +3334,9 @@ k.scene("game", ()=>{
   // Each tile is drawn edge-to-edge with no gaps. Animated waves for water.
   // Edge blending: 1.5px semi-transparent line between different tile types.
   k.onDraw(() => {
+    // ─── ISLAND BACKGROUND SPRITE (loaded from CDN, fallback to procedural) ───
+    try { k.drawSprite({ sprite: "bg_" + GS.currentIsland, pos: k.vec2(0, 0), width: WORLD_W, height: WORLD_H, z: -11 }); }
+    catch(e) { /* sprite not loaded, fall through to procedural */ }
     // ─── PROCEDURAL SCENERY BACKGROUND ──────────────────────
     // Draw sky gradient, water, land features (uses k.onDraw immediate mode)
     // Rendered at z=-9 to z=-6 (above solid color at z=-10, below tiles at z=3)
