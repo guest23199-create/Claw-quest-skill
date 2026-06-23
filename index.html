@@ -2081,6 +2081,8 @@ k.scene("game", ()=>{
 
   // Player parts list for updating positions
   const playerParts=[pHead,pHat,pHatBrim,pHatBand,pEyeL,pEyeR,pPupilL,pPupilR,pNose,pMouth,pPants];
+  // Set initial camera to follow player
+  k.camPos(playerObj.pos.x, playerObj.pos.y);
 
   // ─═══ PEBBLE — Orange Cat Companion (follower) ═══──
   let pebbleObj=null;
@@ -3172,7 +3174,7 @@ k.scene("game", ()=>{
     // ── Pebble still attacks enemies when roaming (defensive only) ──
     if(pebbleObj && GS.pebbleMode === "roam" && pebbleCallPhase !== "walking" && pebbleCallPhase !== "dialoguing" && !pebbleObj.dead){
       // Throttle: only check every 5 frames
-      if (GS.gameTicks % 5 !== 0) break;
+      if (GS.gameTicks % 5 === 0) {
       for(const enemy of enemyObjs){
         if(enemy.dead) continue;
         const dist=Math.sqrt((pebbleObj.pos.x-enemy.pos.x)**2+(pebbleObj.pos.y-enemy.pos.y)**2);
@@ -3194,6 +3196,7 @@ k.scene("game", ()=>{
             updateHUD();
           }
         }
+      }
       }
     }
 
