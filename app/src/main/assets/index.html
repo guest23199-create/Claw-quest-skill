@@ -522,7 +522,7 @@ const k = kaboom({
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 2b: LOAD ISLAND BACKGROUND PNGs
+// SECTION 2b: LOAD SPRITES (CDN — fallback to procedural if fail)
 // ═══════════════════════════════════════════════════════════════════
 const IMG_BASE = "https://cdn.jsdelivr.net/gh/guest23199-create/Claw-quest-skill@main/images";
 // Helper: load sprite with error handling — gracefully logs and falls back
@@ -557,111 +557,25 @@ loadSpriteSafe("palm_tree_sprite", `${IMG_BASE}/palm_tree.png`, { width: TILE, h
 loadSpriteSafe("mine_tile_sprite", `${IMG_BASE}/mine_tile.png`, { width: TILE, height: TILE });
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 2c: DRAW ISLAND ON CANVAS
 // ═══════════════════════════════════════════════════════════════════
-let bgObj = null;
-function generateIslandBackgroundCanvas(id) {
-  const cv = document.createElement("canvas");
-  cv.width = WORLD_W;
-  cv.height = WORLD_H;
-  const ctx = cv.getContext("2d");
-  
-  const themes = {
-    starter_isle:  {sky:[100,180,220], land:[45,105,50], water:[20,89,153], accent:[60,140,60]},
-    ember_isle:    {sky:[180,80,30],   land:[90,35,20],  water:[60,20,10],  accent:[200,70,30]},
-    crystal_atoll: {sky:[120,150,220], land:[25,90,100], water:[30,60,120], accent:[160,120,200]},
-    stormpeak:     {sky:[100,100,130], land:[50,50,65],  water:[30,30,60],  accent:[120,120,160]},
-    fire_island:   {sky:[200,100,30],  land:[100,30,10], water:[80,20,5],   accent:[255,128,0]},
-    ice_island:    {sky:[180,200,230], land:[50,65,115], water:[40,80,140], accent:[200,220,250]},
-    cloud_island:  {sky:[130,160,200], land:[65,60,85],  water:[40,60,100], accent:[180,180,220]},
-    sunken_temple: {sky:[60,100,140],  land:[15,60,80],  water:[10,40,70],  accent:[64,200,180]},
-    golden_plains: {sky:[200,180,120], land:[90,80,30],  water:[60,50,15],  accent:[230,210,100]},
-  };
-  const th = themes[id] || themes.starter_isle;
-  
-  // Sky gradient
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, WORLD_H);
-  skyGrad.addColorStop(0, `rgb(${th.sky[0]+40},${th.sky[1]+40},${th.sky[2]+40})`);
-  skyGrad.addColorStop(0.5, `rgb(${th.sky[0]},${th.sky[1]},${th.sky[2]})`);
-  skyGrad.addColorStop(1, `rgb(${th.water[0]},${th.water[1]},${th.water[2]})`);
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, WORLD_W, WORLD_H);
-  
-  // Water at bottom
-  ctx.fillStyle = `rgb(${th.water[0]},${th.water[1]},${th.water[2]})`;
-  ctx.beginPath();
-  ctx.moveTo(0, WORLD_H * 0.6);
-  for (let i = 0; i <= WORLD_W; i+=8) {
-    const h = WORLD_H * 0.6 + Math.sin(i * 0.03 + id.length) * 20 + Math.sin(i * 0.07) * 10;
-    ctx.lineTo(i, h);
-  }
-  ctx.lineTo(WORLD_W, WORLD_H);
-  ctx.lineTo(0, WORLD_H);
-  ctx.fill();
-  
-  // Land mass
-  ctx.fillStyle = `rgb(${th.land[0]},${th.land[1]},${th.land[2]})`;
-  ctx.beginPath();
-  ctx.moveTo(0, WORLD_H * 0.5);
-  for (let i = 0; i <= WORLD_W; i+=8) {
-    const h = WORLD_H * 0.5 + Math.sin(i * 0.02 + id.length*2) * 30 + Math.sin(i * 0.05 + 1) * 15;
-    ctx.lineTo(i, h);
-  }
-  ctx.lineTo(WORLD_W, WORLD_H * 0.9);
-  ctx.lineTo(0, WORLD_H * 0.9);
-  ctx.fill();
-  
-  // Trees/features
-  for (let i = 0; i < 30; i++) {
-    const dx = (i * 47 + id.length * 13) % WORLD_W;
-    const dy = WORLD_H * 0.4 + (i * 31 + id.length * 7) % (WORLD_H * 0.3);
-    const size = 4 + (i % 5);
-    ctx.fillStyle = `rgb(${Math.max(0,th.accent[0]-20+(i*10)%50)},${Math.max(0,th.accent[1]-10+(i*8)%40)},${Math.max(0,th.accent[2]-10+(i*12)%40)})`;
-    ctx.beginPath();
-    ctx.arc(dx, dy, size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  
-  // Register as kaboom sprite
-  try {
-    k.loadSprite("bg_" + id + "_gen", cv);
-    return "bg_" + id + "_gen";
-  } catch(e) {
-    console.warn("Could not generate canvas background for", id);
-    return null;
-  }
-}
-
+// SECTION 2c: ISLAND THEMES & PROCEDURAL BACKGROUND
+// ═══════════════════════════════════════════════════════════════════
+const ISLAND_THEMES = {
+  starter_isle:  {sky:[100,180,220], land:[45,105,50], water:[20,89,153], accent:[60,140,60]},
+  ember_isle:    {sky:[180,80,30],   land:[90,35,20],  water:[60,20,10],  accent:[200,70,30]},
+  crystal_atoll: {sky:[120,150,220], land:[25,90,100], water:[30,60,120], accent:[160,120,200]},
+  stormpeak:     {sky:[100,100,130], land:[50,50,65],  water:[30,30,60],  accent:[120,120,160]},
+  fire_island:   {sky:[200,100,30],  land:[100,30,10], water:[80,20,5],   accent:[255,128,0]},
+  ice_island:    {sky:[180,200,230], land:[50,65,115], water:[40,80,140], accent:[200,220,250]},
+  cloud_island:  {sky:[130,160,200], land:[65,60,85],  water:[40,60,100], accent:[180,180,220]},
+  sunken_temple: {sky:[60,100,140],  land:[15,60,80],  water:[10,40,70],  accent:[64,200,180]},
+  golden_plains: {sky:[200,180,120], land:[90,80,30],  water:[60,50,15],  accent:[230,210,100]},
+};
+let currentTheme = ISLAND_THEMES.starter_isle;
 function drawIslandBG(id) {
-  if (bgObj) { try { bgObj.destroy(); } catch(e) {} }
-  bgObj = null;
-  const spriteName = "bg_" + id;
-  // Try to add background sprite with correct world dimensions
-  try {
-    bgObj = k.add([
-      k.sprite(spriteName, { width: WORLD_W, height: WORLD_H }),
-      k.pos(0, 0),
-      k.z(-5),
-    ]);
-  } catch(e) {
-    console.warn("Background sprite not available for", id, "- generating procedural background");
-    // Generate a procedural canvas background as fallback
-    const genName = generateIslandBackgroundCanvas(id);
-    if (genName) {
-      try {
-        bgObj = k.add([
-          k.sprite(genName, { width: WORLD_W, height: WORLD_H }),
-          k.pos(0, 0),
-          k.z(-5),
-        ]);
-      } catch(e2) {
-        console.warn("Procedural background also failed for", id);
-      }
-    }
-  }
+  // Set theme for k.onDraw procedural background (no sprite loading needed)
+  currentTheme = ISLAND_THEMES[id] || ISLAND_THEMES.starter_isle;
 }
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 3: GAME STATE
 // ═══════════════════════════════════════════════════════════════════
 const GS = {
   // PLAYER — the main controllable character (humanoid with green hat)
@@ -1849,7 +1763,7 @@ k.scene("game", ()=>{
   const c=bc[islandId]||[50,65,50];
   k.add([k.rect(WORLD_W,WORLD_H),k.pos(0,0),k.color(c[0],c[1],c[2]),k.z(-10),k.opacity(1),"bg"]);
 
-  // ─── drawIslandBG() — display island background PNG via global function ───
+  // ─── drawIslandBG() — set island theme for procedural background ───
   drawIslandBG(GS.currentIsland);
 
   // ─── TILE RENDERING — handled in k.onDraw() via k.draw...() ──
@@ -3417,7 +3331,49 @@ k.scene("game", ()=>{
   // Each tile is drawn edge-to-edge with no gaps. Animated waves for water.
   // Edge blending: 1.5px semi-transparent line between different tile types.
   k.onDraw(() => {
-    // Background PNG is handled by drawIslandBG() above as a k.add game object.
+    // ─── PROCEDURAL SCENERY BACKGROUND ──────────────────────
+    // Draw sky gradient, water, land features (uses k.onDraw immediate mode)
+    // Rendered at z=-9 to z=-6 (above solid color at z=-10, below tiles at z=3)
+    if (currentTheme) {
+      const th = currentTheme;
+      const idLen = (GS.currentIsland || '').length;
+      // Sky gradient (5 horizontal bands)
+      const bandH = WORLD_H / 5;
+      for (let i = 0; i < 5; i++) {
+        const t = i / 5;
+        const r = Math.floor(Math.max(0, Math.min(255, th.sky[0] + t * (th.water[0] - th.sky[0]) * 0.4)));
+        const g = Math.floor(Math.max(0, Math.min(255, th.sky[1] + t * (th.water[1] - th.sky[1]) * 0.4)));
+        const b = Math.floor(Math.max(0, Math.min(255, th.sky[2] + t * (th.water[2] - th.sky[2]) * 0.4)));
+        k.drawRect({ pos: k.vec2(0, i * bandH), width: WORLD_W, height: bandH + 1, color: k.rgb(r, g, b), z: -9 });
+      }
+      // Water body at bottom
+      k.drawRect({ pos: k.vec2(0, WORLD_H * 0.58), width: WORLD_W, height: WORLD_H * 0.42, color: k.rgb(th.water[0], th.water[1], th.water[2]), z: -8 });
+      // Water wave lines
+      const waveTime = Date.now();
+      for (let x = 0; x < WORLD_W; x += 20) {
+        const wy = WORLD_H * 0.58 + Math.sin(x * 0.025 + idLen * 0.5 + waveTime * 0.0005) * 12;
+        k.drawLine({ p1: k.vec2(x, wy), p2: k.vec2(x + 16, wy + Math.sin((x + 16) * 0.025 + idLen) * 8), width: 1.5, color: k.rgb(Math.min(255,th.water[0]+30), Math.min(255,th.water[1]+30), Math.min(255,th.water[2]+30)), opacity: 0.25, z: -7 });
+      }
+      // Land mass (simplified as a staircase polygon)
+      const landPts = [];
+      landPts.push(k.vec2(0, WORLD_H * 0.9));
+      for (let i = 0; i <= WORLD_W; i += 20) {
+        const h = WORLD_H * 0.44 + Math.sin(i * 0.02 + idLen * 2) * 35 + Math.sin(i * 0.05 + 1) * 18;
+        landPts.push(k.vec2(i, h));
+      }
+      landPts.push(k.vec2(WORLD_W, WORLD_H * 0.9));
+      k.drawPolygon({ pts: landPts, color: k.rgb(th.land[0], th.land[1], th.land[2]), z: -7 });
+      // Decorative trees/features
+      for (let i = 0; i < 25; i++) {
+        const dx = (i * 47 + idLen * 13) % WORLD_W;
+        const dy = WORLD_H * 0.35 + (i * 31 + idLen * 7) % (WORLD_H * 0.35);
+        const size = 3 + (i % 4);
+        const r = Math.max(0, th.accent[0] - 15 + (i * 10) % 45);
+        const g = Math.max(0, th.accent[1] - 8 + (i * 8) % 35);
+        const b = Math.max(0, th.accent[2] - 8 + (i * 12) % 35);
+        k.drawCircle({ pos: k.vec2(dx, dy), radius: size, color: k.rgb(r, g, b), z: -6 });
+      }
+    }
     // Guard: exit early if map is invalid
     if (!map || !map.length) return;
     // Viewport culling: only render tiles visible on screen + border
