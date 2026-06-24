@@ -630,7 +630,7 @@ function drawIslandBG(id) {
 const GS = {
   // PLAYER — the main controllable character (humanoid with green hat)
   player:{name:"Adventurer",hp:20,maxHp:20,hunger:80,maxHunger:100,level:1,xp:0,attack:2,defense:1,woodBonus:0,stoneBonus:0,
-    inventory:[],equipment:{head:null,chest:null,weapon:null,offhand:null,ring1:null,ring2:null,boots:null,accessory:null},enemiesKilled:0},
+    inventory:[{id:"axe",count:1},{id:"pickaxe",count:1},{id:"food",count:5}],equipment:{head:null,chest:null,weapon:null,offhand:null,ring1:null,ring2:null,boots:null,accessory:null},enemiesKilled:0},
   // PEBBLE — orange cat companion (follower, not controlled)
   pebble:{name:"Pebble",hp:15,maxHp:15,attack:3,defense:1,trainingBoost:{atk:0,def:0,hp:0}},
 	  pebbleMode:"roam",
@@ -641,7 +641,7 @@ const GS = {
 	  ],
 	  cowPen:{x1:12,y1:8,x2:22,y2:16},
 	  maxCows:10,
-  resources:{wood:0,stone:0,food:0,gold:0},
+  resources:{wood:5,stone:3,food:3,gold:0},
   silverCoins:0,
   currentIsland:"starter_isle",
   unlockedIslands:["starter_isle","ember_isle","crystal_atoll","stormpeak","fire_island","ice_island","cloud_island","sunken_temple","golden_plains"],
