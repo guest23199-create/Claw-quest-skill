@@ -1207,6 +1207,7 @@ function updateHUD(){
   const aliveCows = GS.cows.filter(c=>!c.dead).length;
   const elCowCount = document.getElementById("hud-cow-count");
   if (elCowCount) elCowCount.textContent = aliveCows + "/" + GS.maxCows;
+  document.getElementById("r-wood").textContent=GS.resources.wood||0;
   document.getElementById("r-stone").textContent=GS.resources.stone;
   document.getElementById("r-food").textContent=GS.resources.food;
   document.getElementById("r-gold").textContent=GS.resources.gold;
