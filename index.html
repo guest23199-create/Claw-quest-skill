@@ -165,6 +165,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
   <!-- ─── Mini Action Bar (compact floating buttons) ─── -->
   <div id="mini-bar">
+    <button class="mb-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️</button>
     <button class="mb-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨</button>
     <button class="mb-btn" onclick="window.useHealItem()" title="Hồi Máu">💊</button>
     <button class="mb-btn" onclick="window.toggleInv()" title="Kho Đồ">📦</button>
@@ -1962,6 +1963,14 @@ k.scene("game", ()=>{
           buildingObjs.push(k.add([k.rect(TILE-12,6),k.pos(bx+6,by+TILE/2-2),k.color(89,64,26),k.opacity(0.9),k.z(5)]));
           break;
         }
+        case"arena":{
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-4),k.pos(bx+2,by+TILE/2-2),k.color(180,60,60),k.opacity(0.9),k.z(4),k.area(),"building"]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx-2,by+TILE/2-4),k.vec2(bx+TILE/2,by-4),k.vec2(bx+TILE+2,by+TILE/2-4)]),k.color(255,215,0),k.opacity(0.95),k.z(4)]));
+          buildingObjs.push(k.add([k.rect(TILE-6,2),k.pos(bx+3,by+TILE/2-8),k.color(200,160,40),k.opacity(0.9),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(8,8),k.pos(bx+TILE/2-4,by+TILE/2-2),k.color(100,30,30),k.opacity(0.9),k.z(5)]));
+          buildingObjs.push(k.add([k.text("⚔️",{size:16}),k.pos(bx+TILE/2-8,by+4),k.z(6)]));
+          break;
+        }
         case"merchant_house":{
           buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(140,50,40),k.opacity(0.9),k.z(4),k.area(),"building"]));
           buildingObjs.push(k.add([k.polygon([k.vec2(bx-4,by+TILE/2),k.vec2(bx+TILE/2,by-6),k.vec2(bx+TILE+4,by+TILE/2)]),k.color(210,170,50),k.opacity(0.95),k.z(4)]));
@@ -2891,15 +2900,21 @@ k.scene("game", ()=>{
 
   // Click handler
   k.onMousePress(()=>{
-    const pos=k.mousePos();
+    const pos = k.mousePos();
     if(window._clickConsumed){window._clickConsumed=false;return;}
     if(GS.buildMode){
       const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
-      if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS) return;
+      if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS){
+        showToast("❌ Out of bounds!",800);
+        GS.buildMode=null;
+        if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
+        return;
+      }
       const tt=getTile(tiy, tix, map);
       if(tt===0||tt===1||tt===6||tt===7||tt===8||tt===10||tt===13){
         if(placeBuilding(tix,tiy,GS.buildMode)){renderBuildings();}
-      }else showToast("❌ Build on grass or sand!",1200);
+        // placeBuilding resets GS.buildMode on success
+      }else showToast("❌ Xây trên cỏ hoặc cát!",1200);
       if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
       return;
     }
