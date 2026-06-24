@@ -325,8 +325,8 @@ import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 // SECTION 1: CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
 const TILE = 64, COLS = 48, ROWS = 34;
-const W = (document.getElementById('game-wrap').clientWidth || window.innerWidth - 70);
-const H = (document.getElementById('game-wrap').clientHeight || window.innerHeight - 44);
+const W = Math.max((document.getElementById('game-wrap').clientWidth || window.innerWidth - 70), 360);
+const H = Math.max((document.getElementById('game-wrap').clientHeight || window.innerHeight - 44), 480);
 // Logical world size (for tile grid placement)
 const WORLD_W = COLS * TILE, WORLD_H = ROWS * TILE;
 const TYPES = ["grass","sand","stone","water","tree","mountain","bush","beach","path","deep_water","grass_flower","dense_forest","cliff","tall_grass","farm_plot","palm"];
@@ -664,7 +664,7 @@ const GS = {
   gameTicks:0,
   };
 function getIslandData(id) {
-  if (!GS.islands[id]) GS.islands[id] = {buildings:[],map:null,enemies:[],enemyTimer:0};
+  if (!GS.islands[id]) GS.islands[id] = {buildings:[],map:null,enemies:[],enemyTimer:0,farmPlots:{}};
   return GS.islands[id];
 }
 
@@ -1842,6 +1842,15 @@ function findNearestResource() {
   }
   return null;
 }
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// SECTION 11c: WINDOW FUNCTION STUBS (game scene functions)
+// ════════════════════════════════════════════════════════════════════════════
+// Stubs prevent "is not a function" errors when buttons are clicked before scene loads
+window.farmAction = window.farmAction || function() { showToast("⚠️ Game not ready yet", 1000); };
+window.cowAction = window.cowAction || function() { showToast("⚠️ Game not ready yet", 1000); };
+window.togglePebble = window.togglePebble || function() { showToast("⚠️ Game not ready yet", 1000); };
 
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 12: MAIN GAME SCENE
