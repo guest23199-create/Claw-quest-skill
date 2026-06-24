@@ -1692,7 +1692,7 @@ function openTravelModal(dests){
 // ═══════════════════════════════════════════════════════════════════
 function updateHunger(dt){
   const p=GS.player;
-  p.hunger-=dt*0.5;
+  p.hunger-=dt*0.2;
   if(p.hunger<=0){
     p.hunger=0;
     if(GS.gameTicks%90===0){
@@ -2775,7 +2775,7 @@ k.scene("game", ()=>{
     }
     ghostObj.pos=k.vec2(tix*TILE+1,tiy*TILE+1);
     const tt=getTile(tiy, tix, map);
-    if(tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13){
+    if(tt===0||tt===1||tt===6||tt===7||tt===8||tt===10||tt===13){
       ghostObj.color=k.color(0,255,0);
     }else{
       ghostObj.color=k.color(255,0,0);
@@ -2898,7 +2898,7 @@ k.scene("game", ()=>{
     const p=GS.player;
     let w=0,s=0,f=0,g=0;
     const eq=getEquipStats();
-    if(type===4){w=2+p.woodBonus+eq.atk+Math.floor(Math.random()*2);GS.resources.wood+=w;showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵`,[153,204,77]);}
+    if(type===4){w=2+p.woodBonus+eq.atk+Math.floor(Math.random()*2);GS.resources.wood+=w;if(Math.random()<0.3){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🍎`,[230,77,77]);}showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵`,[153,204,77]);}
         else if(type===2){
       // Mine - improved drop rates
       const roll = Math.random();
@@ -2922,7 +2922,7 @@ k.scene("game", ()=>{
       } else {
         showFloating(tx*TILE, ty*TILE-10, "X", [140,140,140]);
       }
-    }    else if(type===6){f=1+Math.floor(Math.random()*3);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-10,`+${f} 🍎`,[230,77,77]);}
+    }    else if(type===6){f=3+Math.floor(Math.random()*4);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-10,`+${f} 🍎`,[230,77,77]);}
     // 20% chance to forage seeds from trees/bushes
     if((type===4||type===6)&&Math.random()<0.2){
       addInvItem("seed",1);
@@ -2934,7 +2934,7 @@ k.scene("game", ()=>{
       showFloating(tx*TILE,ty*TILE-26,`+1 🌿`,[77,204,77]);
       spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,3,[77,204,77]);
     }
-    if(w||s||f||g){spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,4,[230,230,77]);if(Math.random()<0.3 && type!==2)setTile(ty, tx, 0, map);updateHUD();}
+    if(w||s||f||g){spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,4,[230,230,77]);if(Math.random()<0.1 && type!==2)setTile(ty, tx, 0, map);updateHUD();}
   }
 
   // Level up — uses PLAYER
@@ -3104,6 +3104,41 @@ k.scene("game", ()=>{
         removeInvItem('food', 1);
         showToast('🍎 Auto ate food! +15 Hunger', 1200);
         updateHUD();
+      }
+    }
+
+    // ─── Auto-defense: attack nearby enemies ───
+    if (typeof enemyObjs !== 'undefined' && enemyObjs && enemyObjs.length > 0) {
+      let nearestEnemy = null;
+      let nearestDist = Infinity;
+      const px = playerObj.pos.x, py = playerObj.pos.y;
+      for (const e of enemyObjs) {
+        if (!e || e._dead) continue;
+        const dx = e.pos.x - px, dy = e.pos.y - py;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < nearestDist) { nearestDist = d; nearestEnemy = e; }
+      }
+      if (nearestEnemy && nearestDist < TILE * 4) {
+        // Face and attack enemy
+        const dmg = Math.max(1, GS.player.attack + getEquipStats().atk + Math.floor(Math.random() * 3) - 1);
+        nearestEnemy._hp -= dmg;
+        spawnParticles(nearestEnemy.pos.x, nearestEnemy.pos.y, 3, [255, 50, 50]);
+        showFloating(nearestEnemy.pos.x, nearestEnemy.pos.y - 10, '-' + dmg, [255, 50, 50]);
+        if (nearestEnemy._hp <= 0) {
+          nearestEnemy._dead = true;
+          spawnParticles(nearestEnemy.pos.x, nearestEnemy.pos.y, 10, [255, 200, 50]);
+          GS.player.xp += 3;
+          showToast('⚔️ Defeated enemy! +3 XP', 1000);
+          try { k.destroy(nearestEnemy); } catch(e) {}
+          // Remove from enemyObjs
+          const idx = enemyObjs.indexOf(nearestEnemy);
+          if (idx >= 0) enemyObjs.splice(idx, 1);
+          updateHUD();
+        }
+        // Brief pause between attacks
+        autoFarmState = 'wait';
+        autoFarmCooldown = 0.8;
+        return;
       }
     }
 
