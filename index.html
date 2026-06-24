@@ -584,12 +584,13 @@ const CRAFT_RECIPES = [
 // SECTION 1d: BUILDINGS
 // ═══════════════════════════════════════════════════════════════════
 const BUILDINGS = {
-  shelter:{name:"Shelter",icon:"🏠",costs:{w:5,s:0}, desc:"Rest and recover HP"},
-  campfire:{name:"Campfire",icon:"🔥",costs:{w:3,s:0}, desc:"Scares weaker enemies"},
-  woodcutter:{name:"Woodcutter",icon:"🪵",costs:{w:10,s:0}, desc:"+1 wood per gather"},
-  mine:{name:"Mine",icon:"⛏️",costs:{w:0,s:15}, desc:"+1 stone per gather"},
-  market:{name:"Market",icon:"🏪",costs:{w:20,s:10}, desc:"Trade resources"},
-  merchant_house:{name:"Thương Gia",icon:"🏪",costs:{w:25,s:15}, desc:"Try your luck at the slot machine!"},
+  shelter:{name:"Nhà Tạm",icon:"🏠",costs:{w:5,s:0}, desc:"Hồi phục HP"},
+  campfire:{name:"Lửa Trại",icon:"🔥",costs:{w:3,s:0}, desc:"Xua đuổi quái yếu"},
+  woodcutter:{name:"Xưởng Gỗ",icon:"🪵",costs:{w:10,s:0}, desc:"+1 gỗ mỗi lần"},
+  mine:{name:"Mỏ Đá",icon:"⛏️",costs:{w:0,s:15}, desc:"+1 đá mỗi lần"},
+  arena:{name:"Đấu Trường",icon:"⚔️",costs:{w:15,s:10}, desc:"Chiến sóng quái"},
+  market:{name:"Chợ",icon:"🏪",costs:{w:20,s:10}, desc:"Trao đổi tài nguyên"},
+  merchant_house:{name:"Nhà Buôn",icon:"🏛️",costs:{w:25,s:15}, desc:"Vòng quay may mắn!"},
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1611,8 +1612,12 @@ function interactWithBuilding(building){
       updateHUD();break;
     }
     case"merchant_house":{
-    showToast("🏪 Welcome to the Merchant House! Try your luck!",1500);
+    showToast("🏪 Chào mừng đến Nhà Buôn!",1500);
     k.go("slot_machine");break;
+    }
+    case"arena":{
+    showToast("⚔️ Vào đấu trường! Chuẩn bị chiến đấu!",1500);
+    k.go("arena");break;
     }
   }
 }
@@ -4373,6 +4378,108 @@ k.scene("instructions", ()=>{
   // Back button
   const bb=k.add([k.text("← Quay lại",{size:16}),k.pos(W/2,H-45),k.anchor("center"),k.color(128,204,255),k.z(10),k.area()]);
   bb.onClick(()=>k.go("title"));
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION 15: ARENA — Wave combat (20x20)
+// ═══════════════════════════════════════════════════════════════════
+k.scene("arena", ()=>{
+  const AW=20, AH=20;
+  const AT = Math.min(H, W) / AH;
+  const AX = (W - AT * AW) / 2, AY = (H - AT * AH) / 2 + 30;
+  let cw=1, am=[], ago=false, avic=false;
+  let php=GS.player.hp, pmhp=GS.player.maxHp, pehp=GS.pebble.hp, pemhp=GS.pebble.maxHp;
+  let abf={pa:0,pd:0,pea:0,ped:0,hp:0,rv:0};
+  let sc=GS.silverCoins||0;
+  if(sc>0){abf.pa=Math.min(sc,5);abf.pea=Math.max(0,Math.min(sc-5,3));abf.hp=Math.floor(sc/3);}
+  k.add([k.rect(W,H),k.pos(0,0),k.color(30,20,40)]);
+  k.add([k.rect(AT*AW+4,AT*AH+4),k.pos(AX-2,AY-2),k.color(80,60,40),k.z(0)]);
+  for(let r=0;r<AH;r++) for(let c=0;c<AW;c++){
+    const x=AX+c*AT,y=AY+r*AT;
+    k.add([k.rect(AT-2,AT-2),k.pos(x+1,y+1),(r>=12?k.rgb(40,55,70):k.rgb(55,35,35)),k.z(1)]);
+  }
+  k.add([k.rect(AT*AW,3),k.pos(AX,AY+11*AT),k.color(200,180,100),k.z(2)]);
+  const uW=k.add([k.text("Wave "+cw,{size:16}),k.pos(W/2,8),k.anchor("center"),k.color(255,215,0),k.z(10)]);
+  const uHP=k.add([k.text("🧑 HP: "+php+"/"+pmhp,{size:11}),k.pos(10,2),k.color(46,204,113),k.z(10)]);
+  const uPH=k.add([k.text("🐱 HP: "+pehp+"/"+pemhp,{size:11}),k.pos(10,16),k.color(232,161,64),k.z(10)]);
+  const st=k.add([k.text("⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5))),{size:14}),k.pos(W/2,AY+AH*AT+12),k.anchor("center"),k.color(255,215,0),k.z(10)]);
+  const iB=k.add([k.rect(70,22),k.pos(W-80,4),k.color(100,130,200),k.z(10),k.area()]);
+  k.add([k.text("🎒 Items",{size:10}),k.pos(W-45,15),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  iB.onClick(()=>{let m="🎒 Đấu Trường\n🪙 Silver: "+(GS.silverCoins||0)+"\n⚔️ +ATK: "+abf.pa+"\n🐱 +ATK: "+abf.pea+"\n❤️ Heal: "+abf.hp+" lần";showToast(m,4000);});
+  const bY=H-35;
+  const fB=k.add([k.rect(80,28),k.pos(W/2-90,bY),k.color(46,160,67),k.z(10),k.area()]);
+  k.add([k.text("⚔️ Đánh",{size:13}),k.pos(W/2-50,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  const dB=k.add([k.rect(80,28),k.pos(W/2-5,bY),k.color(60,80,180),k.z(10),k.area()]);
+  k.add([k.text("🛡️ Phòng",{size:13}),k.pos(W/2+35,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  const hB=k.add([k.rect(80,28),k.pos(W/2+80,bY),k.color(40,160,80),k.z(10),k.area()]);
+  k.add([k.text("❤️ Hồi",{size:13}),k.pos(W/2+120,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  const eB=k.add([k.rect(60,22),k.pos(10,bY+3),k.color(150,40,40),k.z(10),k.area()]);
+  k.add([k.text("✖ Thoát",{size:10}),k.pos(40,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  eB.onClick(()=>{GS.player.hp=php;k.go("game");});
+  function spw(w){
+    for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}}
+    am=[];
+    const sr=Math.min(w,5),bh=10+w*5,ba=2+Math.floor(w*1.2),bd=1+Math.floor(w*0.5);
+    const pos=[];
+    for(let i=0;i<3;i++){let rx,ry,a2=0;do{rx=3+Math.floor(Math.random()*14);ry=1+Math.floor(Math.random()*9);a2++;}while(pos.some(p=>Math.abs(p.x-rx)+Math.abs(p.y-ry)<3)&&a2<30);pos.push({x:rx,y:ry});}
+    const cl=[[100,200,100],[150,180,80],[200,150,60],[200,80,80],[180,60,180]];
+    const co=cl[sr-1]||cl[4];
+    for(let i=0;i<3;i++){
+      const hp=bh+Math.floor(Math.random()*10),at=ba+Math.floor(Math.random()*3),df=bd;
+      const px=AX+pos[i].x*AT+AT/2,py=AY+pos[i].y*AT+AT/2;
+      const o=k.add([k.rect(AT-8,AT-8),k.pos(px,py),k.anchor("center"),k.color(co[0],co[1],co[2]),k.outline(2,k.rgb(255,255,255)),k.z(5),k.area()]);
+      const hb=k.add([k.rect(AT-4,4),k.pos(AX+pos[i].x*AT+2,py-AT/2+2),k.color(51,51,51),k.z(6)]);
+      const hf=k.add([k.rect(AT-4,4),k.pos(AX+pos[i].x*AT+2,py-AT/2+2),k.color(230,51,51),k.z(7)]);
+      k.add([k.text(""+(i+1),{size:11}),k.pos(px,py),k.anchor("center"),k.color(255,255,255),k.z(8)]);
+      k.add([k.text("⭐"+sr,{size:8}),k.pos(AX+pos[i].x*AT+AT/2,py-AT/2-6),k.anchor("center"),k.color(255,215,0),k.z(7)]);
+      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,target:Math.random()<0.5?"p":"pe",dead:false});
+    }
+  }
+  function patk(idx){
+    if(ago||avic)return;
+    const al=am.filter(m=>!m.dead);if(!al.length)return;
+    if(idx<0||idx>=am.length)idx=am.indexOf(al[0]);
+    const m=am[idx];if(!m||m.dead)return;
+    const d=Math.max(1,GS.player.attack+getEquipStats().atk+abf.pa+Math.floor(Math.random()*4)-m.def);
+    m.hp-=d;showFloating(m.o.pos.x,m.o.pos.y-15,'-'+d,[255,50,50]);spawnParticles(m.o.pos.x,m.o.pos.y,3,[255,77,26]);
+    m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
+    if(pehp>0){const pd=Math.max(1,GS.pebble.attack+abf.pea+Math.floor(Math.random()*3)-Math.floor(m.def*0.5));m.hp-=pd;showFloating(m.o.pos.x,m.o.pos.y+10,'-'+pd+'🐱',[232,161,64]);m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));}
+    if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);}catch(e){}}
+    const rm=am.filter(m=>!m.dead);
+    if(!rm.length){avic=true;onVic();return;}
+    enTurn();
+  }
+  function enTurn(){
+    const al=am.filter(m=>!m.dead);
+    for(const m of al){
+      if(m.target==="p"&&php>0){const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));php=Math.max(0,php-ed);showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);}
+      else if(pehp>0){const ed=Math.max(1,m.atk-1+Math.floor(Math.random()*2));pehp=Math.max(0,pehp-ed);showFloating(AX+17*AT,AY+14*AT,'-'+ed,[232,100,50]);}
+    }
+    updUI();
+    if(php<=0&&pehp<=0){ago=true;onDef();}
+  }
+  function updUI(){uHP.text="🧑 HP: "+php+"/"+pmhp;uPH.text="🐱 HP: "+pehp+"/"+pemhp;if(php<=0)uHP.color=k.rgb(200,50,50);if(pehp<=0)uPH.color=k.rgb(200,50,50);}
+  function onVic(){
+    const r=3+cw*2;GS.resources.wood+=r;GS.resources.stone+=r;GS.resources.food+=r;GS.player.xp+=5+cw*3;
+    if(cw%3===0){GS.silverCoins=(GS.silverCoins||0)+1;showToast("👑 +1 Silver Coin!",2000);}
+    showToast("🎉 Wave "+cw+" cleared! +"+r+" resources!",2000);checkLevelUp();updateHUD();cw++;
+    setTimeout(()=>{avic=false;php=Math.min(pmhp,php+10);pehp=Math.min(pemhp,pehp+10);GS.player.hp=php;GS.pebble.hp=pehp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)));updUI();spw(cw);},1500);
+  }
+  function onDef(){showToast("💀 Thua! Nhận 3 gỗ, 2 đá, 2 táo.",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);}
+  fB.onClick(()=>{if(ago||avic)return;patk(-1);});
+  dB.onClick(()=>{if(ago||avic)return;showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
+  hB.onClick(()=>{
+    if(ago||avic)return;
+    if(abf.hp>0){abf.hp--;const ha=15+Math.floor(Math.random()*10);if(php<pehp){php=Math.min(pmhp,php+ha);showFloating(AX+2*AT,AY+14*AT,'+'+ha,[46,204,113]);}else{pehp=Math.min(pemhp,pehp+ha);showFloating(AX+17*AT,AY+14*AT,'+'+ha,[232,161,64]);}updUI();const al=am.filter(m=>!m.dead);if(al.length>0)enTurn();}
+    else showToast("❌ Hết bình máu! Vào Merchant House quay thưởng.",2000);
+  });
+  k.add([k.text("🧑",{size:AT*0.6}),k.pos(AX+2*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
+  k.add([k.text("🐱",{size:AT*0.6}),k.pos(AX+17*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
+  spw(cw);
+  k.onKeyPress("space",()=>fB.click());
+  k.onKeyPress("d",()=>dB.click());
+  k.onKeyPress("h",()=>hB.click());
+  k.onKeyPress("escape",()=>eB.click());
 });
 
 // ═══════════════════════════════════════════════════════════════════
