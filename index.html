@@ -4532,7 +4532,7 @@ k.scene("arena", ()=>{
   const uW=k.add([k.text("Wave "+cw,{size:16}),k.pos(W/2,8),k.anchor("center"),k.color(255,215,0),k.z(10)]);
   const uHP=k.add([k.text("🧑 HP: "+php+"/"+pmhp,{size:11}),k.pos(10,2),k.color(46,204,113),k.z(10)]);
   const uPH=k.add([k.text("🐱 HP: "+pehp+"/"+pemhp,{size:11}),k.pos(10,16),k.color(232,161,64),k.z(10)]);
-  const st=k.add([k.text("⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5))),{size:14}),k.pos(W/2,AY+AH*AT+12),k.anchor("center"),k.color(255,215,0),k.z(10)]);
+  const st=k.add([k.text("⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1),{size:14}),k.pos(W/2,AY+AH*AT+12),k.anchor("center"),k.color(255,215,0),k.z(10)]);
   const iB=k.add([k.rect(70,22),k.pos(W-80,4),k.color(100,130,200),k.z(10),k.area()]);
   k.add([k.text("🎒 Items",{size:10}),k.pos(W-45,15),k.anchor("center"),k.color(255,255,255),k.z(11)]);
   iB.onClick(()=>{let m="🎒 Đấu Trường\n🪙 Silver: "+(GS.silverCoins||0)+"\n⚔️ +ATK: "+abf.pa+"\n🐱 +ATK: "+abf.pea+"\n❤️ Heal: "+abf.hp+" lần";showToast(m,4000);});
@@ -4549,12 +4549,13 @@ k.scene("arena", ()=>{
   function spw(w){
     for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}}
     am=[];
-    const sr=Math.min(w,5),bh=10+w*5,ba=2+Math.floor(w*1.2),bd=1+Math.floor(w*0.5);
+    const sr=Math.min(w,5),bh=10+w*8,ba=3+Math.floor(w*1.5),bd=1+Math.floor(w*0.8);
     const pos=[];
-    for(let i=0;i<3;i++){let rx,ry,a2=0;do{rx=3+Math.floor(Math.random()*14);ry=1+Math.floor(Math.random()*9);a2++;}while(pos.some(p=>Math.abs(p.x-rx)+Math.abs(p.y-ry)<3)&&a2<30);pos.push({x:rx,y:ry});}
+    const monCount = Math.min(3 + (w - 1), 10); // Wave1=3, Wave2=4, ..., max10
+    for(let i=0;i<monCount;i++){let rx,ry,a2=0;do{rx=3+Math.floor(Math.random()*14);ry=1+Math.floor(Math.random()*9);a2++;}while(pos.some(p=>Math.abs(p.x-rx)+Math.abs(p.y-ry)<3)&&a2<30);pos.push({x:rx,y:ry});}
     const cl=[[100,200,100],[150,180,80],[200,150,60],[200,80,80],[180,60,180]];
     const co=cl[sr-1]||cl[4];
-    for(let i=0;i<3;i++){
+    for(let i=0;i<monCount;i++){
       const hp=bh+Math.floor(Math.random()*10),at=ba+Math.floor(Math.random()*3),df=bd;
       const px=AX+pos[i].x*AT+AT/2,py=AY+pos[i].y*AT+AT/2;
       const o=k.add([k.rect(AT-8,AT-8),k.pos(px,py),k.anchor("center"),k.color(co[0],co[1],co[2]),k.outline(2,k.rgb(255,255,255)),k.z(5),k.area()]);
@@ -4562,7 +4563,7 @@ k.scene("arena", ()=>{
       const hf=k.add([k.rect(AT-4,4),k.pos(AX+pos[i].x*AT+2,py-AT/2+2),k.color(230,51,51),k.z(7)]);
       k.add([k.text(""+(i+1),{size:11}),k.pos(px,py),k.anchor("center"),k.color(255,255,255),k.z(8)]);
       k.add([k.text("⭐"+sr,{size:8}),k.pos(AX+pos[i].x*AT+AT/2,py-AT/2-6),k.anchor("center"),k.color(255,215,0),k.z(7)]);
-      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,target:Math.random()<0.5?"p":"pe",dead:false});
+      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,target:(php>pehp||pehp<=0)?"p":"pe",dead:false});
     }
   }
   function patk(idx){
@@ -4593,9 +4594,9 @@ k.scene("arena", ()=>{
     const r=3+cw*2;GS.resources.wood+=r;GS.resources.stone+=r;GS.resources.food+=r;GS.player.xp+=5+cw*3;
     if(cw%3===0){GS.silverCoins=(GS.silverCoins||0)+1;showToast("👑 +1 Silver Coin!",2000);}
     showToast("🎉 Wave "+cw+" cleared! +"+r+" resources!",2000);checkLevelUp();updateHUD();cw++;
-    setTimeout(()=>{avic=false;php=Math.min(pmhp,php+10);pehp=Math.min(pemhp,pehp+10);GS.player.hp=php;GS.pebble.hp=pehp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)));updUI();spw(cw);},1500);
+    setTimeout(()=>{avic=false;php=Math.min(pmhp,php+10);pehp=Math.min(pemhp,pehp+10);GS.player.hp=php;GS.pebble.hp=pehp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
   }
-  function onDef(){showToast("💀 Thua! Nhận 3 gỗ, 2 đá, 2 táo.",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);}
+  function onDef(){showToast("💀 Thua trận! Quay lại từ đầu.",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);}
   fB.onClick(()=>{if(ago||avic)return;patk(-1);});
   dB.onClick(()=>{if(ago||avic)return;showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
   hB.onClick(()=>{
