@@ -40,6 +40,10 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 .bot-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:4px 8px;border-radius:8px;font-size:9px;transition:all 0.15s;white-space:nowrap}
 .bot-btn:active{background:rgba(240,192,96,0.2);transform:scale(0.95)}
 .bot-btn.on{background:rgba(240,192,96,0.2);border-color:#f0c060}
+/* ─── Toggle Action Bar ─── */
+#toggle-actions-btn{position:fixed;bottom:8px;right:8px;z-index:25;width:36px;height:36px;border-radius:50%;background:rgba(10,22,40,0.88);border:1px solid rgba(255,215,0,0.2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.15s;backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(0,0,0,0.5)}
+#toggle-actions-btn:active{transform:scale(0.88);background:rgba(240,192,96,0.15);border-color:#f0c060}
+#bottom-actions.hidden{display:none}
 /* ─── D-PAD ─── */
 #dpad{position:fixed;bottom:60px;left:8px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
 #dpad>*{pointer-events:auto}
@@ -171,7 +175,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   </div>
 
   <!-- ─── Bottom Action Buttons ─── -->
-  <div id="bottom-actions">
+  <div id="bottom-actions" class="hidden">
     <button class="bot-btn" onclick="window.toggleBuild()">🏗️ Build</button>
     <button class="bot-btn" onclick="window.showMap()">🗺️ Map</button>
     <button class="bot-btn" onclick="window.saveGame()">💾 Save</button>
@@ -181,6 +185,9 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <button class="bot-btn" id="cow-btn" onclick="window.cowAction()" style="display:none">🐄 Bò</button>
     <button class="bot-btn" id="farm-btn" onclick="window.farmAction()" style="display:none">🌱 Farm</button>
   </div>
+
+  <!-- ─── Toggle Action Bar ─── -->
+  <button id="toggle-actions-btn" onclick="window.toggleActions()" title="Bảng công cụ">🔧</button>
 
   <!-- ─── D-PAD ─── -->
   <div id="dpad">
@@ -1238,24 +1245,10 @@ function hasInvItem(id,count=1){
 }
 
 
-// ─── Right sidebar button functions ───
-window.openWeapons = function(){
-  window.closeModals();
-  document.getElementById("modal-inv").classList.add("show");
-  renderInvGrid();
-  renderEquipPanel();
-  renderStatsDisplay();
-  showToast("⚔️ Weapons & Tools", 1200);
-};
-window.openDefense = function(){
-  window.closeModals();
-  document.getElementById("modal-inv").classList.add("show");
-  const tab = document.querySelector(".tab-btn[data-tab='inv-equip']");
-  if (tab) tab.click();
-  renderInvGrid();
-  renderEquipPanel();
-  renderStatsDisplay();
-  showToast("🛡️ Defense Equipment", 1200);
+// ─── Toggle actions ───
+window.toggleActions = function(){
+  const bar = document.getElementById("bottom-actions");
+  bar.classList.toggle("hidden");
 };
 window.useHealItem = function(){
   const inv = GS.player.inventory;
@@ -3756,8 +3749,8 @@ k.scene("game", ()=>{
     console.error("❌ Game scene error:", e);
     const errDiv = document.createElement("div");
     errDiv.style.cssText = "position:fixed;top:100px;left:10px;right:10px;background:rgba(200,0,0,0.95);color:#fff;padding:16px;z-index:99999;font-size:14px;font-family:monospace;white-space:pre-wrap;border-radius:8px;border:2px solid #ff0;";
-    errDiv.textContent = "🚨 GAME INIT ERROR:\n" + (e.message || e) + "\n\n" + (e.stack || "");
-    document.body.prepend(errDiv);
+    console.error("🚨 GAME INIT ERROR:", e.message || e, e.stack || "");
+    showToast("⚠️ Game init error - check console", 3000);
   }
 
   // ─── Pebble dialogue management ────────────────────────────
