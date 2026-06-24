@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Claw Quest V12 — Tile Survival</title>
+<title>Claw Quest V12 — Sinh Tồn Trên Đảo</title>
 <!-- v=20260625.01 -->
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -147,14 +147,14 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
   <!-- ─── Top Status Bar ─── -->
   <div id="top-bar">
-    <span class="tb-name" id="hud-name">🧑 Adventurer</span>
+    <span class="tb-name" id="hud-name">🧑 Nhà Thám Hiểm</span>
     <span class="tb-level" id="hud-level">Lv.1</span>
     <div class="tb-stat" style="flex:2">
       <div class="tb-label">HP</div>
       <div class="tb-bar-wrap"><div class="tb-bar-fill" id="hud-hp-fill" style="width:100%;background:linear-gradient(90deg,#e74c3c,#2ecc71)"></div></div>
     </div>
     <div class="tb-stat" style="flex:2">
-      <div class="tb-label">XP</div>
+      <div class="tb-label">KN</div>
       <div class="tb-bar-wrap"><div class="tb-bar-fill" id="hud-xp-fill" style="width:0%;background:linear-gradient(90deg,#f1c40f,#e67e22)"></div></div>
     </div>
     <div class="tb-stat" style="flex:2">
@@ -165,26 +165,26 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
   <!-- ─── Mini Action Bar (compact floating buttons) ─── -->
   <div id="mini-bar">
-    <button class="mb-btn" onclick="window.toggleCraft()" title="Chế tạo">✨</button>
-    <button class="mb-btn" onclick="window.useHealItem()" title="Hồi máu">💊</button>
-    <button class="mb-btn" onclick="window.toggleInv()" title="Kho đồ">📦</button>
+    <button class="mb-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨</button>
+    <button class="mb-btn" onclick="window.useHealItem()" title="Hồi Máu">💊</button>
+    <button class="mb-btn" onclick="window.toggleInv()" title="Kho Đồ">📦</button>
   </div>
   <!-- ─── Island Label ─── -->
   <div id="island-label">🏝️ Starter Isle</div>
 
   <!-- ─── Resources ─── -->
   <div id="resources">
-    <div><span class="rlab">🪵</span><span class="rval" id="r-wood">0</span><span class="rlab">🪨</span><span class="rval" id="r-stone">0</span><span class="rlab">🍎</span><span class="rval" id="r-food">0</span></div>
-    <div><span class="rlab">🪙</span><span class="rval" id="r-gold">0</span><span class="rlab">🥈</span><span class="rval" id="r-silver">0</span></div>
+    <div><span class="rlab">🪵Gỗ</span><span class="rval" id="r-wood">0</span><span class="rlab">🪨Đá</span><span class="rval" id="r-stone">0</span><span class="rlab">🍎TA</span><span class="rval" id="r-food">0</span></div>
+    <div><span class="rlab">🪙Vàng</span><span class="rval" id="r-gold">0</span><span class="rlab">🥈Bạc</span><span class="rval" id="r-silver">0</span></div>
   </div>
 
   <!-- ─── Bottom Action Buttons ─── -->
   <div id="bottom-actions" class="hidden">
-    <button class="bot-btn" onclick="window.toggleBuild()">🏗️ Build</button>
+    <button class="bot-btn" onclick="window.toggleBuild()">🏗️ Xây</button>
     <button class="bot-btn" onclick="window.showMap()">🗺️ Map</button>
-    <button class="bot-btn" onclick="window.saveGame()">💾 Save</button>
+    <button class="bot-btn" onclick="window.saveGame()">💾 Lưu</button>
     <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()">⚙️ Auto</button>
-    <button class="bot-btn" onclick="window.quickTravel()">⛵ Travel</button>
+    <button class="bot-btn" onclick="window.quickTravel()">⛵ Du Lịch</button>
     <button class="bot-btn" id="pebble-btn" onclick="window.togglePebble()">📚 Pebble</button>
     <button class="bot-btn" id="cow-btn" onclick="window.cowAction()" style="display:none">🐄 Bò</button>
     <button class="bot-btn" id="farm-btn" onclick="window.farmAction()" style="display:none">🌱 Farm</button>
@@ -205,10 +205,10 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
   <!-- ─── HUD (hidden, kept for script compatibility / cow & companion data) ─── -->
   <div id="hud" style="display:none">
-    <div id="hud-name-hidden" style="display:none">🧑 Adventurer</div>
+    <div id="hud-name-hidden" style="display:none">🧑 Nhà Thám Hiểm</div>
     <div id="hud-hp-bar" style="display:none"><div id="hud-hp-fill-old" style="width:100%"></div></div>
     <div id="hud-hunger-bar" style="display:none"><div id="hud-hunger-fill-old" style="width:80%"></div></div>
-    <div id="hud-hunger-label" style="display:none"><span>🍗 Hunger</span><span id="hud-hunger-pct">80%</span></div>
+    <div id="hud-hunger-label" style="display:none"><span>🍗 Đói</span><span id="hud-hunger-pct">80%</span></div>
     <div id="hud-level">Lv.1</div>
     <div id="hud-xp" style="display:none"><div id="hud-xp-fill-old" style="width:0%"></div></div>
     <div id="hud-xp-text">XP: 0/10</div>
@@ -235,7 +235,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <div class="modal-overlay" id="modal-craft"><div class="modal-box">
   <span class="modal-close" onclick="window.closeModals()">&times;</span>
   <h2>🔨 Crafting</h2>
-  <div class="modal-sub">Resources: 🪵<span id="craft-wood">0</span> &nbsp;🪨<span id="craft-stone">0</span> &nbsp;🍎<span id="craft-food">0</span></div>
+  <div class="modal-sub">Nguyên Liệu: 🪵<span id="craft-wood">0</span> &nbsp;🪨<span id="craft-stone">0</span> &nbsp;🍎<span id="craft-food">0</span></div>
   <div id="craft-list"></div>
 </div></div>
 
@@ -253,8 +253,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
       <div class="stat-item"><span class="stat-val" id="inv-atk">2</span><div class="stat-lab">⚔️ ATK</div></div>
       <div class="stat-item"><span class="stat-val" id="inv-def">1</span><div class="stat-lab">🛡️ DEF</div></div>
       <div class="stat-item"><span class="stat-val" id="inv-hp">20</span><div class="stat-lab">❤️ HP</div></div>
-      <div class="stat-item"><span class="stat-val" id="inv-hunger">80</span><div class="stat-lab">🍗 Hunger</div></div>
-      <div class="stat-item"><span class="stat-val" id="inv-gold">0</span><div class="stat-lab">🪙 Gold</div></div>
+      <div class="stat-item"><span class="stat-val" id="inv-hunger">80</span><div class="stat-lab">🍗 Đói</div></div>
+      <div class="stat-item"><span class="stat-val" id="inv-gold">0</span><div class="stat-lab">🪙 Đild</div></div>
     </div>
     <div id="inv-list"></div>
   </div>
@@ -299,7 +299,37 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <div id="dialogue-continue" style="font-size:10px;color:#8899bb;margin-top:6px;opacity:0.7;">✦</div>
 </div>
 
+<!-- ─── Pebble Task Modal ─── -->
+<div class="modal-overlay" id="modal-pebble-task">
+  <div class="modal-box" style="max-width:320px;text-align:center;">
+    <h2>🐱 Giao Việc Cho Pebble</h2>
+    <p style="font-size:11px;color:#8899bb;margin:6px 0 10px 0;">Chọn nhiệm vụ cho Pebble:</p>
+    <div id="pebble-task-buttons" style="display:flex;flex-direction:column;gap:6px;">
+      <button class="task-btn" data-task="none" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🔄 Tự Do (Mặc Định)</button>
+      <button class="task-btn" data-task="follow" style="background:rgba(46,160,67,0.2);border:1px solid #2ea043;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">👣 Đi Theo Nhân Vật</button>
+      <button class="task-btn" data-task="defend" style="background:rgba(230,51,51,0.2);border:1px solid #e63333;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🛡️ Bảo Vệ Chủ Nhân</button>
+      <button class="task-btn" data-task="gather" style="background:rgba(232,161,64,0.2);border:1px solid #e8a140;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🌲 Thu Thập Tài Nguyên</button>
+      <button class="task-btn" data-task="stay" style="background:rgba(100,130,200,0.2);border:1px solid #6482c8;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">📍 Đứng Yên Tại Chỗ</button>
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:#8899bb;" id="pebble-current-task">Hiện tại: Tự do</div>
+    <button class="modal-close" style="margin-top:10px;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:6px 20px;border-radius:8px;font-size:12px;cursor:pointer;">Đóng</button>
+  </div>
+</div>
+
 <script>
+// ─── Pebble Task UI event handlers ───
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll(".task-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      const task = this.dataset.task;
+      if (typeof window.setPebbleTask === 'function') {
+        window.setPebbleTask(task);
+      }
+      window.closeModals();
+    });
+  });
+});
+
 // ─── Window error handler: show errors on screen ───
 window.onerror = function(msg, url, line, col, err) {
   console.error("GLOBAL ERROR:", msg, err);
@@ -393,7 +423,7 @@ const ISLAND_DEFS = {
   ice_island:    {name:"Ice Island",      diff:4, desc:"Frozen wastes of ancient ice."},
   cloud_island:  {name:"Cloud Island",    diff:5, desc:"Mysterious floating paradise."},
   sunken_temple: {name:"Sunken Temple",   diff:5, desc:"Ancient ruins beneath the waves."},
-  golden_plains: {name:"Golden Plains",   diff:4, desc:"Endless savannahs of shimmering gold."},
+  golden_plains: {name:"Đilden Plains",   diff:4, desc:"Endless savannahs of shimmering gold."},
 };
 const ISLAND_ORDER = ["starter_isle","ember_isle","crystal_atoll","stormpeak","fire_island","ice_island","cloud_island","sunken_temple","golden_plains"];
 const ISLAND_CONNECTIONS = {
@@ -410,7 +440,7 @@ const ISLAND_CONNECTIONS = {
 const ISLAND_UNLOCK_COSTS = {
   ember_isle:    {resources:{wood:20,stone:15},             level:3,  boss:"Slime King",      source:"starter_isle"},
   crystal_atoll: {resources:{stone:30,gold:10},              level:5,  boss:"Fire Spirit King", source:"ember_isle"},
-  stormpeak:     {resources:{wood:40,stone:25,gold:15},      level:8,  boss:"Crystal Golem King",source:"crystal_atoll"},
+  stormpeak:     {resources:{wood:40,stone:25,gold:15},      level:8,  boss:"Crystal Đilem King",source:"crystal_atoll"},
   fire_island:   {resources:{wood:35,food:20},               level:7,  boss:"Storm Wraith King",source:"stormpeak"},
   ice_island:    {resources:{stone:50,gold:25,food:30},      level:10, boss:"Fire Imp King",    source:"fire_island"},
   cloud_island:  {resources:{wood:60,stone:50,gold:40,food:35}, level:15, boss:"Frost Giant King",source:"ice_island"},
@@ -420,7 +450,7 @@ const ISLAND_UNLOCK_COSTS = {
 const ENEMY_TYPES = {
   starter_isle:  {name:"Slime",        hp:5, c:[51,204,77], spd:20, dmg:1, xp:3,  drops:{wood:1,stone:0,food:1,gold:0}},
   ember_isle:    {name:"Fire Spirit",  hp:15,c:[230,77,26], spd:30, dmg:3, xp:6,  drops:{wood:0,stone:1,food:0,gold:1}},
-  crystal_atoll: {name:"Crystal Golem",hp:25,c:[128,77,204], spd:15, dmg:5, xp:10, drops:{wood:1,stone:3,food:0,gold:2}},
+  crystal_atoll: {name:"Crystal Đilem",hp:25,c:[128,77,204], spd:15, dmg:5, xp:10, drops:{wood:1,stone:3,food:0,gold:2}},
   stormpeak:     {name:"Storm Wraith", hp:30,c:[153,153,230], spd:35, dmg:7, xp:12, drops:{wood:0,stone:2,food:0,gold:3}},
   fire_island:   {name:"Fire Imp",     hp:20,c:[230,128,0], spd:25, dmg:4, xp:8,  drops:{wood:0,stone:0,food:1,gold:2}},
   ice_island:    {name:"Frost Giant",  hp:35,c:[77,179,230], spd:18, dmg:6, xp:14, drops:{wood:2,stone:2,food:0,gold:2}},
@@ -431,13 +461,13 @@ const ENEMY_TYPES = {
 const BOSS_TYPES = {
   starter_isle:  {name:"Slime King",        hp:50, c:[0,204,51],   spd:12, dmg:5,  xp:20, drops:{wood:5,stone:3,food:3,gold:2}},
   ember_isle:    {name:"Fire Spirit King",  hp:80, c:[255,51,0],   spd:18, dmg:8,  xp:35, drops:{wood:3,stone:5,food:2,gold:4}},
-  crystal_atoll: {name:"Crystal Golem King",hp:120,c:[102,51,204], spd:8,  dmg:12, xp:50, drops:{wood:5,stone:8,food:2,gold:5}},
+  crystal_atoll: {name:"Crystal Đilem King",hp:120,c:[102,51,204], spd:8,  dmg:12, xp:50, drops:{wood:5,stone:8,food:2,gold:5}},
   stormpeak:     {name:"Storm Wraith King", hp:150,c:[204,51,255], spd:20, dmg:15, xp:65, drops:{wood:3,stone:5,food:4,gold:8}},
   fire_island:   {name:"Fire Imp King",     hp:100,c:[255,102,0],  spd:14, dmg:10, xp:45, drops:{wood:4,stone:4,food:5,gold:5}},
   ice_island:    {name:"Frost Giant King",  hp:180,c:[51,153,255], spd:10, dmg:18, xp:80, drops:{wood:6,stone:6,food:4,gold:8}},
   cloud_island:  {name:"Sky Serpent King",  hp:220,c:[255,255,51], spd:16, dmg:22, xp:100,drops:{wood:8,stone:8,food:6,gold:10}},
   sunken_temple: {name:"Leviathan King",   hp:200,c:[0,180,200],  spd:14, dmg:20, xp:90, drops:{wood:4,stone:10,food:4,gold:8}},
-  golden_plains: {name:"Golden Beast King",hp:180,c:[255,200,0],  spd:22, dmg:18, xp:85, drops:{wood:8,stone:6,food:8,gold:6}},
+  golden_plains: {name:"Đilden Beast King",hp:180,c:[255,200,0],  spd:22, dmg:18, xp:85, drops:{wood:8,stone:6,food:8,gold:6}},
 };
 // ═══════════════════════════════════════════════════════════════════
 // PEBBLE DIALOGUE DATA — random conversations when called
@@ -484,8 +514,8 @@ const PEBBLE_HOME_TILE = {
 // SECTION 1b: ITEM / EQUIPMENT / CRAFT DATA
 // ═══════════════════════════════════════════════════════════════════
 const EQUIP_SLOTS = [
-  {key:"head",     label:"🎩 Head"},
-  {key:"chest",    label:"👕 Chest"},
+  {key:"head",     label:"🎩 Đầu"},
+  {key:"chest",    label:"👕 Ngực"},
   {key:"weapon",   label:"⚔️ Weapon"},
   {key:"offhand",  label:"🛡️ Off-hand"},
   {key:"ring1",    label:"💍 Ring 1"},
@@ -494,58 +524,58 @@ const EQUIP_SLOTS = [
   {key:"accessory",label:"🧣 Accessory"},
 ];
 const ITEMS = {
-  wood:    {id:"wood",    name:"Wood",      icon:"🪵", type:"material",   desc:"Basic building material"},
-  stone:   {id:"stone",   name:"Stone",     icon:"🪨", type:"material",   desc:"Used for crafting"},
-  food:    {id:"food",    name:"Food",      icon:"🍎", type:"consumable", desc:"Restores 15 hunger", use:(p)=>{p.hunger=Math.min(p.maxHunger,p.hunger+15);return"🍎 Ate food! +15 Hunger";}},
-  gold:    {id:"gold",    name:"Gold",      icon:"🪙", type:"currency",   desc:"Shiny coins"},
-  sword:   {id:"sword",   name:"Sword",     icon:"⚔️", type:"weapon",    atk:3,  desc:"+3 Attack"},
-  shield:  {id:"shield",  name:"Shield",    icon:"🛡️", type:"offhand",   def:5,  desc:"+5 Defense"},
+  wood:    {id:"wood",    name:"Wood",      icon:"🪵", type:"material",   desc:"Vật liệu xây dựng cơ bản"},
+  stone:   {id:"stone",   name:"Stone",     icon:"🪨", type:"material",   desc:"Dùng để chế tạo"},
+  food:    {id:"food",    name:"Food",      icon:"🍎", type:"consumable", desc:"Hồi 15 đói", use:(p)=>{p.hunger=Math.min(p.maxĐói,p.hunger+15);return"🍎 Ate food! +15 Đói";}},
+  gold:    {id:"gold",    name:"Đild",      icon:"🪙", type:"currency",   desc:"Tiền vàng lấp lánh"},
+  sword:   {id:"sword",   name:"Sword",     icon:"⚔️", type:"weapon",    atk:3,  desc:"+3 Tấn Công"},
+  shield:  {id:"shield",  name:"Shield",    icon:"🛡️", type:"offhand",   def:5,  desc:"+5 Phòng Thủ"},
   potion:  {id:"potion",  name:"Potion",    icon:"🧪", type:"consumable", desc:"Heals 10 HP", use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+10);return"🧪 Drank potion! +10 HP";}},
-  axe:     {id:"axe",     name:"Axe",       icon:"🪓", type:"weapon",     atk:2, woodBonus:2, desc:"+2 Wood per gather, +2 Atk"},
-  pickaxe: {id:"pickaxe", name:"Pickaxe",   icon:"⛏️", type:"weapon",    atk:2, stoneBonus:2, desc:"+2 Stone per gather, +2 Atk"},
-  helmet:  {id:"helmet",  name:"Helmet",    icon:"⛑️", type:"head",      def:3,  desc:"+3 Defense"},
-  chestplate:{id:"chestplate",name:"Chestplate",icon:"🦺",type:"chest",  def:4,  desc:"+4 Defense"},
-  boots:   {id:"boots",   name:"Boots",     icon:"👢", type:"boots",     def:1,  desc:"+1 Defense"},
-  ring_atk:{id:"ring_atk",name:"Ring of Power",icon:"💍",type:"ring",    atk:2,  desc:"+2 Attack"},
-  ring_def:{id:"ring_def",name:"Ring of Guard",icon:"💍",type:"ring",     def:2,  desc:"+2 Defense"},
-  bow:     {id:"bow",     name:"Bow",       icon:"🏹", type:"weapon",    atk:4,  desc:"+4 Attack"},
+  axe:     {id:"axe",     name:"Axe",       icon:"🪓", type:"weapon",     atk:2, woodBonus:2, desc:"+2 Gỗ mỗi lần, +2 ATK"},
+  pickaxe: {id:"pickaxe", name:"Pickaxe",   icon:"⛏️", type:"weapon",    atk:2, stoneBonus:2, desc:"+2 Đá mỗi lần, +2 ATK"},
+  helmet:  {id:"helmet",  name:"Helmet",    icon:"⛑️", type:"head",      def:3,  desc:"+3 Phòng Thủ"},
+  chestplate:{id:"chestplate",name:"Ngựcplate",icon:"🦺",type:"chest",  def:4,  desc:"+4 Phòng Thủ"},
+  boots:   {id:"boots",   name:"Boots",     icon:"👢", type:"boots",     def:1,  desc:"+1 Phòng Thủ"},
+  ring_atk:{id:"ring_atk",name:"Ring of Power",icon:"💍",type:"ring",    atk:2,  desc:"+2 Tấn Công"},
+  ring_def:{id:"ring_def",name:"Ring of Guard",icon:"💍",type:"ring",     def:2,  desc:"+2 Phòng Thủ"},
+  bow:     {id:"bow",     name:"Bow",       icon:"🏹", type:"weapon",    atk:4,  desc:"+4 Tấn Công"},
   cape:    {id:"cape",    name:"Cape",      icon:"🧣", type:"accessory", def:1, atk:1, desc:"+1 All stats"},
   // ─── Farming Items ───
   seed:    {id:"seed",    name:"Seed",      icon:"🌰", type:"material",   desc:"Plant in farm plots"},
-  wheat:   {id:"wheat",   name:"Wheat",     icon:"🌾", type:"material",   desc:"Golden grain"},
+  wheat:   {id:"wheat",   name:"Wheat",     icon:"🌾", type:"material",   desc:"Đilden grain"},
   carrot:  {id:"carrot",  name:"Carrot",    icon:"🥕", type:"material",   desc:"Orange vegetable"},
   tomato:  {id:"tomato",  name:"Tomato",    icon:"🍅", type:"material",   desc:"Juicy red fruit"},
   water:   {id:"water",   name:"Water",     icon:"💧", type:"material",   desc:"Waters crops — speeds growth 2x"},
   grass:   {id:"grass",   name:"Grass",     icon:"🌿", type:"material",   desc:"Fresh green grass for feeding animals"},
-  milk:    {id:"milk",    name:"Milk",      icon:"🥛", type:"consumable", desc:"Fresh milk! Restores 15 HP and 10 Hunger",
-            use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+15);p.hunger=Math.min(p.maxHunger,p.hunger+10);return"🥛 Drank fresh milk! +15 HP, +10 Hunger";}},
+  milk:    {id:"milk",    name:"Milk",      icon:"🥛", type:"consumable", desc:"Fresh milk! Restores 15 HP and 10 Đói",
+            use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+15);p.hunger=Math.min(p.maxĐói,p.hunger+10);return"🥛 Drank fresh milk! +15 HP, +10 Đói";}},
   silver_coin:{id:"silver_coin",name:"Silver Coin",icon:"🥈",type:"currency",desc:"Shiny silver coin — rare merchant currency!"},
   // ─── Slot Machine Prize Items ───
   pie:{id:"pie",name:"Pie",icon:"🥧",type:"consumable",desc:"Hearty pie! Restores 20 HP.",
     use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+20);return"🥧 Ate pie! +20 HP";}},
-  ice_cream:{id:"ice_cream",name:"Ice Cream",icon:"🍦",type:"consumable",desc:"Cold treat! Restores 20 Hunger.",
-    use:(p)=>{p.hunger=Math.min(p.maxHunger,p.hunger+20);return"🍦 Ate ice cream! +20 Hunger";}},
-  coffee:{id:"coffee",name:"Coffee",icon:"☕",type:"consumable",desc:"Warm coffee! +15 HP & +5 Hunger.",
-    use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+15);p.hunger=Math.min(p.maxHunger,p.hunger+5);return"☕ Drank coffee! +15 HP, +5 Hunger";}},
-  candy:{id:"candy",name:"Candy",icon:"🍬",type:"consumable",desc:"Sweet candy! Restores 10 HP and 10 Hunger.",
-    use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+10);p.hunger=Math.min(p.maxHunger,p.hunger+10);return"🍬 Ate candy! +10 HP, +10 Hunger";}},
-  noodles:{id:"noodles",name:"Noodles",icon:"🍜",type:"consumable",desc:"Hot noodles! Restores 25 Hunger.",
-    use:(p)=>{p.hunger=Math.min(p.maxHunger,p.hunger+25);return"🍜 Ate noodles! +25 Hunger";}},
+  ice_cream:{id:"ice_cream",name:"Ice Cream",icon:"🍦",type:"consumable",desc:"Cold treat! Restores 20 Đói.",
+    use:(p)=>{p.hunger=Math.min(p.maxĐói,p.hunger+20);return"🍦 Ate ice cream! +20 Đói";}},
+  coffee:{id:"coffee",name:"Coffee",icon:"☕",type:"consumable",desc:"Warm coffee! +15 HP & +5 Đói.",
+    use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+15);p.hunger=Math.min(p.maxĐói,p.hunger+5);return"☕ Drank coffee! +15 HP, +5 Đói";}},
+  candy:{id:"candy",name:"Candy",icon:"🍬",type:"consumable",desc:"Sweet candy! Restores 10 HP and 10 Đói.",
+    use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+10);p.hunger=Math.min(p.maxĐói,p.hunger+10);return"🍬 Ate candy! +10 HP, +10 Đói";}},
+  noodles:{id:"noodles",name:"Noodles",icon:"🍜",type:"consumable",desc:"Hot noodles! Restores 25 Đói.",
+    use:(p)=>{p.hunger=Math.min(p.maxĐói,p.hunger+25);return"🍜 Ate noodles! +25 Đói";}},
   beer:{id:"beer",name:"Beer",icon:"🍺",type:"consumable",desc:"Cold beer! Restores 20 HP.",
     use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+20);return"🍺 Drank beer! +20 HP";}},
 };
 const CRAFT_RECIPES = [
-  {name:"Sword",       icon:"⚔️", id:"sword",    costs:{w:5,s:3,f:0}, desc:"+3 Attack"},
-  {name:"Shield",      icon:"🛡️", id:"shield",   costs:{w:5,s:5,f:0}, desc:"+5 Defense"},
+  {name:"Sword",       icon:"⚔️", id:"sword",    costs:{w:5,s:3,f:0}, desc:"+3 Tấn Công"},
+  {name:"Shield",      icon:"🛡️", id:"shield",   costs:{w:5,s:5,f:0}, desc:"+5 Phòng Thủ"},
   {name:"Potion",      icon:"🧪", id:"potion",   costs:{w:0,s:0,f:3}, desc:"Heal 10 HP"},
-  {name:"Axe",         icon:"🪓", id:"axe",      costs:{w:3,s:2,f:0}, desc:"+2 Wood per gather"},
-  {name:"Pickaxe",     icon:"⛏️", id:"pickaxe",  costs:{w:2,s:5,f:0}, desc:"+2 Stone per gather"},
-  {name:"Helmet",      icon:"⛑️", id:"helmet",   costs:{w:4,s:4,f:0}, desc:"+3 Defense"},
-  {name:"Chestplate",  icon:"🦺", id:"chestplate",costs:{w:8,s:6,f:0},desc:"+4 Defense"},
-  {name:"Boots",       icon:"👢", id:"boots",    costs:{w:2,s:2,f:0}, desc:"+1 Defense"},
-  {name:"Bow",         icon:"🏹", id:"bow",      costs:{w:6,s:4,f:0}, desc:"+4 Attack"},
-  {name:"Ring of Power",icon:"💍",id:"ring_atk", costs:{w:0,s:10,f:2},desc:"+2 Attack"},
-  {name:"Ring of Guard",icon:"💍",id:"ring_def", costs:{w:0,s:10,f:2},desc:"+2 Defense"},
+  {name:"Rìu",         icon:"🪓", id:"axe",      costs:{w:3,s:2,f:0}, desc:"+2 Gỗ mỗi lần"},
+  {name:"Cuốc",     icon:"⛏️", id:"pickaxe",  costs:{w:2,s:5,f:0}, desc:"+2 Đá mỗi lần"},
+  {name:"Helmet",      icon:"⛑️", id:"helmet",   costs:{w:4,s:4,f:0}, desc:"+3 Phòng Thủ"},
+  {name:"Ngựcplate",  icon:"🦺", id:"chestplate",costs:{w:8,s:6,f:0},desc:"+4 Phòng Thủ"},
+  {name:"Boots",       icon:"👢", id:"boots",    costs:{w:2,s:2,f:0}, desc:"+1 Phòng Thủ"},
+  {name:"Bow",         icon:"🏹", id:"bow",      costs:{w:6,s:4,f:0}, desc:"+4 Tấn Công"},
+  {name:"Ring of Power",icon:"💍",id:"ring_atk", costs:{w:0,s:10,f:2},desc:"+2 Tấn Công"},
+  {name:"Ring of Guard",icon:"💍",id:"ring_def", costs:{w:0,s:10,f:2},desc:"+2 Phòng Thủ"},
   {name:"Cape",        icon:"🧣", id:"cape",     costs:{w:3,s:7,f:1}, desc:"+1 All stats"},
   {name:"Water",       icon:"💧", id:"water",    costs:{w:1,s:0,f:0}, desc:"Waters crops (2x growth)"},
 ];
@@ -633,11 +663,12 @@ function drawIslandBG(id) {
 // ═══════════════════════════════════════════════════════════════════
 const GS = {
   // PLAYER — the main controllable character (humanoid with green hat)
-  player:{name:"Adventurer",hp:20,maxHp:20,hunger:80,maxHunger:100,level:1,xp:0,attack:2,defense:1,woodBonus:0,stoneBonus:0,
+  player:{name:"Adventurer",hp:20,maxHp:20,hunger:80,maxĐói:100,level:1,xp:0,attack:2,defense:1,woodBonus:0,stoneBonus:0,
     inventory:[{id:"axe",count:1},{id:"pickaxe",count:1},{id:"food",count:5}],equipment:{head:null,chest:null,weapon:null,offhand:null,ring1:null,ring2:null,boots:null,accessory:null},enemiesKilled:0},
   // PEBBLE — orange cat companion (follower, not controlled)
   pebble:{name:"Pebble",hp:15,maxHp:15,attack:3,defense:1,trainingBoost:{atk:0,def:0,hp:0}},
 	  pebbleMode:"roam",
+  pebbleTask:"none", // none | follow | defend | gather | stay
 	  // COWS — multiple farm animals on starter island
 	  cows:[
 	    {id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},
@@ -1075,7 +1106,7 @@ window.saveGame = function(){
   try{
     GS.gameTicks++;
     localStorage.setItem("clawquest_v13", JSON.stringify(GS));
-    showToast("💾 Saved!");
+    showToast("💾 Đã Lưu!");
   }catch(e){console.warn("Save fail",e);}
 };
 function loadGame(){
@@ -1104,7 +1135,7 @@ function loadGame(){
     // Ensure old fields exist on the loaded pebble
     if(loaded.pebble){
       if(loaded.pebble.hunger===undefined) loaded.pebble.hunger=80;
-      if(loaded.pebble.maxHunger===undefined) loaded.pebble.maxHunger=100;
+      if(loaded.pebble.maxĐói===undefined) loaded.pebble.maxĐói=100;
       if(loaded.pebble.equipment===undefined) loaded.pebble.equipment={head:null,chest:null,weapon:null,offhand:null,ring1:null,ring2:null,boots:null,accessory:null};
       if(loaded.pebble.inventory===undefined) loaded.pebble.inventory=[];
       if(loaded.pebble.enemiesKilled===undefined) loaded.pebble.enemiesKilled=0;
@@ -1114,7 +1145,7 @@ function loadGame(){
         hp:loaded.pebble.hp||20,
         maxHp:loaded.pebble.maxHp||20,
         hunger:loaded.pebble.hunger||80,
-        maxHunger:loaded.pebble.maxHunger||100,
+        maxĐói:loaded.pebble.maxĐói||100,
         level:loaded.pebble.level||1,
         xp:loaded.pebble.xp||0,
         attack:loaded.pebble.attack||2,
@@ -1197,7 +1228,7 @@ function updateHUD(){
   const p = GS.player;
   document.getElementById("hud-name").textContent=`🧑 ${p.name}`;
   document.getElementById("hud-hp-fill").style.width=(p.hp/p.maxHp*100)+"%";
-  const hungerPct=Math.max(0,p.hunger/p.maxHunger*100);
+  const hungerPct=Math.max(0,p.hunger/p.maxĐói*100);
   document.getElementById("hud-hunger-fill").style.width=hungerPct+"%";
   document.getElementById("hud-hunger-pct").textContent=Math.floor(hungerPct)+"%";
   document.getElementById("hud-level").textContent=`Lv.${p.level}`;
@@ -1274,10 +1305,10 @@ window.useHealItem = function(){
     }
   }
   if (GS.resources.food > 0) {
-    GS.player.hunger = Math.min(GS.player.maxHunger, GS.player.hunger + 10);
+    GS.player.hunger = Math.min(GS.player.maxĐói, GS.player.hunger + 10);
     GS.resources.food--;
     GS.player.hp = Math.min(GS.player.maxHp, GS.player.hp + 3);
-    showToast("🍎 Ate food! +10 Hunger, +3 HP", 1500);
+    showToast("🍎 Ate food! +10 Đói, +3 HP", 1500);
     updateHUD();
     return;
   }
@@ -1302,7 +1333,7 @@ function calcStats(){
     if(info){atk+=(info.atk||0); def+=(info.def||0);}
   }
   const pS=getPebbleStats();
-  return {atk,def,hp:p.hp,maxHp:p.maxHp,hunger:p.hunger,maxHunger:p.maxHunger,gold:GS.resources.gold,level:p.level,xp:p.xp,killed:p.enemiesKilled,
+  return {atk,def,hp:p.hp,maxHp:p.maxHp,hunger:p.hunger,maxĐói:p.maxĐói,gold:GS.resources.gold,level:p.level,xp:p.xp,killed:p.enemiesKilled,
     // Include companion stats
     pebbleHp:pS.hp,pebbleMaxHp:pS.maxHp,pebbleAtk:pS.attack};
 }
@@ -1312,7 +1343,7 @@ function renderStatsDisplay(){
   document.getElementById("inv-atk").textContent=s.atk;
   document.getElementById("inv-def").textContent=s.def;
   document.getElementById("inv-hp").textContent=`${s.hp}/${s.maxHp}`;
-  document.getElementById("inv-hunger").textContent=`${Math.floor(s.hunger)}/${s.maxHunger}`;
+  document.getElementById("inv-hunger").textContent=`${Math.floor(s.hunger)}/${s.maxĐói}`;
   document.getElementById("inv-gold").textContent=s.gold;
   const el=document.getElementById("stats-display");
   el.innerHTML=`
@@ -1320,11 +1351,11 @@ function renderStatsDisplay(){
       <div style="color:#f0c060;font-weight:bold;font-size:13px;margin-bottom:6px;text-align:center">🧑 Player Stats</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">❤️</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.hp}/${s.maxHp}</div><div style="font-size:8px;color:#8899bb">HP</div></div>
-        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">⚔️</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.atk}</div><div style="font-size:8px;color:#8899bb">Attack</div></div>
-        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">🛡️</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.def}</div><div style="font-size:8px;color:#8899bb">Defense</div></div>
-        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">🍗</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${Math.floor(s.hunger)}/${s.maxHunger}</div><div style="font-size:8px;color:#8899bb">Hunger</div></div>
-        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">⬆️</span><div style="font-size:12px;color:#f0c060;font-weight:bold">Lv.${s.level}</div><div style="font-size:8px;color:#8899bb">Level</div></div>
-        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">🪙</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.gold}</div><div style="font-size:8px;color:#8899bb">Gold</div></div>
+        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">⚔️</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.atk}</div><div style="font-size:8px;color:#8899bb">Tấn Công</div></div>
+        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">🛡️</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.def}</div><div style="font-size:8px;color:#8899bb">Phòng Thủ</div></div>
+        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">🍗</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${Math.floor(s.hunger)}/${s.maxĐói}</div><div style="font-size:8px;color:#8899bb">Đói</div></div>
+        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">⬆️</span><div style="font-size:12px;color:#f0c060;font-weight:bold">Lv.${s.level}</div><div style="font-size:8px;color:#8899bb">Cấp</div></div>
+        <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">🪙</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.gold}</div><div style="font-size:8px;color:#8899bb">Đild</div></div>
         <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">💀</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.killed}</div><div style="font-size:8px;color:#8899bb">Killed</div></div>
         <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">⭐</span><div style="font-size:12px;color:#f0c060;font-weight:bold">${s.xp}/${s.level*10}</div><div style="font-size:8px;color:#8899bb">XP to next</div></div>
       </div>
@@ -1332,7 +1363,7 @@ function renderStatsDisplay(){
         <div style="color:#e8a040;font-weight:bold;font-size:12px;margin-bottom:4px;text-align:center">🐱 Pebble (Companion)</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
           <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">❤️</span><div style="font-size:12px;color:#e8a040;font-weight:bold">${s.pebbleHp}/${s.pebbleMaxHp}</div><div style="font-size:8px;color:#8899bb">HP</div></div>
-          <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">⚔️</span><div style="font-size:12px;color:#e8a040;font-weight:bold">${s.pebbleAtk}</div><div style="font-size:8px;color:#8899bb">Attack</div></div>
+          <div style="text-align:center;padding:4px;background:rgba(255,255,255,0.04);border-radius:6px"><span style="font-size:18px">⚔️</span><div style="font-size:12px;color:#e8a040;font-weight:bold">${s.pebbleAtk}</div><div style="font-size:8px;color:#8899bb">Tấn Công</div></div>
         </div>
       </div>
     </div>
@@ -1527,7 +1558,7 @@ window.toggleCraft = function(){
 };
 
 function craftItem(r){
-  if(r.costs.w>GS.resources.wood||r.costs.s>GS.resources.stone||r.costs.f>GS.resources.food){showToast("❌ Not enough!");return;}
+  if(r.costs.w>GS.resources.wood||r.costs.s>GS.resources.stone||r.costs.f>GS.resources.food){showToast("❌ Không đủ nguyên liệu!");return;}
   GS.resources.wood-=r.costs.w;GS.resources.stone-=r.costs.s;GS.resources.food-=r.costs.f;
   const p=GS.player;
   addInvItem(r.id,1);
@@ -1556,12 +1587,12 @@ window.toggleBuild = function(){
 
 function placeBuilding(tx,ty,type){
   const bi=BUILDINGS[type]; if(!bi) return false;
-  if(bi.costs.w>GS.resources.wood||bi.costs.s>GS.resources.stone){showToast("❌ Not enough!");return false;}
+  if(bi.costs.w>GS.resources.wood||bi.costs.s>GS.resources.stone){showToast("❌ Không đủ nguyên liệu!");return false;}
   const idata=getIslandData(GS.currentIsland);
-  if(idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty)){showToast("❌ Already a building here!");return false;}
+  if(idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty)){showToast("❌ ❌ Đã có công trình ở đây!");return false;}
   GS.resources.wood-=bi.costs.w;GS.resources.stone-=bi.costs.s;
   idata.buildings.push({tileX:tx,tileY:ty,type});
-  showToast(`✅ Built ${bi.icon} ${bi.name}!`);updateHUD();GS.buildMode=null;
+  showToast(`✅ Đã xây ${bi.icon} ${bi.name}!`);updateHUD();GS.buildMode=null;
   return true;
 }
 
@@ -1690,7 +1721,7 @@ function openTravelModal(dests){
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 11: HUNGER SYSTEM — uses PLAYER
 // ═══════════════════════════════════════════════════════════════════
-function updateHunger(dt){
+function updateĐói(dt){
   const p=GS.player;
   p.hunger-=dt*0.2;
   if(p.hunger<=0){
@@ -1702,7 +1733,7 @@ function updateHunger(dt){
   }
   if(p.hunger<20&&GS.resources.food>0){
     GS.resources.food--;
-    p.hunger=Math.min(p.maxHunger,p.hunger+15);
+    p.hunger=Math.min(p.maxĐói,p.hunger+15);
   }
 }
 
@@ -1838,7 +1869,7 @@ k.scene("game", ()=>{
   // Hide loading indicator
   const loader = document.getElementById("sprite-loader");
   if (loader) loader.style.display = "none";
-  console.log("🎮 Game scene init...");
+  console.log("🎮 Đang khởi tạo...");
   try {
   const islandId=GS.currentIsland;
   const def=ISLAND_DEFS[islandId];
@@ -1987,6 +2018,26 @@ k.scene("game", ()=>{
           const dx=playerObj.pos.x-enemy.pos.x,dy=playerObj.pos.y-enemy.pos.y,d=Math.sqrt(dx*dx+dy*dy);
           enemy.pos.x+=(dx/d)*enemy.spd*k.dt();
           enemy.pos.y+=(dy/d)*enemy.spd*k.dt();
+          // Deal contact damage to player
+          if (distToPlayer < TILE * 1.2) {
+            if (!enemy._attackTimer) enemy._attackTimer = 0;
+            enemy._attackTimer += k.dt();
+            if (enemy._attackTimer >= 1.5) { // Attack every 1.5s
+              enemy._attackTimer = 0;
+              const playerHp = GS.player;
+              const edmg = Math.max(1, enemy.eTy.dmg - (playerHp.defense + getEquipStats().def) + Math.floor(Math.random() * 2));
+              playerHp.hp = Math.max(0, playerHp.hp - edmg);
+              showFloating(W/2, 60, '-' + edmg + 'HP', [255, 51, 51]);
+              spawnParticles(playerObj.pos.x, playerObj.pos.y, 3, [255, 50, 50]);
+              if (playerHp.hp <= 0) {
+                playerHp.hp = playerHp.maxHp;
+                showToast("💀 Đã ngất! Hồi phục.", 2000);
+                playerObj.pos.x = 2 * TILE + TILE/2;
+                playerObj.pos.y = 2 * TILE + TILE/2;
+              }
+              updateHUD();
+            }
+          }
           // Update enemy eyes
           if(enemy._eyes){
             enemy._eyes[0].pos=k.vec2(enemy.pos.x-4,enemy.pos.y-2);
@@ -2062,7 +2113,7 @@ k.scene("game", ()=>{
     boss.pos = k.vec2(bx * TILE + TILE/2, by * TILE + TILE/2);
 
     activeBoss = boss;
-    showToast(`👑 ${bTy.name} has appeared!`, 3000);
+    showToast(`👑 ${bTy.name} đã xuất hiện!`, 3000);
   }
 
   function attackEnemy(enemy){
@@ -2080,7 +2131,7 @@ k.scene("game", ()=>{
       GS.resources.wood+=(dr.wood||0)+Math.floor(Math.random()*2);
       GS.resources.stone+=(dr.stone||0)+Math.floor(Math.random()*2);
       GS.resources.food+=(dr.food||0);GS.resources.gold+=(dr.gold||0);
-      GS.player.xp+=enemy.eTy.xp;checkLevelUp();GS.player.enemiesKilled++;
+      GS.player.xp+=enemy.eTy.xp;checkCấpUp();GS.player.enemiesKilled++;
       spawnParticles(enemy.pos.x,enemy.pos.y,6,[230,230,51]);
       showFloating(enemy.pos.x,enemy.pos.y-34,`+${enemy.eTy.xp}XP`,[230,230,51]);
       try{k.destroy(enemy._hpBg);k.destroy(enemy._hpFill);}catch(e){}
@@ -2093,7 +2144,7 @@ k.scene("game", ()=>{
       const ed=Math.max(1,enemy.eTy.dmg-(p.defense+getEquipStats().def)+Math.floor(Math.random()*2));
       p.hp=Math.max(0,p.hp-ed);
       showFloating(W/2,60,`-${ed}HP`,[255,51,51]);
-      if(p.hp<=0){p.hp=p.maxHp;showToast("💀 Knocked out! Restored.",2000);const pObj=getPlayer();if(pObj){pObj.pos.x=2*TILE+TILE/2;pObj.pos.y=2*TILE+TILE/2;}}
+      if(p.hp<=0){p.hp=p.maxHp;showToast("💀 Đã ngất! Hồi phục.",2000);const pObj=getPlayer();if(pObj){pObj.pos.x=2*TILE+TILE/2;pObj.pos.y=2*TILE+TILE/2;}}
       updateHUD();
     }
   }
@@ -2148,8 +2199,8 @@ k.scene("game", ()=>{
     k.outline(2,DARK_OUTLINE),k.z(9),
   ]);
 
-  // Head (circle)
-  const pHead=k.add([k.circle(10),k.pos(sx,sy-8),SKIN_COLOR,k.outline(2,DARK_OUTLINE),k.z(11)]);
+  // Đầu (circle)
+  const pĐầu=k.add([k.circle(10),k.pos(sx,sy-8),SKIN_COLOR,k.outline(2,DARK_OUTLINE),k.z(11)]);
 
   // Cowboy hat (brown, wide brim)
   // Hat crown (triangle)
@@ -2176,7 +2227,7 @@ k.scene("game", ()=>{
   const pHpFill=k.add([k.rect(22,4),k.pos(sx-11,sy+24),k.color(46,204,113),k.z(11)]);
 
   // Player parts list for updating positions
-  const playerParts=[pHead,pHat,pHatBrim,pHatBand,pEyeL,pEyeR,pPupilL,pPupilR,pNose,pMouth,pPants];
+  const playerParts=[pĐầu,pHat,pHatBrim,pHatBand,pEyeL,pEyeR,pPupilL,pPupilR,pNose,pMouth,pPants];
   // Set initial camera to follow player
   k.camPos(playerObj.pos.x, playerObj.pos.y);
 
@@ -2205,7 +2256,7 @@ k.scene("game", ()=>{
     k.outline(2,k.color(0,0,0)),k.z(10),k.area(),"pebble",
     {moving:false},
   ]);
-  const pebHead=k.add([k.circle(TILE/2-4),k.pos(pebSx,pebSy-4),CAT_COLOR,k.outline(2,k.color(0,0,0)),k.z(11)]);
+  const pebĐầu=k.add([k.circle(TILE/2-4),k.pos(pebSx,pebSy-4),CAT_COLOR,k.outline(2,k.color(0,0,0)),k.z(11)]);
   const pebEarL=k.add([k.polygon([k.vec2(pebSx-12,pebSy-6),k.vec2(pebSx-6,pebSy-20),k.vec2(pebSx-2,pebSy-6)]),CAT_DARK,k.z(11)]);
   const pebEarR=k.add([k.polygon([k.vec2(pebSx+12,pebSy-6),k.vec2(pebSx+6,pebSy-20),k.vec2(pebSx+2,pebSy-6)]),CAT_DARK,k.z(11)]);
   const pebEarInnerL=k.add([k.polygon([k.vec2(pebSx-10,pebSy-7),k.vec2(pebSx-6,pebSy-16),k.vec2(pebSx-3,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
@@ -2228,7 +2279,7 @@ k.scene("game", ()=>{
     pebWhiskers.push(w);
   }
 
-  const pebCatParts=[pebHead,pebEarL,pebEarR,pebEarInnerL,pebEarInnerR,pebEyeL,pebEyeR,pebPupilL,pebPupilR,pebNose,...pebWhiskers];
+  const pebCatParts=[pebĐầu,pebEarL,pebEarR,pebEarInnerL,pebEarInnerR,pebEyeL,pebEyeR,pebPupilL,pebPupilR,pebNose,...pebWhiskers];
 
   // ─── PEBBLE FREE-ROAM AI STATE MACHINE ──────────
   let roamState = 'roaming';     // roaming | investigating | sniffing | going_home | resting
@@ -2319,7 +2370,7 @@ k.scene("game", ()=>{
     const sniffBounce = (roamState === 'sniffing' || roamState === 'resting') ? Math.sin(Date.now() * 0.004) * 1.5 : 0;
     const bobY = pBobY + sniffBounce;
 
-    pebHead.pos = k.vec2(ppx, bobY);
+    pebĐầu.pos = k.vec2(ppx, bobY);
     pebEarL.pos = k.vec2(ppx, bobY); pebEarR.pos = k.vec2(ppx, bobY);
     pebEarInnerL.pos = k.vec2(ppx, bobY); pebEarInnerR.pos = k.vec2(ppx, bobY);
     pebEyeL.pos = k.vec2(ppx - 7, bobY - 2); pebEyeR.pos = k.vec2(ppx + 7, bobY - 2);
@@ -2630,7 +2681,7 @@ k.scene("game", ()=>{
 
     for (const cw of cows) {
       if (cw.dead) continue;
-      // Hunger decreases
+      // Đói decreases
       cw.hunger = Math.max(0, cw.hunger - dt * 0.4);
       // Starvation damage: lose HP when hunger hits 0
       if (cw.hunger <= 0) {
@@ -2789,7 +2840,7 @@ k.scene("game", ()=>{
     const bobY = py - 8 + bob;
     playerObj.pos = k.vec2(px, py + 4);
     playerObj._lastPx = px; playerObj._lastPy = py;
-    pHead.pos = k.vec2(px, bobY);
+    pĐầu.pos = k.vec2(px, bobY);
     pHat.pos = k.vec2(px, bobY - 2); pHatBrim.pos = k.vec2(px - 15, bobY - 8);
     pHatBand.pos = k.vec2(px - 9, bobY - 12);
     pPants.pos = k.vec2(px - 9, py + 16);
@@ -2937,14 +2988,14 @@ k.scene("game", ()=>{
     if(w||s||f||g){spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,4,[230,230,77]);if(Math.random()<0.1 && type!==2)setTile(ty, tx, 0, map);updateHUD();}
   }
 
-  // Level up — uses PLAYER
-  function checkLevelUp(){
+  // Cấp up — uses PLAYER
+  function checkCấpUp(){
     const p=GS.player;
     let needed=p.level*10;
     while(p.xp>=needed){
       p.xp-=needed;p.level++;p.maxHp+=5;p.hp=p.maxHp;p.attack+=1;p.defense+=1;
       spawnParticles(W/2,100,12,[230,230,51]);
-      showToast(`🎉 Level ${p.level}!`,2000);
+      showToast(`🎉 Cấp ${p.level}!`,2000);
       showFloating(W/2,100,`LEVEL ${p.level}! 🎉`,[230,230,51]);
       needed=p.level*10;
       updateHUD();
@@ -2954,7 +3005,7 @@ k.scene("game", ()=>{
   // Death handler
   function triggerDeath(){
     GS.player.hp = GS.player.maxHp;
-    showToast("💀 Knocked out! Restored.", 2000);
+    showToast("💀 Đã ngất! Hồi phục.", 2000);
     const pObj = getPlayer();
     if (pObj) { pObj.pos.x = 2 * TILE + TILE/2; pObj.pos.y = 2 * TILE + TILE/2; }
   }
@@ -3052,7 +3103,7 @@ k.scene("game", ()=>{
     const fp=getFarmPlot(tx,ty);
     const stage=computeCropStage(fp);
     if(!fp.planted){
-      if(!hasInvItem("seed")){showToast("❌ No seeds! Forage bushes/trees!");return;}
+      if(!hasInvItem("seed")){showToast("❌ ❌ Hết hạt! Hãy thu hoạch bụi cây!");return;}
       removeInvItem("seed",1);
       const crops=["wheat","carrot","tomato"];
       fp.planted=true;fp.crop=crops[Math.floor(Math.random()*crops.length)];
@@ -3063,7 +3114,7 @@ k.scene("game", ()=>{
 
       const hYield=1+Math.floor(Math.random()*2);
       addInvItem(fp.crop,hYield);
-      GS.player.xp+=3+Math.floor(Math.random()*2);checkLevelUp();
+      GS.player.xp+=3+Math.floor(Math.random()*2);checkCấpUp();
       showToast(`🧺 +${hYield} ${fp.crop}! +3 XP`);
       spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,6,[255,215,0]);
       fp.planted=false;fp.crop=null;fp.stage=-1;
@@ -3100,9 +3151,9 @@ k.scene("game", ()=>{
     if (GS.player.hunger < 30) {
       const foodEntry = GS.player.inventory.find(i => i.id === 'food' && i.count > 0);
       if (foodEntry) {
-        GS.player.hunger = Math.min(GS.player.maxHunger, GS.player.hunger + 15);
+        GS.player.hunger = Math.min(GS.player.maxĐói, GS.player.hunger + 15);
         removeInvItem('food', 1);
-        showToast('🍎 Auto ate food! +15 Hunger', 1200);
+        showToast('🍎 Auto ate food! +15 Đói', 1200);
         updateHUD();
       }
     }
@@ -3128,7 +3179,7 @@ k.scene("game", ()=>{
           nearestEnemy._dead = true;
           spawnParticles(nearestEnemy.pos.x, nearestEnemy.pos.y, 10, [255, 200, 50]);
           GS.player.xp += 3;
-          showToast('⚔️ Defeated enemy! +3 XP', 1000);
+          showToast('⚔️ Tiêu diệt quái! +3 KN', 1000);
           try { k.destroy(nearestEnemy); } catch(e) {}
           // Remove from enemyObjs
           const idx = enemyObjs.indexOf(nearestEnemy);
@@ -3273,9 +3324,9 @@ k.scene("game", ()=>{
   // ─── UPDATE LOOP ─────────────────────────────────────────────
   k.onUpdate(()=>{
     GS.gameTicks = (GS.gameTicks||0) + 1;
-    // Hunger system (player)
+    // Đói system (player)
     // Run every ~30 frames to reduce CPU
-    if (GS.gameTicks % 30 === 0) updateHunger(k.dt());
+    if (GS.gameTicks % 30 === 0) updateĐói(k.dt());
 
     // ── Move PLAYER ──
     // Continuous movement (keyboard / D-pad)
@@ -3344,7 +3395,7 @@ k.scene("game", ()=>{
       if (pebMoved) {
         const ppx = pebbleObj.pos.x, ppy = pebbleObj.pos.y;
         const pBobY = ppy - 4;
-        pebHead.pos = k.vec2(ppx, pBobY);
+        pebĐầu.pos = k.vec2(ppx, pBobY);
         pebEarL.pos = k.vec2(ppx, pBobY); pebEarR.pos = k.vec2(ppx, pBobY);
         pebEarInnerL.pos = k.vec2(ppx, pBobY); pebEarInnerR.pos = k.vec2(ppx, pBobY);
         pebEyeL.pos = k.vec2(ppx-7, pBobY-2); pebEyeR.pos = k.vec2(ppx+7, pBobY-2);
@@ -3383,7 +3434,7 @@ k.scene("game", ()=>{
       if (pebbleObj) {
         const ppx = pebbleObj.pos.x, ppy = pebbleObj.pos.y;
         const pBobY = ppy - 4;
-        pebHead.pos = k.vec2(ppx, pBobY);
+        pebĐầu.pos = k.vec2(ppx, pBobY);
         pebEarL.pos = k.vec2(ppx, pBobY); pebEarR.pos = k.vec2(ppx, pBobY);
         pebEarInnerL.pos = k.vec2(ppx, pBobY); pebEarInnerR.pos = k.vec2(ppx, pBobY);
         pebEyeL.pos = k.vec2(ppx-7, pBobY-2); pebEyeR.pos = k.vec2(ppx+7, pBobY-2);
@@ -3483,7 +3534,7 @@ k.scene("game", ()=>{
             }
           }
           GS.player.xp = (GS.player.xp || 0) + b.xp;
-          checkLevelUp();
+          checkCấpUp();
 
           const defeatedId = b.islandId;
           if (!GS.defeatedBosses) GS.defeatedBosses = [];
@@ -3565,6 +3616,7 @@ k.scene("game", ()=>{
         _af_playerTileY = Math.floor(playerObj.pos.y / TILE);
       }
       autoFarmUpdate(k.dt());
+      if (typeof updatePebbleTask === 'function') updatePebbleTask(k.dt());
     }
   });
 
@@ -3784,7 +3836,7 @@ k.scene("game", ()=>{
     k.camPos(playerObj.pos.x, playerObj.pos.y);
     k.camScale(Math.min(W, H) / (14 * TILE));
   }
-  console.log("✅ Game scene setup complete");
+  console.log("✅ Khởi tạo game xong");
   } catch(e) {
     console.error("❌ Game scene error:", e);
     const errDiv = document.createElement("div");
@@ -3815,7 +3867,7 @@ k.scene("game", ()=>{
     const textEl = document.getElementById("dialogue-text");
     const bubbleEl = document.getElementById("pebble-dialogue");
     if (!speakerEl || !textEl || !bubbleEl) return;
-    const speakerName = line.speaker === "pebble" ? "🐱 Pebble" : "🧑 Adventurer";
+    const speakerName = line.speaker === "pebble" ? "🐱 Pebble" : "🧑 Nhà Thám Hiểm";
     const speakerColor = line.speaker === "pebble" ? "#e8a140" : "#f0c060";
     speakerEl.textContent = speakerName;
     speakerEl.style.color = speakerColor;
@@ -3866,7 +3918,7 @@ k.scene("game", ()=>{
         dialogueIndex = 0;
         const btn = document.getElementById("pebble-btn");
         if (btn) {
-          btn.textContent = "🐾 Gọi Pebble";
+          btn.textContent = "🐾 Gọi Mèo";
           btn.style.opacity = "1";
           btn.style.pointerEvents = "auto";
         }
@@ -3914,7 +3966,7 @@ k.scene("game", ()=>{
       showToast(info, 3500);
       // Reset to roam so next click will call Pebble
       GS.pebbleMode = "roam";
-      if (btn) btn.textContent = "🐾 Gọi Pebble";
+      if (btn) btn.textContent = "🐾 Gọi Mèo";
       if (pebbleObj) {
         pebbleObj.visible = true;
         if (typeof pebCatParts !== 'undefined' && pebCatParts) {
@@ -3993,9 +4045,9 @@ k.scene("title", ()=>{
 
   // Title
   k.add([k.text("Claw Quest V12",{size:38}),k.pos(W/2,85),k.anchor("center"),k.color(230,191,97)]);
-  k.add([k.text("Tile Survival",{size:22}),k.pos(W/2,125),k.anchor("center"),k.color(242,199,15)]);
-  k.add([k.text("🧑 A Hero's Journey Across 7 Islands",{size:13}),k.pos(W/2,152),k.anchor("center"),k.color(179,179,204)]);
-  k.add([k.text("🐱 Pebble roams free — has its own home!",{size:11}),k.pos(W/2,167),k.anchor("center"),k.color(232,161,64)]);
+  k.add([k.text("Sinh Tồn Trên Đảo",{size:22}),k.pos(W/2,125),k.anchor("center"),k.color(242,199,15)]);
+  k.add([k.text("🧑 Hành Trình Khám Phá 7 Hòn Đảo",{size:13}),k.pos(W/2,152),k.anchor("center"),k.color(179,179,204)]);
+  k.add([k.text("🐱 Pebble tự do dạo chơi — has its own home!",{size:11}),k.pos(W/2,167),k.anchor("center"),k.color(232,161,64)]);
 
   // Player character on title (farmer with cowboy hat) — smaller
   const tcx=W/2-20,tcy=225;
@@ -4026,8 +4078,8 @@ k.scene("title", ()=>{
   const btnW=260,btnH=38,startY=285,gap=7;
   const btns=[
     {text:"🏝️  KHÁM PHÁ ĐẢO",scene:"game"},
-    {text:"🏪  THƯƠNG GIA",scene:"slot_machine"},
-    {text:"📖  HƯỚNG DẪN",scene:"instructions"},
+    {text:"🏪  SLOT",scene:"slot_machine"},
+    {text:"📖  LUẬT CHƠI",scene:"instructions"},
   ];
 
   for(let i=0;i<btns.length;i++){
@@ -4053,11 +4105,11 @@ k.scene("title", ()=>{
     });
   }
 
-  k.add([k.text("Move • Gather • Fight • Build • Craft",{size:10}),k.pos(W/2,410),k.anchor("center"),k.color(128,128,153)]);
+  k.add([k.text("Di Chuyển • Thu Thập • Chiến Đấu • Xây Dựng • Chế Tạo",{size:10}),k.pos(W/2,410),k.anchor("center"),k.color(128,128,153)]);
   k.add([k.text("v12.0 — Kaboom Engine   🧑 Hero + 🐱 Pebble Edition",{size:9}),k.pos(W/2,H-15),k.anchor("center"),k.color(77,77,102)]);
 
   if(loadGame()){
-    k.add([k.text("📂 Save loaded!",{size:11}),k.pos(W/2,432),k.anchor("center"),k.color(77,204,77)]);
+    k.add([k.text("📂 Đã tải dữ liệu!",{size:11}),k.pos(W/2,432),k.anchor("center"),k.color(77,204,77)]);
   }else{
     for(const id of ISLAND_ORDER) getIslandData(id);
   }
@@ -4182,7 +4234,7 @@ k.scene("slot_machine", ()=>{
     // Jackpot check
     if(grid[0][0]===grid[0][1]&&grid[0][1]===grid[0][2]&&grid[0][2]===grid[1][0]&&grid[1][0]===grid[1][1]&&grid[1][1]===grid[1][2]&&grid[1][2]===grid[2][0]&&grid[2][0]===grid[2][1]&&grid[2][1]===grid[2][2]){
       GS.silverCoins=(GS.silverCoins||0)+5;
-      resultMsg="👑 *JACKPOT!* +5 Silver Coins! +3 Gold, +5 Food!";
+      resultMsg="👑 *JACKPOT!* +5 Silver Coins! +3 Đild, +5 Food!";
       winType="jackpot";addInvItem("gold",3);addInvItem("food",5);
       triggerJackpot();return;
     }
@@ -4295,7 +4347,7 @@ k.scene("instructions", ()=>{
   // Stars
   for(let i=0;i<30;i++) k.add([k.circle(1+Math.random()*1.5),k.pos(Math.random()*W,Math.random()*H),k.color(255,255,255),k.opacity(0.2+Math.random()*0.5)]);
 
-  k.add([k.text("📖 HƯỚNG DẪN",{size:28}),k.pos(W/2,40),k.anchor("center"),k.color(230,191,97)]);
+  k.add([k.text("📖 LUẬT CHƠI",{size:28}),k.pos(W/2,40),k.anchor("center"),k.color(230,191,97)]);
 
   const instructions=[
     "🧑  DI CHUYỂN: Click vào ô đất để đi đến đó",
