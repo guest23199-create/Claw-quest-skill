@@ -1644,10 +1644,6 @@ window.unlockPebbleSkill = function(skillId) {
   renderPebblePanel();
   updateHUD();
 };
-      if(eq[slotKey]) unequipItem(slotKey);
-    });
-  });
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 8: CRAFTING — uses PLAYER
@@ -3721,9 +3717,9 @@ k.scene("game", ()=>{
     // Camera follows PLAYER every frame
     if(playerObj && playerObj.pos){
       k.camPos(playerObj.pos.x,playerObj.pos.y);
-      const vw=k.width(), vh=k.height();
-      const VISIBLE_TILES = vw > vh ? 8 : 14;
-      k.camScale(Math.min(vw, vh) / (VISIBLE_TILES * TILE));
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const VISIBLE_TILES = isLandscape ? 8 : 14;
+      k.camScale(Math.min(window.innerWidth, window.innerHeight) / (VISIBLE_TILES * TILE));
     }
 
     updateHUD();
@@ -3971,8 +3967,8 @@ k.scene("game", ()=>{
   // already looks at the player instead of default (0,0).
   if (playerObj && playerObj.pos) {
     k.camPos(playerObj.pos.x, playerObj.pos.y);
-    const ivw=k.width(), ivh=k.height();
-    k.camScale(Math.min(ivw, ivh) / ((ivw > ivh ? 8 : 14) * TILE));
+    const isLandscapeInit = window.innerWidth > window.innerHeight;
+    k.camScale(Math.min(window.innerWidth, window.innerHeight) / ((isLandscapeInit ? 8 : 14) * TILE));
   }
   console.log("✅ Khởi tạo game xong");
   } catch(e) {
