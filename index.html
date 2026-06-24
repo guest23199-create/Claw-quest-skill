@@ -6,146 +6,218 @@
 <title>Claw Quest V12 — Tile Survival</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a2a4a 50%,#0d1f3c 100%);background-size:cover;background-attachment:fixed;color:#fff;touch-action:none;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a1628;color:#fff;touch-action:none;-webkit-user-select:none;user-select:none}
 button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:inherit}
-#game-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-#game-wrap canvas{display:block;image-rendering:pixelated;background:#1e3a5f}
+/* ─── Layout ─── */
+#game-wrap{position:absolute;top:44px;left:0;right:70px;bottom:0;display:flex;align-items:center;justify-content:center}
+#game-wrap canvas{display:block;image-rendering:pixelated;background:#1e3a5f;max-width:100%;max-height:100%}
 #ui-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
 #ui-overlay>*{pointer-events:auto}
-/* ─── HUD ─── */
-#hud{position:fixed;bottom:10px;right:10px;color:#fff;font-size:13px;background:rgba(0,0,0,0.7);padding:7px 12px;border-radius:8px;min-width:180px;border:1px solid rgba(90,173,226,0.3)}
-#hud-name{font-weight:bold;font-size:15px;color:#f0c060}
-#hud-hp-bar{width:100%;height:6px;background:#333;border-radius:3px;margin:2px 0;overflow:hidden}
-#hud-hp-fill{height:100%;background:linear-gradient(90deg,#e74c3c,#2ecc71);border-radius:3px;transition:width 0.3s}
-#hud-hunger-bar{width:100%;height:5px;background:#333;border-radius:3px;margin:2px 0;overflow:hidden}
-#hud-hunger-fill{height:100%;background:linear-gradient(90deg,#e67e22,#f1c40f);border-radius:3px;transition:width 0.3s}
-#hud-hunger-label{font-size:9px;color:#f1c40f;display:flex;justify-content:space-between}
-#hud-level{font-size:11px;color:#f1c40f}
-#hud-xp{width:100%;height:4px;background:#333;border-radius:2px;margin:2px 0;overflow:hidden}
-#hud-xp-fill{height:100%;background:linear-gradient(90deg,#f1c40f,#e67e22);border-radius:2px;transition:width 0.3s}
-#hud-xp-text{font-size:9px;color:#bdc3c7}
-/* ─── Companion HUD ─── */
-#hud-companion{margin-top:4px;padding-top:3px;border-top:1px solid rgba(232,161,64,0.25);font-size:10px;color:#e8a040}
-#hud-companion-label{font-weight:bold}
-#hud-pebble-hp-bar{width:100%;height:4px;background:#333;border-radius:2px;margin:2px 0;overflow:hidden}
-#hud-pebble-hp-fill{height:100%;background:linear-gradient(90deg,#e74c3c,#e8a040);border-radius:2px;transition:width 0.3s}
-#hud-cow{margin-top:4px;padding-top:3px;border-top:1px solid rgba(153,204,77,0.25);font-size:10px;color:#99cc4d}
-#hud-cow-label{font-weight:bold}
-#hud-cow-hp-bar{width:100%;height:4px;background:#333;border-radius:2px;margin:2px 0;overflow:hidden}
-#hud-cow-hp-fill{height:100%;background:linear-gradient(90deg,#e74c3c,#99cc4d);border-radius:2px;transition:width 0.3s}
-#resources{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);padding:5px 8px;border-radius:8px;color:#fff;font-size:11px;border:1px solid rgba(255,215,0,0.2);min-width:130px;text-align:center}
-#resources>div{display:flex;justify-content:space-between;gap:6px;padding:1px 0}
-#resources .rlab{color:#bdc3c7}
-#resources .rval{font-weight:bold;min-width:20px;text-align:right;color:#f0c060}
-#island-label{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.7);padding:5px 14px;border-radius:20px;color:#f0c060;font-weight:bold;font-size:14px;border:1px solid rgba(255,215,0,0.2);white-space:nowrap;z-index:15}
-#actions{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(0,0,0,0.8);padding:5px 8px;border-radius:12px;border:1px solid rgba(255,215,0,0.15)}
-.act-btn{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:5px 10px;border-radius:8px;font-size:11px;transition:all 0.2s;white-space:nowrap}
-.act-btn:hover{background:rgba(255,215,0,0.2);transform:scale(1.05)}
-.act-btn:active{transform:scale(0.95)}
-.act-btn.on{background:rgba(240,192,96,0.25);border-color:#f0c060}
+/* ─── Top Status Bar ─── */
+#top-bar{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(10,22,40,0.95);display:flex;align-items:center;padding:0 8px;gap:6px;border-bottom:1px solid rgba(255,215,0,0.15);z-index:20}
+#top-bar .tb-name{font-size:12px;font-weight:bold;color:#f0c060;white-space:nowrap;min-width:60px}
+#top-bar .tb-stat{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+#top-bar .tb-stat .tb-label{font-size:7px;color:#8899bb;text-transform:uppercase;letter-spacing:0.3px}
+#top-bar .tb-stat .tb-bar-wrap{width:100%;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;position:relative}
+#top-bar .tb-stat .tb-bar-fill{height:100%;border-radius:3px;transition:width 0.3s}
+#top-bar .tb-stat .tb-val{font-size:8px;color:#bdc3c7;position:absolute;right:2px;top:-1px;font-weight:bold}
+#top-bar .tb-compact{display:flex;align-items:center;gap:4px;font-size:10px;color:#f0c060}
+#top-bar .tb-level{background:rgba(240,192,96,0.15);padding:1px 6px;border-radius:10px;font-size:10px;color:#f0c060;font-weight:bold;white-space:nowrap}
+/* ─── Right Action Bar ─── */
+#right-bar{position:fixed;top:44px;right:0;bottom:0;width:70px;background:rgba(10,22,40,0.92);border-left:1px solid rgba(255,215,0,0.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:8px 4px;z-index:20}
+.rb-btn{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.15s;cursor:pointer}
+.rb-btn:active{transform:scale(0.92);background:rgba(240,192,96,0.15);border-color:#f0c060}
+.rb-btn .rb-icon{font-size:22px;line-height:1}
+.rb-btn .rb-label{font-size:8px;color:#bdc3c7;font-weight:500;letter-spacing:0.2px}
+/* ─── Island Label ─── */
+#island-label{position:fixed;top:50px;left:6px;background:rgba(0,0,0,0.75);padding:3px 10px;border-radius:16px;color:#f0c060;font-weight:bold;font-size:11px;border:1px solid rgba(255,215,0,0.2);z-index:15}
+/* ─── Resources Panel (Top-Right, above right-bar) ─── */
+#resources{position:fixed;top:48px;right:76px;background:rgba(0,0,0,0.75);padding:4px 8px;border-radius:8px;color:#fff;font-size:10px;border:1px solid rgba(255,215,0,0.15);z-index:15;min-width:110px;text-align:center}
+#resources>div{display:flex;justify-content:space-between;gap:4px;padding:1px 0}
+#resources .rlab{color:#8899bb}
+#resources .rval{font-weight:bold;min-width:16px;text-align:right;color:#f0c060}
+/* ─── Bottom Action Buttons ─── */
+#bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(0,0,0,0.82);padding:4px 6px;border-radius:12px;border:1px solid rgba(255,215,0,0.12);z-index:20}
+.bot-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:4px 8px;border-radius:8px;font-size:9px;transition:all 0.15s;white-space:nowrap}
+.bot-btn:active{background:rgba(240,192,96,0.2);transform:scale(0.95)}
+.bot-btn.on{background:rgba(240,192,96,0.2);border-color:#f0c060}
+/* ─── D-PAD ─── */
+#dpad{position:fixed;bottom:60px;left:8px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
+#dpad>*{pointer-events:auto}
+.dpad-row{display:flex;gap:2px;justify-content:center}
+.dpad-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:none;transition:background 0.1s;outline:none}
+.dpad-btn:active,.dpad-btn.pressed{background:rgba(255,255,255,0.25);border-color:rgba(240,192,96,0.4)}
 /* ─── MODALS ─── */
-.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.78);display:none;align-items:center;justify-content:center;z-index:100}
 .modal-overlay.show{display:flex}
 .modal-box{background:linear-gradient(135deg,#151530,#2a1a4e);border:1px solid #f0c060;border-radius:12px;padding:14px;max-width:440px;width:92%;max-height:82vh;overflow-y:auto;color:#fff}
-.modal-box h2{color:#f0c060;margin:0 0 8px 0;text-align:center;font-size:16px;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
-.modal-close{float:right;cursor:pointer;color:#e74c3c;font-size:20px;line-height:1;padding:0 4px}
+.modal-box h2{color:#f0c060;margin:0 0 6px 0;text-align:center;font-size:15px}
+.modal-close{float:right;cursor:pointer;color:#e74c3c;font-size:18px;line-height:1;padding:0 4px}
 .modal-close:hover{color:#ff6b6b}
 .modal-sub{text-align:center;font-size:10px;color:#bdc3c7;margin-bottom:6px}
-.list-item{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);padding:6px 8px;border-radius:6px;margin:3px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s}
-.list-item:hover{background:rgba(255,215,0,0.12);transform:translateX(2px)}
-.list-item .cost{font-size:10px;color:#f1c40f}
-.list-item .name{font-size:12px}
-.list-item .have{font-size:10px;color:#2ecc71}
-.list-item.cant{opacity:0.4;pointer-events:none}
-.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 22px;border-radius:8px;font-size:15px;font-weight:bold;pointer-events:none;z-index:200;opacity:0;transition:opacity 0.3s;border:1px solid rgba(255,215,0,0.2)}
-.toast.show{opacity:1}
-/* ─── EQUIPMENT PANEL ─── */
-#equip-panel{background:rgba(0,0,0,0.3);border-radius:8px;padding:6px;margin-bottom:8px;border:1px solid rgba(255,215,0,0.15)}
-#equip-panel h3{font-size:11px;color:#f0c060;margin:0 0 4px 0;text-align:center}
-.equip-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-.equip-slot{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 2px;text-align:center;min-height:48px;cursor:pointer;transition:all 0.2s}
-.equip-slot:hover{background:rgba(255,215,0,0.12);border-color:#f0c060}
-.equip-slot .slot-icon{font-size:16px}
-.equip-slot .slot-label{font-size:7px;color:#8899bb;display:block}
-.equip-slot .slot-item{font-size:11px;color:#f0c060;display:block}
-.equip-slot.filled{border-color:rgba(240,192,96,0.3);background:rgba(240,192,96,0.06)}
-/* ─── GRID INVENTORY ─── */
-#inv-stats-bar{display:flex;justify-content:space-around;padding:4px 0;font-size:11px;background:rgba(0,0,0,0.25);border-radius:6px;margin-bottom:6px}
-#inv-stats-bar .stat-item{text-align:center}
-#inv-stats-bar .stat-val{font-weight:bold;color:#f0c060;font-size:13px}
-#inv-stats-bar .stat-lab{font-size:8px;color:#8899bb}
-.inv-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px}
-.inv-cell{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:10px;transition:all 0.2s;min-height:38px;position:relative}
-.inv-cell:hover{background:rgba(255,215,0,0.12);border-color:#f0c060}
-.inv-cell .cell-icon{font-size:16px;line-height:1}
-.inv-cell .cell-count{position:absolute;bottom:1px;right:3px;font-size:8px;color:#bdc3c7}
-.inv-cell .cell-name{font-size:7px;color:#8899bb;line-height:1;margin-top:1px}
-.inv-cell.empty{opacity:0.3}
-/* ─── CRAFTING GRID ─── */
-.craft-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px}
-.craft-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:8px;cursor:pointer;transition:all 0.2s}
-.craft-card:hover{background:rgba(240,192,96,0.10);transform:translateY(-1px)}
-.craft-card .cc-icon{font-size:20px;text-align:center}
-.craft-card .cc-name{font-size:11px;font-weight:bold;text-align:center;color:#eee}
-.craft-card .cc-cost{font-size:9px;color:#f1c40f;text-align:center;padding:2px 0}
-.craft-card .cc-desc{font-size:8px;color:#8899bb;text-align:center}
-.craft-card.cant{opacity:0.4;pointer-events:none;filter:grayscale(0.5)}
-/* ─── BUILD LIST ─── */
-.build-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.build-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:8px;cursor:pointer;text-align:center;transition:all 0.2s}
-.build-card:hover{background:rgba(240,192,96,0.10);transform:translateY(-1px)}
-.build-card .bc-icon{font-size:22px}
-.build-card .bc-name{font-size:11px;font-weight:bold;color:#eee}
-.build-card .bc-cost{font-size:9px;color:#f1c40f}
-.build-card.cant{opacity:0.4;pointer-events:none}
-/* ─── MAP LIST ─── */
-.map-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:8px 10px;margin:3px 0;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s}
-.map-card:hover{background:rgba(240,192,96,0.08)}
-.map-card .mc-name{font-size:12px;font-weight:bold}
-.map-card .mc-info{font-size:9px;color:#bdc3c7}
-/* ─── TAB SYSTEM ─── */
-.tab-bar{display:flex;gap:3px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:4px}
-.tab-btn{flex:1;padding:4px 6px;border-radius:6px 6px 0 0;font-size:10px;font-weight:600;background:rgba(255,255,255,0.04);color:#8899bb;cursor:pointer;transition:all 0.2s;text-align:center}
-.tab-btn.active{background:rgba(240,192,96,0.12);color:#f0c060;border-bottom:2px solid #f0c060}
-.tab-btn:hover{background:rgba(255,255,255,0.08)}
+.list-item{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);padding:6px 8px;border-radius:6px;margin:3px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 0.15s}
+.list-item:hover{background:rgba(255,215,0,0.08);border-color:rgba(255,215,0,0.2)}
+.list-item:active{transform:scale(0.98)}
+.list-name{font-weight:bold;font-size:12px}
+.list-desc{font-size:9px;color:#8899bb}
+.list-cost{font-size:9px;color:#f0c060}
+.list-qty{font-size:10px;color:#99cc4d}
+/* ─── Inventory ─── */
+.tab-bar{display:flex;gap:2px;margin-bottom:6px;background:rgba(255,255,255,0.04);border-radius:8px;padding:2px}
+.tab-btn{padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;color:#bdc3c7;text-align:center;flex:1;transition:all 0.15s}
+.tab-btn.active{background:rgba(240,192,96,0.15);color:#f0c060;font-weight:bold}
 .tab-content{display:none}
 .tab-content.active{display:block}
-/* ─── RESPONSIVE ─── */
-@media(max-width:500px){.modal-box{padding:10px;max-width:98%}.equip-slot{min-height:40px}.inv-cell{min-height:32px}#hud{font-size:11px;padding:5px 8px;min-width:140px}#hud-name{font-size:13px}#resources{font-size:10px;padding:4px 6px;min-width:90px;right:4px;top:4px}#island-label{font-size:12px;padding:4px 12px;top:10px;left:10px}.act-btn{font-size:9px;padding:3px 6px}#actions{gap:2px;padding:4px 5px;bottom:8px}#hud-hp-bar{height:5px}#hud-hunger-bar{height:4px}#hud-xp{height:3px}#hud-companion{font-size:9px}.dpad-btn{width:40px;height:40px;font-size:16px}#dpad{bottom:70px;left:6px}}
-/* ─── D-PAD ─── */
-#dpad{position:fixed;bottom:90px;left:12px;z-index:50;display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
-#dpad>*{pointer-events:auto}
-.dpad-row{display:flex;gap:3px;justify-content:center}
-.dpad-btn{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:none;transition:background 0.1s;outline:none}
-.dpad-btn:active,.dpad-btn.pressed{background:rgba(255,255,255,0.3);border-color:rgba(240,192,96,0.5)}
+#inv-stats-bar{display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap}
+.stat-item{background:rgba(255,255,255,0.04);border-radius:6px;padding:3px 6px;text-align:center;flex:1;min-width:40px}
+.stat-val{font-size:13px;font-weight:bold;color:#f0c060}
+.stat-lab{font-size:7px;color:#8899bb;text-transform:uppercase}
+.inv-cell{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 8px;min-height:36px;display:flex;align-items:center;gap:6px}
+.inv-cell.empty{opacity:0.4;justify-content:center;color:#8899bb;font-size:10px}
+.inv-cell .item-icon{font-size:18px}
+.inv-cell .item-info{flex:1}
+.inv-cell .item-name{font-size:11px;font-weight:bold}
+.inv-cell .item-desc{font-size:9px;color:#8899bb}
+.equip-slot{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:6px;padding:5px 8px;min-height:44px;display:flex;align-items:center;gap:6px;margin:2px 0;cursor:pointer;transition:all 0.15s}
+.equip-slot:hover{border-color:rgba(240,192,96,0.3)}
+.equip-slot .slot-label{font-size:8px;color:#8899bb;text-transform:uppercase;min-width:44px}
+.equip-slot .slot-item{font-size:11px;color:#f0c060;font-weight:bold}
+/* ─── Crafting Grid ─── */
+#craft-list{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+/* ─── Build List ─── */
+#build-list{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+/* ─── Toast ─── */
+.toast{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:1px solid rgba(255,215,0,0.3);border-radius:10px;padding:6px 16px;z-index:200;display:none;color:#fff;font-size:12px;text-align:center;white-space:nowrap;pointer-events:none}
+.toast.show{display:block;animation:toastIn 0.3s}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+/* ─── Companion Dialogue ─── */
+#pebble-dialogue{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #e8a140;border-radius:14px;padding:10px 16px;z-index:150;display:none;max-width:340px;width:90%;color:#fff;font-size:13px;text-align:center;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.6)}
+/* ─── Map List ─── */
+.map-island{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 10px;margin:3px 0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.15s}
+.map-island:active{transform:scale(0.98)}
+.map-island .mi-icon{font-size:28px;flex-shrink:0}
+.map-island .mi-name{font-weight:bold;font-size:12px;color:#f0c060}
+.map-island .mi-desc{font-size:9px;color:#bdc3c7}
+.map-island .mi-owned{font-size:10px;color:#2ecc71}
+/* ─── Responsive ─── */
+@media(max-width:500px){
+#right-bar{width:58px}
+#right-bar .rb-btn{width:44px;height:44px;border-radius:10px}
+#right-bar .rb-btn .rb-icon{font-size:18px}
+#right-bar .rb-btn .rb-label{font-size:7px}
+#game-wrap{right:58px;top:40px}
+#resources{right:64px;font-size:9px;padding:3px 6px;min-width:90px;top:46px}
+#top-bar{height:40px;padding:0 4px;gap:4px}
+#top-bar .tb-name{font-size:10px;min-width:40px}
+#island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
+#dpad{bottom:50px;left:4px}
+.dpad-btn{width:34px;height:34px;font-size:14px}
+#bottom-actions{bottom:6px;padding:3px 5px;gap:2px}
+.bot-btn{font-size:8px;padding:3px 5px}
+.modal-box{padding:10px;max-width:98%}
+#craft-list{grid-template-columns:1fr}
+#build-list{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 <div id="game-wrap"></div>
 
 <div id="ui-overlay">
-<!-- Loading indicator for sprite loads -->
-<div id="sprite-loader" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:rgba(0,0,0,0.85);padding:20px 30px;border-radius:16px;border:1px solid #f0c060;text-align:center;pointer-events:auto">
-  <div style="font-size:24px;margin-bottom:8px">⏳</div>
-  <div style="color:#f0c060;font-weight:bold;font-size:14px">Loading...</div>
-  <div style="color:#8899bb;font-size:10px;margin-top:4px">Preparing islands...</div>
-</div>
-  <div id="hud">
-    <div id="hud-name">🧑 Adventurer</div>
-    <div id="hud-hp-bar"><div id="hud-hp-fill" style="width:100%"></div></div>
-    <div id="hud-hunger-bar"><div id="hud-hunger-fill" style="width:80%"></div></div>
-    <div id="hud-hunger-label"><span>🍗 Hunger</span><span id="hud-hunger-pct">80%</span></div>
+  <!-- Loading indicator -->
+  <div id="sprite-loader" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:rgba(0,0,0,0.85);padding:20px 30px;border-radius:16px;border:1px solid #f0c060;text-align:center;pointer-events:auto">
+    <div style="font-size:24px;margin-bottom:8px">⏳</div>
+    <div style="color:#f0c060;font-weight:bold;font-size:14px">Loading...</div>
+    <div style="color:#8899bb;font-size:10px;margin-top:4px">Preparing islands...</div>
+  </div>
+
+  <!-- ─── Top Status Bar ─── -->
+  <div id="top-bar">
+    <span class="tb-name" id="hud-name">🧑 Adventurer</span>
+    <span class="tb-level" id="hud-level">Lv.1</span>
+    <div class="tb-stat" style="flex:2">
+      <div class="tb-label">HP</div>
+      <div class="tb-bar-wrap"><div class="tb-bar-fill" id="hud-hp-fill" style="width:100%;background:linear-gradient(90deg,#e74c3c,#2ecc71)"></div></div>
+    </div>
+    <div class="tb-stat" style="flex:2">
+      <div class="tb-label">XP</div>
+      <div class="tb-bar-wrap"><div class="tb-bar-fill" id="hud-xp-fill" style="width:0%;background:linear-gradient(90deg,#f1c40f,#e67e22)"></div></div>
+    </div>
+    <div class="tb-stat" style="flex:2">
+      <div class="tb-label">🍗</div>
+      <div class="tb-bar-wrap"><div class="tb-bar-fill" id="hud-hunger-fill" style="width:80%;background:linear-gradient(90deg,#e67e22,#f1c40f)"></div></div>
+    </div>
+  </div>
+
+  <!-- ─── Right Action Bar ─── -->
+  <div id="right-bar">
+    <button class="rb-btn" onclick="window.openWeapons()">
+      <span class="rb-icon">⚔️</span>
+      <span class="rb-label">VŨ KHÍ</span>
+    </button>
+    <button class="rb-btn" onclick="window.openDefense()">
+      <span class="rb-icon">🛡️</span>
+      <span class="rb-label">PHÒNG THỦ</span>
+    </button>
+    <button class="rb-btn" onclick="window.toggleCraft()">
+      <span class="rb-icon">✨</span>
+      <span class="rb-label">ĐẶC BIỆT</span>
+    </button>
+    <button class="rb-btn" onclick="window.useHealItem()">
+      <span class="rb-icon">💊</span>
+      <span class="rb-label">HỒI MÁU</span>
+    </button>
+    <button class="rb-btn" onclick="window.toggleInv()">
+      <span class="rb-icon">📦</span>
+      <span class="rb-label">NGUYÊN LIỆU</span>
+    </button>
+  </div>
+  <!-- ─── Island Label ─── -->
+  <div id="island-label">🏝️ Starter Isle</div>
+
+  <!-- ─── Resources ─── -->
+  <div id="resources">
+    <div><span class="rlab">🪵</span><span class="rval" id="r-wood">0</span><span class="rlab">🪨</span><span class="rval" id="r-stone">0</span><span class="rlab">🍎</span><span class="rval" id="r-food">0</span></div>
+    <div><span class="rlab">🪙</span><span class="rval" id="r-gold">0</span><span class="rlab">🥈</span><span class="rval" id="r-silver">0</span></div>
+  </div>
+
+  <!-- ─── Bottom Action Buttons ─── -->
+  <div id="bottom-actions">
+    <button class="bot-btn" onclick="window.toggleBuild()">🏗️ Build</button>
+    <button class="bot-btn" onclick="window.showMap()">🗺️ Map</button>
+    <button class="bot-btn" onclick="window.saveGame()">💾 Save</button>
+    <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()">⚙️ Auto</button>
+    <button class="bot-btn" onclick="window.quickTravel()">⛵ Travel</button>
+    <button class="bot-btn" id="pebble-btn" onclick="window.togglePebble()">📚 Pebble</button>
+    <button class="bot-btn" id="cow-btn" onclick="window.cowAction()" style="display:none">🐄 Bò</button>
+    <button class="bot-btn" id="farm-btn" onclick="window.farmAction()" style="display:none">🌱 Farm</button>
+  </div>
+
+  <!-- ─── D-PAD ─── -->
+  <div id="dpad">
+    <div class="dpad-row"><button class="dpad-btn" data-dir="up">↑</button></div>
+    <div class="dpad-row">
+      <button class="dpad-btn" data-dir="left">←</button>
+      <button class="dpad-btn" data-dir="down">↓</button>
+      <button class="dpad-btn" data-dir="right">→</button>
+    </div>
+  </div>
+
+  <!-- ─── HUD (hidden, kept for script compatibility / cow & companion data) ─── -->
+  <div id="hud" style="display:none">
+    <div id="hud-name-hidden" style="display:none">🧑 Adventurer</div>
+    <div id="hud-hp-bar" style="display:none"><div id="hud-hp-fill-old" style="width:100%"></div></div>
+    <div id="hud-hunger-bar" style="display:none"><div id="hud-hunger-fill-old" style="width:80%"></div></div>
+    <div id="hud-hunger-label" style="display:none"><span>🍗 Hunger</span><span id="hud-hunger-pct">80%</span></div>
     <div id="hud-level">Lv.1</div>
-    <div id="hud-xp"><div id="hud-xp-fill" style="width:0%"></div></div>
+    <div id="hud-xp" style="display:none"><div id="hud-xp-fill-old" style="width:0%"></div></div>
     <div id="hud-xp-text">XP: 0/10</div>
-    <!-- Companion HUD -->
-    <div id="hud-companion">
+    <div id="hud-companion" style="display:none">
       <span id="hud-companion-label">🐱 Pebble</span>
       <span>❤️ <span id="hud-pebble-hp-text">15/15</span></span>
       <div id="hud-pebble-hp-bar"><div id="hud-pebble-hp-fill" style="width:100%"></div></div>
     </div>
-    <!-- Cow HUD -->
-    <div id="hud-cow">
+    <div id="hud-cow" style="display:none">
       <span id="hud-cow-label">🐄 Đàn bò</span>
       <span id="hud-cow-count">0/10</span>
       <span>😊 <span id="hud-cow-mood">Happy</span></span>
@@ -154,37 +226,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
         <span>😊 <span id="hud-cow-happy-text">100%</span></span>
         <span>🥛 <span id="hud-cow-milk-text">0/10</span></span>
       </div>
-      <div id="hud-cow-hp-bar" style="display:none">
-        <div id="hud-cow-hp-fill" style="width:100%;height:4px;background:#99cc4d;border-radius:2px"></div>
-      </div>
+      <div id="hud-cow-hp-bar" style="display:none"><div id="hud-cow-hp-fill" style="width:100%;height:4px;background:#99cc4d;border-radius:2px"></div></div>
     </div>
-  </div>
-  <div id="resources">
-    <div><span class="rlab">🪵</span><span class="rval" id="r-wood">0</span><span class="rlab">🪨</span><span class="rval" id="r-stone">0</span></div>
-    <div><span class="rlab">🍎</span><span class="rval" id="r-food">0</span><span class="rlab">🪙</span><span class="rval" id="r-gold">0</span><span class="rlab">🥈</span><span class="rval" id="r-silver">0</span></div>
-  </div>
-  <div id="island-label">🏝️ Starter Isle</div>
-  <div id="actions">
-    <button class="act-btn" onclick="window.toggleCraft()">🔨 Craft</button>
-    <button class="act-btn" onclick="window.toggleInv()">🎒 Items</button>
-    <button class="act-btn" onclick="window.toggleBuild()">🏗️ Build</button>
-    <button class="act-btn" onclick="window.showMap()">🗺️ Map</button>
-    <button class="act-btn" onclick="window.saveGame()">💾 Save</button>
-    <button class="act-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()">⚙️</button>
-    <button class="act-btn" onclick="window.quickTravel()">⛵ Travel</button>
-	    <button class="act-btn" id="pebble-btn" onclick="window.togglePebble()">📚 Gọi Pebble</button>
-		    <button class="act-btn" id="farm-btn" onclick="window.farmAction()" style="display:none">🌱</button>
-    <button class="act-btn" id="cow-btn" onclick="window.cowAction()" style="display:none">🐄</button>
-  </div>
-</div>
-
-<!-- ─── D-PAD ─── -->
-<div id="dpad">
-  <div class="dpad-row"><button class="dpad-btn" data-dir="up">↑</button></div>
-  <div class="dpad-row">
-    <button class="dpad-btn" data-dir="left">←</button>
-    <button class="dpad-btn" data-dir="down">↓</button>
-    <button class="dpad-btn" data-dir="right">→</button>
   </div>
 </div>
 
@@ -250,11 +293,13 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <div class="toast" id="toast"></div>
 
 <!-- ─── PEBBLE DIALOGUE BUBBLE ─── -->
-<div id="pebble-dialogue" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:2px solid #e8a140;border-radius:14px;padding:12px 18px;z-index:150;display:none;max-width:380px;width:92%;color:#fff;font-size:14px;text-align:center;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+<div id="pebble-dialogue" style="position:fixed;bottom:46px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:2px solid #e8a140;border-radius:14px;padding:12px 18px;z-index:150;display:none;max-width:380px;width:92%;color:#fff;font-size:14px;text-align:center;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
   <div id="dialogue-speaker" style="font-weight:bold;color:#f0c060;margin-bottom:4px;font-size:13px;"></div>
   <div id="dialogue-text" style="color:#fff;line-height:1.4;"></div>
   <div id="dialogue-continue" style="font-size:10px;color:#8899bb;margin-top:6px;opacity:0.7;">✦</div>
 </div>
+
+<script>
 // ─── Window error handler: show errors on screen ───
 window.onerror = function(msg, url, line, col, err) {
   var errDiv = document.createElement("div");
@@ -271,7 +316,7 @@ window.addEventListener("unhandledrejection", function(e) {
   document.body.prepend(errDiv);
   console.error("UNHANDLED PROMISE:", e.reason);
 });
-
+</script>
 
 <script type="module">
 import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
@@ -280,13 +325,12 @@ import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 // SECTION 1: CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
 const TILE = 64, COLS = 48, ROWS = 34;
-// Dynamic canvas dimensions — fill viewport, no letterbox bars
-const W = window.innerWidth;
-const H = window.innerHeight;
+const W = (document.getElementById('game-wrap').clientWidth || window.innerWidth - 70);
+const H = (document.getElementById('game-wrap').clientHeight || window.innerHeight - 44);
 // Logical world size (for tile grid placement)
 const WORLD_W = COLS * TILE, WORLD_H = ROWS * TILE;
 const TYPES = ["grass","sand","stone","water","tree","mountain","bush","beach","path","deep_water","grass_flower","dense_forest","cliff","tall_grass","farm_plot","palm"];
-const SOLID = {3:1,4:1,9:1};
+const SOLID = {3:1,4:1,5:1,9:1,11:1,12:1};
 function isSolid(t){return SOLID[t]===1;}
 const GATHER = {2:"stone",4:"wood",6:"food",8:"food",13:"food"};
 function canGather(t){return GATHER[t]!==undefined;}
@@ -604,8 +648,8 @@ const GS = {
 	  pebbleMode:"roam",
 	  // COWS — multiple farm animals on starter island
 	  cows:[
-	    {id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},
-	    {id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"},
+	    {id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},
+	    {id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"},
 	  ],
 	  cowPen:{x1:12,y1:8,x2:22,y2:16},
 	  maxCows:10,
@@ -655,7 +699,7 @@ function getPebbleStats(){
 // ─── Procedural starter island generator — REAL ISLAND ──────────
 // Redesigned: ~20% water edges, sandy beaches, dirt paths, palms, more land
 function generateStarterIsland() {
-  const g = Array.from({length: ROWS}, () => Array(COLS).fill(0)); // Start all grass
+  let g = Array.from({length: ROWS}, () => Array(COLS).fill(0)); // Start all grass
   const cx = COLS / 2, cy = ROWS / 2;
   const rx = 30, ry = 22; // Bigger radius → land covers most of map
 
@@ -829,7 +873,7 @@ function generateStarterIsland() {
             for (let dx = -1; dx <= 1 && !blocked; dx++) {
               const nx = px + dx, ny = py + dy;
               if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-                if ([2, 4, 6, 14, 15].includes(g[ny][nx])) blocked = true;
+                if ([2, 4, 6, 14, 15].includes(g[ny][nx]) && !(dx===0 && dy===0)) blocked = true;
               }
             }
           if (!blocked) { g[py][px] = 15; palms++; }
@@ -1010,8 +1054,8 @@ function scatterResources(map, id, densityMultiplier = 1) {
       const {r, c} = candidates[ci];
       // Check a 2-tile radius to avoid clustering
       let tooClose = false;
-      for (let dr = -2; dr <= 2 && !tooClose; dr++) {
-        for (let dc = -2; dc <= 2 && !tooClose; dc++) {
+      for (let dr = -1; dr <= 1 && !tooClose; dr++) {
+        for (let dc = -1; dc <= 1 && !tooClose; dc++) {
           if (dr === 0 && dc === 0) continue;
           const nr = r + dr, nc = c + dc;
           if (nr >= 0 && nr < map.length && nc >= 0 && nc < map[0].length) {
@@ -1053,7 +1097,7 @@ function loadGame(){
       // Migration: ensure new fields exist in loaded saves
       if(!GS.pebble.trainingBoost) GS.pebble.trainingBoost={atk:0,def:0,hp:0};
       if(!GS.pebble.defense) GS.pebble.defense=1;
-	      if(!GS.cows) GS.cows=[{id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},{id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"}];if(!GS.cowPen)GS.cowPen={x1:12,y1:8,x2:22,y2:16};if(!GS.maxCows)GS.maxCows=10;
+	      if(!GS.cows) GS.cows=[{id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},{id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"}];if(!GS.cowPen)GS.cowPen={x1:12,y1:8,x2:22,y2:16};if(!GS.maxCows)GS.maxCows=10;
       for(const id of ISLAND_ORDER) getIslandData(id);
       // Validate all island maps: clear corrupt ones so they regenerate fresh on scene entry
       for(const id of ISLAND_ORDER) {
@@ -1211,6 +1255,55 @@ function hasInvItem(id,count=1){
   const entry=getInvItem(id);
   return entry&&(entry.count||0)>=count;
 }
+
+
+// ─── Right sidebar button functions ───
+window.openWeapons = function(){
+  window.closeModals();
+  document.getElementById("modal-inv").classList.add("show");
+  renderInvGrid();
+  renderEquipPanel();
+  renderStatsDisplay();
+  showToast("⚔️ Weapons & Tools", 1200);
+};
+window.openDefense = function(){
+  window.closeModals();
+  document.getElementById("modal-inv").classList.add("show");
+  const tab = document.querySelector(".tab-btn[data-tab='inv-equip']");
+  if (tab) tab.click();
+  renderInvGrid();
+  renderEquipPanel();
+  renderStatsDisplay();
+  showToast("🛡️ Defense Equipment", 1200);
+};
+window.useHealItem = function(){
+  const inv = GS.player.inventory;
+  const healItems = ["potion","food","milk","pie","coffee","candy","noodles","beer"];
+  for (const hid of healItems) {
+    const entry = inv.find(i => i.id === hid && (i.count||0) > 0);
+    if (!entry) continue;
+    const info = ITEMS[hid];
+    if (info && info.type === "consumable" && info.use) {
+      const msg = info.use(GS.player);
+      removeInvItem(hid, 1);
+      showToast(msg || "💊 Used " + (info.name || hid), 1500);
+      renderInvGrid();
+      renderEquipPanel();
+      renderStatsDisplay();
+      updateHUD();
+      return;
+    }
+  }
+  if (GS.resources.food > 0) {
+    GS.player.hunger = Math.min(GS.player.maxHunger, GS.player.hunger + 10);
+    GS.resources.food--;
+    GS.player.hp = Math.min(GS.player.maxHp, GS.player.hp + 3);
+    showToast("🍎 Ate food! +10 Hunger, +3 HP", 1500);
+    updateHUD();
+    return;
+  }
+  showToast("❌ No healing items!", 1500);
+};
 
 window.toggleInv = function(){
   window.closeModals();
@@ -2463,6 +2556,15 @@ k.scene("game", ()=>{
 
   // School area for surplus cows
   const SCHOOL_POS = {x:6, y:7};
+  // Draw school area on starter island
+  if (GS.currentIsland === 'starter_isle') {
+    for (let sx = SCHOOL_POS.x-1; sx <= SCHOOL_POS.x+3; sx++) {
+      for (let sy = SCHOOL_POS.y-1; sy <= SCHOOL_POS.y+3; sy++) {
+        k.add([k.rect(4,4),k.pos(sx*TILE+2,sy*TILE+2),k.rgb(200,180,120),k.opacity(0.15),k.z(2)]);
+      }
+    }
+    k.add([k.text('Khu truong hoc',{size:9}),k.pos(SCHOOL_POS.x*TILE,SCHOOL_POS.y*TILE-12),k.rgb(200,200,150),k.z(4)]);
+  }
 
   // Cow rendering colors
   const CWHITE = k.rgb(250,248,240), CBLACK = k.rgb(35,35,35), CPINK = k.rgb(255,182,193);
@@ -2542,6 +2644,11 @@ k.scene("game", ()=>{
       if (cw.dead) continue;
       // Hunger decreases
       cw.hunger = Math.max(0, cw.hunger - dt * 0.4);
+      // Starvation damage: lose HP when hunger hits 0
+      if (cw.hunger <= 0) {
+        cw.hp -= dt * 1.5;
+        if (cw.hp <= 0) { cw.dead = true; cw.hp = 0; }
+      }
       // Age increases
       if (!cw.growing) cw.age += dt * 0.01;
       else { cw.age += dt * 0.02; if (cw.age >= 1) cw.growing = false; } // calf matures in ~50s
@@ -2712,7 +2819,13 @@ k.scene("game", ()=>{
   const heldDirs = { left:false, right:false, up:false, down:false };
   function setDir(dir, pressed) {
     heldDirs[dir] = pressed;
-    if (pressed && autoFarmEnabled) toggleAutoFarm();
+    if (pressed && autoFarmEnabled) {
+      // Auto-farm pauses during manual movement
+      autoFarmState = 'idle';
+      autoFarmTarget = null;
+      autoFarmPath = [];
+      autoFarmCooldown = 0.5;
+    }
   }
   // Keyboard handlers
   for (const [key, dir] of Object.entries({left:"left",right:"right",up:"up",down:"down",a:"left",d:"right",w:"up",s:"down"})) {
@@ -2798,31 +2911,30 @@ k.scene("game", ()=>{
     let w=0,s=0,f=0,g=0;
     const eq=getEquipStats();
     if(type===4){w=2+p.woodBonus+eq.atk+Math.floor(Math.random()*2);GS.resources.wood+=w;showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵`,[153,204,77]);}
-    else if(type===2){
-      // ⛏️ MINE — very low drop rates (1-5%)
+        else if(type===2){
+      // Mine - improved drop rates
       const roll = Math.random();
-      if(roll < 0.05) { // 5% stone
-        s = 1 + Math.floor(Math.random() * 2);
+      if(roll < 0.40) { // 40% stone
+        s = 1 + Math.floor(Math.random() * 3);
         GS.resources.stone += s;
-        showFloating(tx*TILE, ty*TILE-10, `+${s} 🪨`, [128,128,153]);
-      } else if(roll < 0.08) { // 3% wood
+        showFloating(tx*TILE, ty*TILE-10, '+'+s+' stone', [128,128,153]);
+      } else if(roll < 0.52) { // 12% wood
         w = 1;
         GS.resources.wood += w;
-        showFloating(tx*TILE, ty*TILE-10, `+${w} 🪵`, [153,204,77]);
-      } else if(roll < 0.095) { // 1.5% gold
+        showFloating(tx*TILE, ty*TILE-10, '+'+w+' wood', [153,204,77]);
+      } else if(roll < 0.60) { // 8% gold
         g = 1;
         GS.resources.gold += g;
-        showFloating(tx*TILE, ty*TILE-10, `+1 🪙`, [255,215,0]);
-      } else if(roll < 0.10) { // 0.5% iron ore
+        showFloating(tx*TILE, ty*TILE-10, '+1 gold', [255,215,0]);
+      } else if(roll < 0.66) { // 6% iron ore
         s = 3 + Math.floor(Math.random() * 3);
         GS.resources.stone += s;
-        showFloating(tx*TILE, ty*TILE-10, `+${s} ⛏️`, [180,140,200]);
+        showFloating(tx*TILE, ty*TILE-10, '+'+s+' iron', [180,140,200]);
         spawnParticles(tx*TILE+TILE/2, ty*TILE+TILE/2, 6, [180,140,200]);
       } else {
-        showFloating(tx*TILE, ty*TILE-10, "❌", [140,140,140]);
+        showFloating(tx*TILE, ty*TILE-10, "X", [140,140,140]);
       }
-    }
-    else if(type===6){f=1+Math.floor(Math.random()*3);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-10,`+${f} 🍎`,[230,77,77]);}
+    }    else if(type===6){f=1+Math.floor(Math.random()*3);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-10,`+${f} 🍎`,[230,77,77]);}
     // 20% chance to forage seeds from trees/bushes
     if((type===4||type===6)&&Math.random()<0.2){
       addInvItem("seed",1);
@@ -3799,6 +3911,12 @@ k.scene("game", ()=>{
       msg += `\n${cw.mood||"🐄"} ${cw.name}: \u2764\ufe0f${Math.floor(cw.hp)}/${cw.maxHp} \ud83c\udf7d\ufe0f${Math.floor(cw.hunger)}% ${loc}`;
     }
     showToast(msg, 3000);
+  }
+
+  // Show cow button on starter island
+  const cowBtn = document.getElementById("cow-btn");
+  if (cowBtn) {
+    cowBtn.style.display = GS.currentIsland === 'starter_isle' ? 'inline-block' : 'none';
   }
 
   // Initialize pebble button text & visibility based on current mode
