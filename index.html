@@ -243,10 +243,11 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <!-- ─── INVENTORY MODAL ─── -->
 <div class="modal-overlay" id="modal-inv"><div class="modal-box">
   <span class="modal-close" onclick="window.closeModals()">&times;</span>
-  <h2>🎒 Inventory</h2>
+  <h2>🎒 Kho Đồ</h2>
   <div class="tab-bar">
-    <div class="tab-btn active" data-tab="inv-items">Items</div>
-    <div class="tab-btn" data-tab="inv-equip">Equipment</div>
+    <div class="tab-btn active" data-tab="inv-items">Đồ</div>
+    <div class="tab-btn" data-tab="inv-equip">Trang Bị</div>
+    <div class="tab-btn" data-tab="inv-pebble">🐱 Pebble</div>
     <div class="tab-btn" data-tab="inv-stats">Stats</div>
   </div>
   <div id="tab-inv-items" class="tab-content active">
@@ -260,8 +261,12 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <div id="inv-list"></div>
   </div>
   <div id="tab-inv-equip" class="tab-content">
-    <div style="font-size:10px;color:#bdc3c7;margin-bottom:4px">Click a slot to unequip. Click items in grid to equip.</div>
+    <div style="font-size:10px;color:#bdc3c7;margin-bottom:4px">Click slot để tháo. Click vật phẩm để trang bị.</div>
     <div id="equip-panel"></div>
+  </div>
+  <div id="tab-inv-pebble" class="tab-content">
+    <div id="pebble-equip-panel" style="margin-bottom:8px"></div>
+    <div id="pebble-skills-panel"></div>
   </div>
   <div id="tab-inv-stats" class="tab-content">
     <div id="stats-display"></div>
@@ -668,7 +673,7 @@ const GS = {
   player:{name:"Adventurer",hp:20,maxHp:20,hunger:80,maxĐói:100,level:1,xp:0,attack:2,defense:1,woodBonus:0,stoneBonus:0,
     inventory:[{id:"axe",count:1},{id:"pickaxe",count:1},{id:"food",count:5}],equipment:{head:null,chest:null,weapon:null,offhand:null,ring1:null,ring2:null,boots:null,accessory:null},enemiesKilled:0},
   // PEBBLE — orange cat companion (follower, not controlled)
-  pebble:{name:"Pebble",hp:15,maxHp:15,attack:3,defense:1,trainingBoost:{atk:0,def:0,hp:0}},
+  pebble:{name:"Pebble",hp:15,maxHp:15,attack:3,defense:1,trainingBoost:{atk:0,def:0,hp:0},equipment:{head:null,chest:null,weapon:null,accessory:null},kills:0,skills:{slash:false,pounce:false,screech:false}},
 	  pebbleMode:"roam",
   pebbleTask:"none", // none | follow | defend | gather | stay
 	  // COWS — multiple farm animals on starter island
@@ -708,11 +713,28 @@ function getEquipStats(){
 function getPebbleStats(){
   const p=GS.pebble;
   const tb=p.trainingBoost||{atk:0,def:0,hp:0};
+  // Equipment bonuses
+  let eqAtk=0, eqDef=0, eqHp=0;
+  const peq=p.equipment||{};
+  for(const k of Object.keys(peq)){
+    const item=peq[k]; if(!item) continue;
+    const info=ITEMS[item.id||item];
+    if(info){eqAtk+=(info.atk||0); eqDef+=(info.def||0); if(info.hpBonus) eqHp+=info.hpBonus;}
+  }
+  // Skills bonuses
+  const sk=p.skills||{};
+  let skAtk=0, skDef=0;
+  if(sk.slash) skAtk+=2;
+  if(sk.pounce) skDef+=2;
+  // screech is an active skill handled in combat
+  
   return {
-    maxHp:p.maxHp+tb.hp,
-    hp:Math.min(p.hp,p.maxHp+tb.hp),
-    attack:p.attack+tb.atk,
-    defense:(p.defense||0)+tb.def,
+    maxHp:p.maxHp+tb.hp+eqHp,
+    hp:Math.min(p.hp,p.maxHp+tb.hp+eqHp),
+    attack:p.attack+tb.atk+eqAtk+skAtk,
+    defense:(p.defense||0)+tb.def+eqDef+skDef,
+    kills:p.kills||0,
+    skills:sk,
   };
 }
 
@@ -1121,7 +1143,7 @@ function loadGame(){
       Object.assign(GS, loaded);
       // Migration: ensure new fields exist in loaded saves
       if(!GS.pebble.trainingBoost) GS.pebble.trainingBoost={atk:0,def:0,hp:0};
-      if(!GS.pebble.defense) GS.pebble.defense=1;
+      if(!GS.pebble.defense) GS.pebble.defense=1;if(!GS.pebble.equipment) GS.pebble.equipment={head:null,chest:null,weapon:null,accessory:null};if(!GS.pebble.kills) GS.pebble.kills=0;if(!GS.pebble.skills) GS.pebble.skills={slash:false,pounce:false,screech:false};
 	      if(!GS.cows) GS.cows=[{id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},{id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"}];if(!GS.cowPen)GS.cowPen={x1:12,y1:8,x2:22,y2:16};if(!GS.maxCows)GS.maxCows=10;
       for(const id of ISLAND_ORDER) getIslandData(id);
       // Validate all island maps: clear corrupt ones so they regenerate fresh on scene entry
@@ -1528,6 +1550,99 @@ function renderEquipPanel(){
   el.querySelectorAll(".equip-slot").forEach(cell=>{
     cell.addEventListener("click",()=>{
       const slotKey=cell.dataset.slot;
+      if(GS.player.equipment[slotKey]) unequipItem(slotKey);
+    });
+  });
+}
+
+// Pebble equipment panel
+function renderPebblePanel(){
+  const equipEl = document.getElementById("pebble-equip-panel");
+  const skillEl = document.getElementById("pebble-skills-panel");
+  if(!equipEl || !skillEl) return;
+  
+  const p = GS.pebble;
+  const peq = p.equipment || {};
+  const ps = getPebbleStats();
+  const sk = ps.skills || {};
+  const kills = ps.kills || 0;
+  
+  // Equipment
+  const PEBBLE_SLOTS = [
+    {key:"head", label:"🎩 Đầu"},
+    {key:"chest", label:"👕 Ngực"},
+    {key:"weapon", label:"⚔️ Vũ Khí"},
+    {key:"accessory", label:"🧣 Phụ Kiện"},
+  ];
+  let eqHtml = `<h3>🐱 Trang Bị Pebble</h3><div class="equip-grid">`;
+  for(const sl of PEBBLE_SLOTS){
+    const item = peq[sl.key];
+    const info = item ? ITEMS[item.id || item] : null;
+    const filled = !!info;
+    eqHtml += `<div class="equip-slot${filled?" filled":""}" data-pslot="${sl.key}">`;
+    if(info){
+      eqHtml += `<span class="slot-item">${info.icon}</span><span class="slot-label">${info.name}</span>`;
+    }else{
+      eqHtml += `<span class="slot-icon">${sl.label}</span>`;
+    }
+    eqHtml += `</div>`;
+  }
+  eqHtml += `</div>`;
+  equipEl.innerHTML = eqHtml;
+  
+  // Click to unequip
+  equipEl.querySelectorAll("[data-pslot]").forEach(cell => {
+    cell.addEventListener("click", ()=>{
+      const skey = cell.dataset.pslot;
+      if(peq[skey]){
+        const item = peq[skey];
+        peq[skey] = null;
+        addInvItem(item.id||item, 1);
+        showToast("🔙 Đã tháo trang bị của Pebble", 1000);
+        renderPebblePanel();
+        updateHUD();
+      }
+    });
+  });
+  
+  // Skills
+  let skHtml = `<h3>⚡ Kỹ Năng Pebble</h3><div style="font-size:11px;color:#8899bb;margin-bottom:6px;">Số quái đã giết: ${kills}</div>`;
+  
+  const skillDefs = [
+    {id:"slash", name:"Claw Slash", icon:"🐾", desc:"+2 ATK", req:5, unlocked:sk.slash, emoji:"✅", lockedEmoji:"🔒"},
+    {id:"pounce", name:"Pounce", icon:"🦘", desc:"+2 DEF (né đòn)", req:15, unlocked:sk.pounce, emoji:"✅", lockedEmoji:"🔒"},
+    {id:"screech", name:"Screech", icon:"🗣️", desc:"AoE sát thương khi chiến đấu", req:30, unlocked:sk.screech, emoji:"✅", lockedEmoji:"🔒"},
+  ];
+  
+  for(const sd of skillDefs){
+    const canUnlock = kills >= sd.req && !sd.unlocked;
+    const unlocked = sd.unlocked;
+    const status = unlocked ? sd.emoji : (canUnlock ? "⚡" : sd.lockedEmoji);
+    const statusColor = unlocked ? "#2ecc71" : (canUnlock ? "#f1c40f" : "#e74c3c");
+    const bgColor = unlocked ? "rgba(46,204,113,0.08)" : (canUnlock ? "rgba(241,196,15,0.08)" : "rgba(50,50,50,0.3)");
+    
+    skHtml += `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;margin:3px 0;border-radius:6px;background:${bgColor};border:1px solid ${statusColor}40;">`;
+    skHtml += `<span style="font-size:16px;">${sd.icon}</span>`;
+    skHtml += `<div style="flex:1;"><div style="font-size:11px;font-weight:bold;color:#fff;">${sd.name}</div><div style="font-size:9px;color:#8899bb;">${sd.desc} (${sd.req} kills)</div></div>`;
+    skHtml += `<span style="font-size:14px;color:${statusColor};">${status}</span>`;
+    if(canUnlock){
+      skHtml += `<button onclick="window.unlockPebbleSkill('${sd.id}')" style="background:rgba(241,196,15,0.2);border:1px solid #f1c40f;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Mở</button>`;
+    }
+    skHtml += `</div>`;
+  }
+  
+  skillEl.innerHTML = skHtml;
+}
+
+// Unlock pebble skill
+window.unlockPebbleSkill = function(skillId) {
+  const sk = GS.pebble.skills || {};
+  sk[skillId] = true;
+  GS.pebble.skills = sk;
+  showToast("🐱 Đã học kỹ năng mới!", 1500);
+  renderPebblePanel();
+  updateHUD();
+};
       if(eq[slotKey]) unequipItem(slotKey);
     });
   });
@@ -2145,7 +2260,7 @@ k.scene("game", ()=>{
       GS.resources.wood+=(dr.wood||0)+Math.floor(Math.random()*2);
       GS.resources.stone+=(dr.stone||0)+Math.floor(Math.random()*2);
       GS.resources.food+=(dr.food||0);GS.resources.gold+=(dr.gold||0);
-      GS.player.xp+=enemy.eTy.xp;checkCấpUp();GS.player.enemiesKilled++;
+      GS.player.xp+=enemy.eTy.xp;checkCấpUp();GS.player.enemiesKilled++;if(GS.pebble)GS.pebble.kills=(GS.pebble.kills||0)+1;
       spawnParticles(enemy.pos.x,enemy.pos.y,6,[230,230,51]);
       showFloating(enemy.pos.x,enemy.pos.y-34,`+${enemy.eTy.xp}XP`,[230,230,51]);
       try{k.destroy(enemy._hpBg);k.destroy(enemy._hpFill);}catch(e){}
