@@ -3721,8 +3721,9 @@ k.scene("game", ()=>{
     // Camera follows PLAYER every frame
     if(playerObj && playerObj.pos){
       k.camPos(playerObj.pos.x,playerObj.pos.y);
-      const VISIBLE_TILES = 14;
-      k.camScale(Math.min(W, H) / (VISIBLE_TILES * TILE));
+      const vw=k.width(), vh=k.height();
+      const VISIBLE_TILES = vw > vh ? 8 : 14;
+      k.camScale(Math.min(vw, vh) / (VISIBLE_TILES * TILE));
     }
 
     updateHUD();
@@ -3970,7 +3971,8 @@ k.scene("game", ()=>{
   // already looks at the player instead of default (0,0).
   if (playerObj && playerObj.pos) {
     k.camPos(playerObj.pos.x, playerObj.pos.y);
-    k.camScale(Math.min(W, H) / (14 * TILE));
+    const ivw=k.width(), ivh=k.height();
+    k.camScale(Math.min(ivw, ivh) / ((ivw > ivh ? 8 : 14) * TILE));
   }
   console.log("✅ Khởi tạo game xong");
   } catch(e) {
