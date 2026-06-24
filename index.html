@@ -15,14 +15,14 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #ui-overlay>*{pointer-events:auto}
 /* ─── Top Status Bar ─── */
 #top-bar{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(10,22,40,0.95);display:flex;align-items:center;padding:0 8px;gap:6px;border-bottom:1px solid rgba(255,215,0,0.15);z-index:20}
-#top-bar .tb-name{font-size:12px;font-weight:bold;color:#f0c060;white-space:nowrap;min-width:60px}
+#top-bar .tb-name{font-size:12px;font-weight:bold;color:#f0c060;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis;min-width:60px}
 #top-bar .tb-stat{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
 #top-bar .tb-stat .tb-label{font-size:7px;color:#8899bb;text-transform:uppercase;letter-spacing:0.3px}
 #top-bar .tb-stat .tb-bar-wrap{width:100%;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;position:relative}
 #top-bar .tb-stat .tb-bar-fill{height:100%;border-radius:3px;transition:width 0.3s}
 #top-bar .tb-stat .tb-val{font-size:8px;color:#bdc3c7;position:absolute;right:2px;top:-1px;font-weight:bold}
 #top-bar .tb-compact{display:flex;align-items:center;gap:4px;font-size:10px;color:#f0c060}
-#top-bar .tb-level{background:rgba(240,192,96,0.15);padding:1px 6px;border-radius:10px;font-size:10px;color:#f0c060;font-weight:bold;white-space:nowrap}
+#top-bar .tb-level{background:rgba(240,192,96,0.15);padding:1px 6px;border-radius:10px;font-size:10px;color:#f0c060;font-weight:bold;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
 /* ─── Mini Action Bar (compact floating buttons) ─── */
 #mini-bar{position:fixed;bottom:60px;right:6px;z-index:20;display:flex;flex-direction:column;gap:4px;pointer-events:none}
 #mini-bar>*{pointer-events:auto}
@@ -37,7 +37,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #resources .rval{font-weight:bold;min-width:16px;text-align:right;color:#f0c060}
 /* ─── Bottom Action Buttons ─── */
 #bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(0,0,0,0.82);padding:4px 6px;border-radius:12px;border:1px solid rgba(255,215,0,0.12);z-index:20}
-.bot-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:4px 8px;border-radius:8px;font-size:9px;transition:all 0.15s;white-space:nowrap}
+.bot-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:4px 8px;border-radius:8px;font-size:9px;transition:all 0.15s;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
 .bot-btn:active{background:rgba(240,192,96,0.2);transform:scale(0.95)}
 .bot-btn.on{background:rgba(240,192,96,0.2);border-color:#f0c060}
 /* ─── Toggle Action Bar ─── */
@@ -90,7 +90,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 /* ─── Build List ─── */
 #build-list{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 /* ─── Toast ─── */
-.toast{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:1px solid rgba(255,215,0,0.3);border-radius:10px;padding:6px 16px;z-index:200;display:none;color:#fff;font-size:12px;text-align:center;white-space:nowrap;pointer-events:none}
+.toast{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:1px solid rgba(255,215,0,0.3);border-radius:10px;padding:6px 16px;z-index:200;display:none;color:#fff;font-size:12px;text-align:center;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .toast.show{display:block;animation:toastIn 0.3s}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 /* ─── Companion Dialogue ─── */
@@ -3839,7 +3839,7 @@ k.scene("game", ()=>{
   // ─── Pebble toggle ──────────────────────────────────────────────
   window.togglePebble = function() {
     const btn = document.getElementById("pebble-btn");
-    // If pebble is currently in roam mode, call it to player
+    // If pebble is roaming & idle → call it to player
     if (pebbleObj && playerObj && pebbleCallPhase === "idle" && GS.pebbleMode === "roam") {
       // ─── CALL PEBBLE — walk to player then dialogue ───
       const startDist = 50;
@@ -3850,8 +3850,10 @@ k.scene("game", ()=>{
       );
       pebbleObj.visible = true;
       pebbleObj._hidden = false;
-      for (const part of pebCatParts) {
-        part.visible = true;
+      if (typeof pebCatParts !== 'undefined' && pebCatParts) {
+        for (const part of pebCatParts) {
+          if (part) part.visible = true;
+        }
       }
       pebbleWalkTarget = { x: playerObj.pos.x, y: playerObj.pos.y };
       pebbleCallPhase = "walking";
@@ -3859,21 +3861,26 @@ k.scene("game", ()=>{
       btn.style.opacity = "0.6";
       btn.style.pointerEvents = "none";
       roamState = 'roaming';
-      roamTarget = pickRoamTarget();
+      if (typeof pickRoamTarget === 'function') roamTarget = pickRoamTarget();
       roamHomeTimer = 15 + Math.random() * 8;
       roamStateTimer = 0;
     } else {
-      // ─── SEND PEBBLE TO FREE-ROAM ───
-      pebbleCallPhase = "idle";
-      hideDialogue();
-      hideSniffMarker();
-      currentDialogue = null;
+      // ─── SHOW PEBBLE INFO ───
+      const p = GS.pebble || {};
+      const modeText = GS.pebbleMode === "roam" ? "Tự do" : "Đi theo";
+      const info = "🐱 Pebble  ❤️" + (p.hp || 15) + "/" + (p.maxHp || 15) +
+        "  ⚔️" + (p.attack || 3) + "  🛡️" + (p.defense || 1) +
+        "  📊" + modeText;
+      showToast(info, 3500);
+      // Reset to roam so next click will call Pebble
       GS.pebbleMode = "roam";
       if (btn) btn.textContent = "🐾 Gọi Pebble";
       if (pebbleObj) {
         pebbleObj.visible = true;
-        for (const part of pebCatParts) {
-          part.visible = true;
+        if (typeof pebCatParts !== 'undefined' && pebCatParts) {
+          for (const part of pebCatParts) {
+            if (part) part.visible = true;
+          }
         }
         pebbleObj._hidden = false;
       }
@@ -3905,27 +3912,33 @@ k.scene("game", ()=>{
   // Initialize pebble button text & visibility based on current mode
   const pebbleBtn = document.getElementById("pebble-btn");
   if (pebbleBtn) {
-    if (GS.pebbleMode === "roam") pebbleBtn.textContent = "🐾 Gọi Pebble";
-    else pebbleBtn.textContent = "🐾 Gọi Pebble";
+    pebbleBtn.textContent = GS.pebbleMode === "roam" ? "🐾 Gọi Pebble" : "📋 Pebble Info";
     pebbleBtn.style.opacity = "1";
     pebbleBtn.style.pointerEvents = "auto";
   }
-  if (pebbleObj && GS.pebbleMode === "roam") {
-    pebbleObj.visible = true;
-    pebbleObj._hidden = false;
-    pebbleCallPhase = "idle";
-    roamState = 'roaming';
-    roamTarget = pickRoamTarget();
-    roamHomeTimer = 10 + Math.random() * 8;
-    roamStateTimer = 0;
-    // Ensure parts visible
-    for (const part of pebCatParts) {
-      part.visible = true;
+  // Safe init for pebble roam state
+  try {
+    if (pebbleObj && GS.pebbleMode === "roam") {
+      pebbleObj.visible = true;
+      pebbleObj._hidden = false;
+      pebbleCallPhase = "idle";
+      roamState = 'roaming';
+      if (typeof pickRoamTarget === 'function') roamTarget = pickRoamTarget();
+      roamHomeTimer = 10 + Math.random() * 8;
+      roamStateTimer = 0;
+      // Ensure parts visible
+      if (typeof pebCatParts !== 'undefined' && pebCatParts) {
+        for (const part of pebCatParts) {
+          if (part) part.visible = true;
+        }
+      }
+    } else if (pebbleObj) {
+      pebbleObj.visible = true;
+      pebbleObj._hidden = false;
+      pebbleCallPhase = "idle";
     }
-  } else if (pebbleObj) {
-    pebbleObj.visible = true;
-    pebbleObj._hidden = false;
-    pebbleCallPhase = "idle";
+  } catch(e) {
+    console.warn("Pebble init warning:", e);
   }
   });
 
