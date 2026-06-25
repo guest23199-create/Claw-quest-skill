@@ -1823,6 +1823,12 @@ function placeBuilding(tx,ty,type){
   if(bi.costs.w>GS.resources.wood||bi.costs.s>GS.resources.stone){showToast("❌ Không đủ nguyên liệu!");return false;}
   const idata=getIslandData(GS.currentIsland);
   if(idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty)){showToast("❌ ❌ Đã có công trình ở đây!");return false;}
+  // Clear resource tiles (tree, stone, palm) when building on them
+  const tileType = getTile(ty, tx, idata.map);
+  if(tileType === 2 || tileType === 4 || tileType === 15){
+    idata.map[ty][tx] = 0; // Clear to grass
+    showToast("🗑️ Đã dọn sạch cây/đá!",1000);
+  }
   GS.resources.wood-=bi.costs.w;GS.resources.stone-=bi.costs.s;
   idata.buildings.push({tileX:tx,tileY:ty,type});
   showToast(`✅ Đã xây ${bi.icon} ${bi.name}!`);updateHUD();GS.buildMode=null;
@@ -3071,7 +3077,7 @@ k.scene("game", ()=>{
     }
     ghostObj.pos=k.vec2(tix*TILE+1,tiy*TILE+1);
     const tt=getTile(tiy, tix, map);
-    if(tt===0||tt===1||tt===6||tt===7||tt===8||tt===10||tt===13){
+    if(tt===0||tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13||tt===15){
       ghostObj.color=k.color(0,255,0);
     }else{
       ghostObj.color=k.color(255,0,0);
@@ -3142,10 +3148,10 @@ k.scene("game", ()=>{
         return;
       }
       const tt=getTile(tiy, tix, map);
-      if(tt===0||tt===1||tt===6||tt===7||tt===8||tt===10||tt===13){
+      if(tt===0||tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13||tt===15){
         if(placeBuilding(tix,tiy,GS.buildMode)){renderBuildings();}
         // placeBuilding resets GS.buildMode on success
-      }else showToast("❌ Xây trên cỏ hoặc cát!",1200);
+      }else showToast("❌ Không thể xây ở đây! Chọn cỏ, cát, hoặc phá cây/đá!",1200);
       if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
       return;
     }
