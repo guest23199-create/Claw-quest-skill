@@ -14,7 +14,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',system-u
 button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:inherit}
 /* ─── Layout ─── */
 #game-wrap{position:absolute;top:44px;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center}
-#game-wrap canvas{display:block;image-rendering:pixelated;background:#1e3a5f;max-width:100%;max-height:100%}
+#game-wrap canvas{display:block;image-rendering:pixelated;background:#0a0a1a;max-width:100%;max-height:100%}
 #ui-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
 #ui-overlay>*{pointer-events:auto}
 /* ─── Top Status Bar ─── */
@@ -132,10 +132,11 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
 <div id="ui-overlay">
   <!-- Loading indicator -->
-  <div id="sprite-loader" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:rgba(0,0,0,0.85);padding:20px 30px;border-radius:16px;border:1px solid #f0c060;text-align:center;pointer-events:auto">
-    <div style="font-size:24px;margin-bottom:8px">⏳</div>
-    <div style="color:#f0c060;font-weight:bold;font-size:14px">Loading...</div>
-    <div style="color:#8899bb;font-size:10px;margin-top:4px">Preparing islands...</div>
+  <div id="sprite-loader" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:rgba(0,0,0,0.92);padding:24px 36px;border-radius:16px;border:2px solid #f0c060;text-align:center;pointer-events:auto;box-shadow:0 0 60px rgba(0,0,0,0.8)">
+    <div style="font-size:32px;margin-bottom:10px">⚔️</div>
+    <div style="color:#f0c060;font-weight:bold;font-size:18px">Claw Quest V12</div>
+    <div style="color:#e8a140;font-size:12px;margin-top:4px">Sinh Tồn Trên Đảo</div>
+    <div style="color:#8899bb;font-size:10px;margin-top:10px">⏳ Đang tải...</div>
   </div>
 
   <!-- ─── Top Status Bar ─── -->
@@ -473,6 +474,22 @@ window.addEventListener("unhandledrejection", function(e) {
     el._timer = setTimeout(() => { el.style.display = "none"; }, 8000);
   }
 });
+
+// ─── Module load fallback ───
+// Shows error if module script fails to load within 15 seconds
+(function(){
+  window._moduleLoadTimeout = setTimeout(function(){
+    var loader = document.getElementById("sprite-loader");
+    if(loader){
+      loader.innerHTML = '<div style="font-size:40px;margin-bottom:12px">❌</div><div style="color:#ff6b6b;font-weight:bold;font-size:16px">Không thể tải game!</div><div style="color:#8899bb;font-size:11px;margin-top:6px">Vui lòng kiểm tra kết nối mạng<br>và thử lại sau.</div><div style="margin-top:12px"><button onclick="location.reload()" style="background:#f0c060;color:#000;padding:8px 24px;border-radius:8px;font-size:14px;font-weight:bold;border:none;cursor:pointer">⟳ Thử lại</button></div>';
+    }
+    var errBanner = document.getElementById("error-banner");
+    if(errBanner){
+      errBanner.textContent = "⚠ Module load timeout - check network";
+      errBanner.style.display = "block";
+    }
+  }, 15000);
+})();
 </script>
 
 <script type="module">
@@ -2229,7 +2246,7 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
 
 // Hide loading indicator
   const loader = document.getElementById("sprite-loader");
-  if (loader) loader.style.display = "none";
+  if (loader) { loader.style.display = "none"; clearTimeout(window._moduleLoadTimeout); }
   console.log("🎮 Đang khởi tạo...");
   try {
   const islandId=GS.currentIsland;
@@ -4666,6 +4683,9 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
 // SECTION 13: TITLE SCENE (3-Button Menu)
 // ═══════════════════════════════════════════════════════════════════
 k.scene("title", ()=>{
+  // Hide loading screen
+  const loader = document.getElementById("sprite-loader");
+  if (loader) { loader.style.display = "none"; clearTimeout(window._moduleLoadTimeout); }
   k.add([k.rect(W,H),k.pos(0,0),k.color(20,26,46)]);
 
   // Stars
