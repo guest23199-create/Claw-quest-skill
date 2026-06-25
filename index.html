@@ -3802,6 +3802,107 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
     }
   }
 
+  // ─── Pebble task-based AI (follow/defend/gather/stay) ────
+  // Called from auto-farm update loop below
+  function updatePebbleTask(dt) {
+    const task = GS.pebbleTask;
+    if (!pebbleObj || !task || task === "none") return;
+    const pPos = playerObj ? playerObj.pos : null;
+    if (!pPos) return;
+    const ppx = pebbleObj.pos.x, ppy = pebbleObj.pos.y;
+    const dx = pPos.x - ppx;
+    const dy = pPos.y - ppy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const pebSpeed = 80; // px/s
+    switch (task) {
+      case "follow":
+        if (dist > 48) {
+          pebbleObj.pos.x += (dx / dist) * pebSpeed * dt;
+          pebbleObj.pos.y += (dy / dist) * pebSpeed * dt;
+          try { updatePebbleParts(true, pebbleObj); } catch(e) {}
+        }
+        break;
+      case "defend":
+        if (dist > 64) {
+          pebbleObj.pos.x += (dx / dist) * pebSpeed * dt;
+          pebbleObj.pos.y += (dy / dist) * pebSpeed * dt;
+        }
+        let nearestEnemy = null;
+        let nearestDist = 999;
+        for (const en of enemyObjs) {
+          if (!en || en.dead) continue;
+          const edx = en.pos.x - ppx;
+          const edy = en.pos.y - ppy;
+          const ed = Math.sqrt(edx*edx + edy*edy);
+          if (ed < nearestDist) { nearestDist = ed; nearestEnemy = en; }
+        }
+        if (nearestEnemy && nearestDist < 150) {
+          const edx = nearestEnemy.pos.x - ppx;
+          const edy = nearestEnemy.pos.y - ppy;
+          const ed = Math.sqrt(edx*edx + edy*edy);
+          if (ed > 30) {
+            pebbleObj.pos.x += (edx / ed) * pebSpeed * 1.2 * dt;
+            pebbleObj.pos.y += (edy / ed) * pebSpeed * 1.2 * dt;
+          }
+          if (ed < 40 && GS.gameTicks % 60 === 0) {
+            const pebAtk = GS.pebble.attack + (getPebbleStats ? getPebbleStats().atk : 0);
+            const dmg = Math.max(1, pebAtk + Math.floor(Math.random() * 3));
+            nearestEnemy.hp -= dmg;
+            try { showFloating(nearestEnemy.pos.x, nearestEnemy.pos.y-20, '-'+dmg+'🐱', [232,161,64]); } catch(e) {}
+            if (nearestEnemy._hpFill) nearestEnemy._hpFill.width = Math.max(0, (nearestEnemy.hp/nearestEnemy.maxHp) * 22);
+            if (nearestEnemy.hp <= 0) {
+              nearestEnemy.dead = true;
+              try { k.destroy(nearestEnemy); k.destroy(nearestEnemy._hpBg); k.destroy(nearestEnemy._hpFill); } catch(e) {}
+              GS.pebble.kills = (GS.pebble.kills||0) + 1;
+            }
+          }
+        }
+        try { updatePebbleParts(true, pebbleObj); } catch(e) {}
+        break;
+      case "gather":
+        if (dist > 120) {
+          pebbleObj.pos.x += (dx / dist) * pebSpeed * 0.6 * dt;
+          pebbleObj.pos.y += (dy / dist) * pebSpeed * 0.6 * dt;
+        }
+        const RANGE = 3;
+        const px = Math.floor(ppx / TILE);
+        const py = Math.floor(ppy / TILE);
+        let bestTile = null;
+        let bestDist2 = 999;
+        for (let dy2 = -RANGE; dy2 <= RANGE; dy2++) {
+          for (let dx2 = -RANGE; dx2 <= RANGE; dx2++) {
+            const tx = px + dx2, ty = py + dy2;
+            if (tx < 1 || tx >= COLS-1 || ty < 1 || ty >= ROWS-1) continue;
+            const tt = getTile(ty, tx, map);
+            if (tt === 4 || tt === 2 || tt === 6) {
+              if (Math.abs(dx2) + Math.abs(dy2) < bestDist2) {
+                bestDist2 = Math.abs(dx2) + Math.abs(dy2);
+                bestTile = { tx, ty, type: tt };
+              }
+            }
+          }
+        }
+        if (bestTile) {
+          const gx = bestTile.tx * TILE + TILE/2;
+          const gy = bestTile.ty * TILE + TILE/2;
+          const gd = Math.sqrt((gx-ppx)*(gx-ppx) + (gy-ppy)*(gy-ppy));
+          if (gd > 20) {
+            pebbleObj.pos.x += ((gx-ppx)/gd) * pebSpeed * dt;
+            pebbleObj.pos.y += ((gy-ppy)/gd) * pebSpeed * dt;
+          } else if (GS.gameTicks % 90 === 0) {
+            const r = Math.floor(Math.random() * 2) + 1;
+            if (bestTile.type === 4) { GS.resources.wood += r; showFloating(gx, gy-10, '+'+r+' 🪵', [153,204,77]); }
+            else if (bestTile.type === 2) { GS.resources.stone += r; showFloating(gx, gy-10, '+'+r+' 🪨', [128,128,153]); }
+            else if (bestTile.type === 6) { GS.resources.food += r; showFloating(gx, gy-10, '+'+r+' 🍎', [230,77,77]); }
+          }
+        }
+        try { updatePebbleParts(true, pebbleObj); } catch(e) {}
+        break;
+      case "stay":
+        break;
+    }
+  }
+
   // ─── UPDATE LOOP ─────────────────────────────────────────────
   k.onUpdate(()=>{
     GS.gameTicks = (GS.gameTicks||0) + 1;
