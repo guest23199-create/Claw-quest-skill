@@ -481,22 +481,21 @@ import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 // ═══════════════════════════════════════════════════════════════════
 // ─── Telegram Mini App integration ───
 try {
-	 Game URL: t.me/Cocorot_bot/clawquest_1
   if (window.Telegram && window.Telegram.WebApp) {
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
+    // Handle Telegram viewport changes (keyboard show/hide)
+    window.Telegram.WebApp.onEvent("viewportChanged", function() {
+      // Trigger resize event so our handler re-positions camera
+      window.dispatchEvent(new Event("resize"));
+    });
+    // Enable back button
+    window.Telegram.WebApp.BackButton.onClick(function() {
+      window.Telegram.WebApp.BackButton.hide();
+      // Navigate back via kaboom if possible
+      try { if (typeof k !== "undefined" && k.go) k.go("title"); } catch(e) {}
+    });
   }
-  // Handle Telegram viewport changes (keyboard show/hide)
-  window.Telegram.WebApp.onEvent("viewportChanged", function() {
-    // Trigger resize event so our handler re-positions camera
-    window.dispatchEvent(new Event("resize"));
-  });
-  // Enable back button
-  window.Telegram.WebApp.BackButton.onClick(function() {
-    window.Telegram.WebApp.BackButton.hide();
-    // Navigate back via kaboom if possible
-    try { if (typeof k !== "undefined" && k.go) k.go("title"); } catch(e) {}
-  });
 } catch(_) {}
 
 // SECTION 1: CONSTANTS
