@@ -27,11 +27,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #top-bar .tb-stat .tb-val{font-size:8px;color:#bdc3c7;position:absolute;right:2px;top:-1px;font-weight:bold}
 #top-bar .tb-compact{display:flex;align-items:center;gap:4px;font-size:10px;color:#f0c060}
 #top-bar .tb-level{background:rgba(240,192,96,0.15);padding:1px 6px;border-radius:10px;font-size:10px;color:#f0c060;font-weight:bold;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
-/* ─── Mini Action Bar (compact floating buttons) ─── */
-#mini-bar{position:fixed;bottom:60px;right:6px;z-index:20;display:flex;flex-direction:column;gap:4px;pointer-events:none}
-#mini-bar>*{pointer-events:auto}
-.mb-btn{width:38px;height:38px;border-radius:50%;background:rgba(10,22,40,0.85);border:1px solid rgba(255,215,0,0.2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.15s;backdrop-filter:blur(4px)}
-.mb-btn:active{transform:scale(0.88);background:rgba(240,192,96,0.15);border-color:#f0c060}
 /* ─── Island Label ─── */
 #island-label{position:fixed;top:50px;left:6px;background:rgba(0,0,0,0.75);padding:3px 10px;border-radius:16px;color:#f0c060;font-weight:bold;font-size:11px;border:1px solid rgba(255,215,0,0.2);z-index:15}
 /* ─── Resources Panel (Top-Right) ─── */
@@ -40,19 +35,15 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #resources .rlab{color:#8899bb}
 #resources .rval{font-weight:bold;min-width:16px;text-align:right;color:#f0c060}
 /* ─── Bottom Action Buttons ─── */
-#bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(0,0,0,0.82);padding:4px 6px;border-radius:12px;border:1px solid rgba(255,215,0,0.12);z-index:20}
-.bot-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:4px 8px;border-radius:8px;font-size:9px;transition:all 0.15s;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
+#bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:rgba(0,0,0,0.88);padding:8px 12px;border-radius:16px;border:1px solid rgba(255,215,0,0.2);z-index:20;box-shadow:0 4px 16px rgba(0,0,0,0.5)}
+.bot-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;transition:all 0.15s;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis;cursor:pointer;min-width:44px;text-align:center}
 .bot-btn:active{background:rgba(240,192,96,0.2);transform:scale(0.95)}
 .bot-btn.on{background:rgba(240,192,96,0.2);border-color:#f0c060}
-/* ─── Toggle Action Bar ─── */
-#toggle-actions-btn{position:fixed;bottom:8px;right:8px;z-index:25;width:36px;height:36px;border-radius:50%;background:rgba(10,22,40,0.88);border:1px solid rgba(255,215,0,0.2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.15s;backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(0,0,0,0.5)}
-#toggle-actions-btn:active{transform:scale(0.88);background:rgba(240,192,96,0.15);border-color:#f0c060}
-#bottom-actions.hidden{display:none}
 /* ─── D-PAD ─── */
 #dpad{position:fixed;bottom:60px;left:8px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
 #dpad>*{pointer-events:auto}
 .dpad-row{display:flex;gap:2px;justify-content:center}
-.dpad-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:none;transition:background 0.1s;outline:none}
+.dpad-btn{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:none;transition:background 0.1s;outline:none}
 .dpad-btn:active,.dpad-btn.pressed{background:rgba(255,255,255,0.25);border-color:rgba(240,192,96,0.4)}
 /* ─── MODALS ─── */
 .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.78);display:none;align-items:center;justify-content:center;z-index:100}
@@ -109,26 +100,24 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 /* ─── Responsive ─── */
 @media(max-width:500px){
 #game-wrap{top:40px}
-#mini-bar{bottom:50px;right:4px;gap:3px}
-.mb-btn{width:32px;height:32px;font-size:14px}
 #resources{right:4px;font-size:9px;padding:3px 6px;min-width:90px;top:46px}
 #top-bar{height:40px;padding:0 4px;gap:4px}
 #top-bar .tb-name{font-size:10px;min-width:40px}
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
-.dpad-btn{width:34px;height:34px;font-size:14px}
-#bottom-actions{bottom:6px;padding:3px 5px;gap:2px}
-.bot-btn{font-size:8px;padding:3px 5px}
+.dpad-btn{width:42px;height:42px;font-size:18px}
+#bottom-actions{bottom:8px;padding:5px 8px;gap:3px}
+.bot-btn{font-size:10px;padding:5px 8px}
 }
-#game-wrap{right:58px;top:40px}
-#resources{right:64px;font-size:9px;padding:3px 6px;min-width:90px;top:46px}
+#game-wrap{right:0;top:40px}
+#resources{right:8px;font-size:10px;padding:4px 8px;min-width:110px;top:48px}
 #top-bar{height:40px;padding:0 4px;gap:4px}
 #top-bar .tb-name{font-size:10px;min-width:40px}
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
-.dpad-btn{width:34px;height:34px;font-size:14px}
-#bottom-actions{bottom:6px;padding:3px 5px;gap:2px}
-.bot-btn{font-size:8px;padding:3px 5px}
+.dpad-btn{width:42px;height:42px;font-size:18px}
+#bottom-actions{bottom:8px;padding:5px 8px;gap:3px}
+.bot-btn{font-size:10px;padding:5px 8px}
 .modal-box{padding:10px;max-width:98%}
 #craft-list{grid-template-columns:1fr}
 #build-list{grid-template-columns:1fr}
@@ -163,14 +152,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
 
-  <!-- ─── Mini Action Bar (compact floating buttons) ─── -->
-  <div id="mini-bar">
-    <button class="mb-btn" onclick="window.openPebbleChat()" title="Chat với Pebble">💬</button>
-    <button class="mb-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️</button>
-    <button class="mb-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨</button>
-    <button class="mb-btn" onclick="window.useHealItem()" title="Hồi Máu">💊</button>
-    <button class="mb-btn" onclick="window.toggleInv()" title="Kho Đồ">📦</button>
-  </div>
   <!-- ─── Island Label ─── -->
   <div id="island-label">🏝️ Starter Isle</div>
 
@@ -180,10 +161,14 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <div><span class="rlab">🪙Vàng</span><span class="rval" id="r-gold">0</span><span class="rlab">🥈Bạc</span><span class="rval" id="r-silver">0</span></div>
   </div>
 
-  <!-- ─── Bottom Action Buttons ─── -->
-  <div id="bottom-actions" class="hidden">
-    <button class="bot-btn" onclick="window.toggleBuild()">🏗️ Xây</button>
-    <button class="bot-btn" onclick="window.showMap()">🗺️ Map</button>
+  <!-- ─── Bottom Action Buttons (always visible) ─── -->
+  <div id="bottom-actions">
+    <button class="bot-btn" onclick="window.openPebbleChat()" title="Chat">💬 Chat</button>
+    <button class="bot-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️ Xây</button>
+    <button class="bot-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨ Chế Tạo</button>
+    <button class="bot-btn" onclick="window.useHealItem()" title="Hồi Máu">💊 Máu</button>
+    <button class="bot-btn" onclick="window.toggleInv()" title="Kho Đồ">📦 Đồ</button>
+    <button class="bot-btn" onclick="window.showMap()" title="Bản Đồ">🗺️ Map</button>
     <button class="bot-btn" onclick="window.saveGame()">💾 Lưu</button>
     <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()">⚙️ Auto</button>
     <button class="bot-btn" onclick="window.quickTravel()">⛵ Du Lịch</button>
@@ -191,9 +176,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <button class="bot-btn" id="cow-btn" onclick="window.cowAction()" style="display:none">🐄 Bò</button>
     <button class="bot-btn" id="farm-btn" onclick="window.farmAction()" style="display:none">🌱 Farm</button>
   </div>
-
-  <!-- ─── Toggle Action Bar ─── -->
-  <button id="toggle-actions-btn" onclick="window.toggleActions()" title="Bảng công cụ">🔧</button>
 
   <!-- ─── D-PAD ─── -->
   <div id="dpad">
@@ -203,6 +185,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
       <button class="dpad-btn" data-dir="down">↓</button>
       <button class="dpad-btn" data-dir="right">→</button>
     </div>
+    <div style="font-size:7px;color:rgba(255,255,255,0.3);text-align:center;margin-top:2px;">DI CHUYỂN</div>
   </div>
 
   <!-- ─── HUD (hidden, kept for script compatibility / cow & companion data) ─── -->
@@ -1424,7 +1407,6 @@ function hasInvItem(id,count=1){
   return entry&&(entry.count||0)>=count;
 }
 
-
 // ─── Toggle actions ───
 window.toggleActions = function(){
   const bar = document.getElementById("bottom-actions");
@@ -2095,7 +2077,6 @@ function findNearestResource() {
   }
   return null;
 }
-
 
 // ════════════════════════════════════════════════════════════════════════════
 // SECTION 11c: WINDOW FUNCTION STUBS (game scene functions)
@@ -3191,8 +3172,15 @@ k.scene("game", ()=>{
         window.farmAction();
         return;
       }
-      // Click to move
-      movePlayerTo(pos.x, pos.y);
+      // Click building to interact
+      const ba=idata.buildings.find(b=>b.tileX===tix&&b.tileY===tiy);
+      if(ba&&d<TILE*2.5){interactWithBuilding(ba);return;}
+      // Click dock to travel
+      if(tix===DOCK_X&&tiy===DOCK_Y&&d<TILE*3){const conn=ISLAND_CONNECTIONS[islandId]||[];openTravelModal(conn);return;}
+      // Resource gathering at distance (auto-farm style)
+      if(d<TILE*5&&(tt===4||tt===2||tt===6)){gatherResource(tix,tiy,tt);return;}
+      // Movement disabled - use D-Pad only
+      showToast("🔄 Dùng D-Pad để di chuyển!",1000);
       return;
     }
   });
@@ -3877,7 +3865,6 @@ k.scene("game", ()=>{
       if (typeof updatePebbleTask === 'function') updatePebbleTask(k.dt());
     }
   });
-
 
   // ─── MAIN TILE RENDERING — immediate-mode k.draw...() ─────
   // Each tile is drawn edge-to-edge with no gaps. Animated waves for water.
