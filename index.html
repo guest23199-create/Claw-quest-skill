@@ -35,13 +35,14 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #resources .rlab{color:#8899bb}
 #resources .rval{font-weight:bold;min-width:16px;text-align:right;color:#f0c060}
 /* ─── Bottom Action Buttons ─── */
-#bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,0.88);padding:8px 12px;border-radius:16px;border:1px solid rgba(255,215,0,0.2);z-index:20;box-shadow:0 4px 16px rgba(0,0,0,0.5)}
-.ba-row{display:flex;gap:5px;justify-content:center}
-.bot-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;transition:all 0.15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;min-width:52px;text-align:center;flex:1}
-.bot-btn:active{background:rgba(240,192,96,0.2);transform:scale(0.95)}
-.bot-btn.on{background:rgba(240,192,96,0.2);border-color:#f0c060}
-.bot-btn.dig-active{background:rgba(240,192,96,0.35);border-color:#f0c060;box-shadow:0 0 8px rgba(255,215,0,0.3)}
-.bot-btn.plant-active{background:rgba(46,204,113,0.35);border-color:#2ecc71;box-shadow:0 0 8px rgba(46,204,113,0.3)}
+#bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:3px;background:rgba(0,0,0,0.88);padding:6px 10px;border-radius:14px;border:1px solid rgba(255,215,0,0.2);z-index:20;box-shadow:0 4px 16px rgba(0,0,0,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ba-row{display:flex;gap:4px;justify-content:center}
+.bot-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;transition:all 0.12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;min-width:44px;text-align:center;flex:1;font-weight:500}
+.bot-btn:hover{background:rgba(255,255,255,0.14)}
+.bot-btn:active{background:rgba(240,192,96,0.25);transform:scale(0.93)}
+.bot-btn.on{background:rgba(240,192,96,0.22);border-color:#f0c060;box-shadow:0 0 6px rgba(240,192,96,0.15)}
+.bot-btn.dig-active{background:rgba(240,192,96,0.35);border-color:#f0c060;box-shadow:0 0 8px rgba(255,215,0,0.25)}
+.bot-btn.plant-active{background:rgba(46,204,113,0.35);border-color:#2ecc71;box-shadow:0 0 8px rgba(46,204,113,0.25)}
 /* ─── D-PAD ─── */
 #dpad{position:fixed;bottom:60px;left:8px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
 #dpad>*{pointer-events:auto}
@@ -109,8 +110,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
 .dpad-btn{width:42px;height:42px;font-size:18px}
-#bottom-actions{bottom:8px;padding:5px 8px;gap:2px}
-.bot-btn{font-size:10px;padding:5px 6px;min-width:40px}
+#bottom-actions{bottom:6px;padding:4px 6px;gap:2px;border-radius:10px}
+.bot-btn{font-size:9px;padding:4px 5px;min-width:34px;border-radius:6px}
 }
 #game-wrap{right:0;top:40px}
 #resources{right:8px;font-size:10px;padding:4px 8px;min-width:110px;top:48px}
@@ -119,8 +120,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
 .dpad-btn{width:42px;height:42px;font-size:18px}
-#bottom-actions{bottom:8px;padding:5px 8px;gap:2px}
-.bot-btn{font-size:10px;padding:5px 6px;min-width:40px}
+#bottom-actions{bottom:6px;padding:4px 6px;gap:2px;border-radius:10px}
+.bot-btn{font-size:9px;padding:4px 5px;min-width:34px;border-radius:6px}
 .modal-box{padding:10px;max-width:98%}
 #craft-list{grid-template-columns:1fr}
 #build-list{grid-template-columns:1fr}
@@ -284,6 +285,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 </div></div>
 
 <div class="toast" id="toast"></div>
+<div id="error-banner" style="position:fixed;top:90px;left:50%;transform:translateX(-50%);background:rgba(200,40,40,0.92);border:1px solid #ff6b6b;border-radius:8px;padding:5px 12px;z-index:300;display:none;color:#fff;font-size:11px;text-align:center;max-width:400px;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,0.5);"></div>
 
 <!-- ─── PEBBLE CHAT MODAL ─── -->
 <div class="modal-overlay" id="modal-pebble-chat">
@@ -451,10 +453,25 @@ document.addEventListener("DOMContentLoaded", function() {
 // ─── Window error handler: show errors on screen ───
 window.onerror = function(msg, url, line, col, err) {
   console.error("GLOBAL ERROR:", msg, err);
+  // Show error on screen for debugging
+  const el = document.getElementById("error-banner");
+  if(el) {
+    el.textContent = "⚠ " + (msg || "").substring(0, 120) + (col ? " (:"+col+")" : "");
+    el.style.display = "block";
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.style.display = "none"; }, 8000);
+  }
   return true;
 };
 window.addEventListener("unhandledrejection", function(e) {
   console.error("UNHANDLED PROMISE:", e.reason);
+  const el = document.getElementById("error-banner");
+  if(el) {
+    el.textContent = "⚠ Promise: " + ((e.reason && e.reason.message) || "").substring(0, 100);
+    el.style.display = "block";
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.style.display = "none"; }, 8000);
+  }
 });
 </script>
 
