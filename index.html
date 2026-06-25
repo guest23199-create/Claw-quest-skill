@@ -35,10 +35,13 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #resources .rlab{color:#8899bb}
 #resources .rval{font-weight:bold;min-width:16px;text-align:right;color:#f0c060}
 /* ─── Bottom Action Buttons ─── */
-#bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:rgba(0,0,0,0.88);padding:8px 12px;border-radius:16px;border:1px solid rgba(255,215,0,0.2);z-index:20;box-shadow:0 4px 16px rgba(0,0,0,0.5)}
-.bot-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;transition:all 0.15s;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis;cursor:pointer;min-width:44px;text-align:center}
+#bottom-actions{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,0.88);padding:8px 12px;border-radius:16px;border:1px solid rgba(255,215,0,0.2);z-index:20;box-shadow:0 4px 16px rgba(0,0,0,0.5)}
+.ba-row{display:flex;gap:5px;justify-content:center}
+.bot-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;transition:all 0.15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;min-width:52px;text-align:center;flex:1}
 .bot-btn:active{background:rgba(240,192,96,0.2);transform:scale(0.95)}
 .bot-btn.on{background:rgba(240,192,96,0.2);border-color:#f0c060}
+.bot-btn.dig-active{background:rgba(240,192,96,0.35);border-color:#f0c060;box-shadow:0 0 8px rgba(255,215,0,0.3)}
+.bot-btn.plant-active{background:rgba(46,204,113,0.35);border-color:#2ecc71;box-shadow:0 0 8px rgba(46,204,113,0.3)}
 /* ─── D-PAD ─── */
 #dpad{position:fixed;bottom:60px;left:8px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
 #dpad>*{pointer-events:auto}
@@ -106,8 +109,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
 .dpad-btn{width:42px;height:42px;font-size:18px}
-#bottom-actions{bottom:8px;padding:5px 8px;gap:3px}
-.bot-btn{font-size:10px;padding:5px 8px}
+#bottom-actions{bottom:8px;padding:5px 8px;gap:2px}
+.bot-btn{font-size:10px;padding:5px 6px;min-width:40px}
 }
 #game-wrap{right:0;top:40px}
 #resources{right:8px;font-size:10px;padding:4px 8px;min-width:110px;top:48px}
@@ -116,8 +119,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
 .dpad-btn{width:42px;height:42px;font-size:18px}
-#bottom-actions{bottom:8px;padding:5px 8px;gap:3px}
-.bot-btn{font-size:10px;padding:5px 8px}
+#bottom-actions{bottom:8px;padding:5px 8px;gap:2px}
+.bot-btn{font-size:10px;padding:5px 6px;min-width:40px}
 .modal-box{padding:10px;max-width:98%}
 #craft-list{grid-template-columns:1fr}
 #build-list{grid-template-columns:1fr}
@@ -163,18 +166,18 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
   <!-- ─── Bottom Action Buttons (always visible) ─── -->
   <div id="bottom-actions">
-    <button class="bot-btn" onclick="window.openPebbleChat()" title="Chat">💬 Chat</button>
-    <button class="bot-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️ Xây</button>
-    <button class="bot-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨ Chế Tạo</button>
-    <button class="bot-btn" onclick="window.useHealItem()" title="Hồi Máu">💊 Máu</button>
-    <button class="bot-btn" onclick="window.toggleInv()" title="Kho Đồ">📦 Đồ</button>
-    <button class="bot-btn" onclick="window.showMap()" title="Bản Đồ">🗺️ Map</button>
-    <button class="bot-btn" onclick="window.saveGame()">💾 Lưu</button>
-    <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()">⚙️ Auto</button>
-    <button class="bot-btn" onclick="window.quickTravel()">⛵ Du Lịch</button>
-    <button class="bot-btn" id="pebble-btn" onclick="window.togglePebble()">📚 Pebble</button>
-    <button class="bot-btn" id="cow-btn" onclick="window.cowAction()" style="display:none">🐄 Bò</button>
-    <button class="bot-btn" id="farm-btn" onclick="window.farmAction()" style="display:none">🌱 Farm</button>
+    <div class="ba-row">
+      <button class="bot-btn" onclick="window.openPebbleChat()" title="Chat">💬 Chat</button>
+      <button class="bot-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️ Xây</button>
+      <button class="bot-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨ Chế Tạo</button>
+      <button class="bot-btn" onclick="window.useHealItem()" title="Hồi Máu">💊 Máu</button>
+    </div>
+    <div class="ba-row">
+      <button class="bot-btn" onclick="window.useDigItem()" title="Đào Đất">🪓 Đào</button>
+      <button class="bot-btn" onclick="window.usePlantItem()" title="Trồng Cây">🌾 Trồng</button>
+      <button class="bot-btn" onclick="window.toggleInv()" title="Kho Đồ">📦 Đồ</button>
+      <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()" title="Auto">⚙️ Auto</button>
+    </div>
   </div>
 
   <!-- ─── D-PAD ─── -->
@@ -650,9 +653,18 @@ const ITEMS = {
   cape:    {id:"cape",    name:"Cape",      icon:"🧣", type:"accessory", def:1, atk:1, desc:"+1 All stats"},
   // ─── Farming Items ───
   seed:    {id:"seed",    name:"Seed",      icon:"🌰", type:"material",   desc:"Plant in farm plots"},
+  // Fruit crops
+  grape:   {id:"grape",   name:"Nho",       icon:"🍇", type:"fruit",     desc:"Trái nho ngọt ngào"},
+  melon:   {id:"melon",   name:"Dưa Hấu",   icon:"🍈", type:"fruit",     desc:"Dưa hấu mát lạnh"},
+  lemon:   {id:"lemon",   name:"Chanh",     icon:"🍋", type:"fruit",     desc:"Chanh vàng chua ngọt"},
+  banana:  {id:"banana",  name:"Chuối",     icon:"🍌", type:"fruit",     desc:"Chuối cung cấp năng lượng"},
+  pineapple:{id:"pineapple",name:"Dứa",    icon:"🍍", type:"fruit",     desc:"Thơm ngon nhiệt đới"},
+  cherry:  {id:"cherry",  name:"Anh Đào",   icon:"🍒", type:"fruit",     desc:"Anh đào đỏ mọng"},
+  coconut: {id:"coconut", name:"Dừa",       icon:"🥥", type:"fruit",     desc:"Dừa bổ dưỡng"},
   wheat:   {id:"wheat",   name:"Wheat",     icon:"🌾", type:"material",   desc:"Đilden grain"},
   carrot:  {id:"carrot",  name:"Carrot",    icon:"🥕", type:"material",   desc:"Orange vegetable"},
   tomato:  {id:"tomato",  name:"Tomato",    icon:"🍅", type:"material",   desc:"Juicy red fruit"},
+  shovel:  {id:"shovel",  name:"Xẻng",      icon:"🪓", type:"tool",      desc:"Đào đất trồng cây"},
   water:   {id:"water",   name:"Water",     icon:"💧", type:"material",   desc:"Waters crops — speeds growth 2x"},
   grass:   {id:"grass",   name:"Grass",     icon:"🌿", type:"material",   desc:"Fresh green grass for feeding animals"},
   milk:    {id:"milk",    name:"Milk",      icon:"🥛", type:"consumable", desc:"Fresh milk! Restores 15 HP and 10 Đói",
@@ -685,6 +697,7 @@ const CRAFT_RECIPES = [
   {name:"Ring of Power",icon:"💍",id:"ring_atk", costs:{w:0,s:10,f:2},desc:"+2 Tấn Công"},
   {name:"Ring of Guard",icon:"💍",id:"ring_def", costs:{w:0,s:10,f:2},desc:"+2 Phòng Thủ"},
   {name:"Cape",        icon:"🧣", id:"cape",     costs:{w:3,s:7,f:1}, desc:"+1 All stats"},
+  {name:"Xẻng",        icon:"🪓", id:"shovel",   costs:{w:2,s:2,f:0}, desc:"Đào đất trồng cây (dùng trên cỏ)"},
   {name:"Water",       icon:"💧", id:"water",    costs:{w:1,s:0,f:0}, desc:"Waters crops (2x growth)"},
 ];
 
@@ -793,6 +806,7 @@ const GS = {
   islands:{},
   buildMode:null,
   plantMode:false,
+  digMode:false,
   gameTicks:0,
   arenaKillBuff:0,
   };
@@ -996,7 +1010,7 @@ function generateStarterIsland() {
   }
 
   // Scatter resources (trees, stones, bushes) densely over land
-  g = scatterResources(g, 'starter_isle', 1.2);
+  g = scatterResources(g, 'starter_isle', 1.0);
 
   // Third pass: add decorative coconut palm trees (tile 15) on grass & beach
   {
@@ -1190,10 +1204,10 @@ function scatterResources(map, id, densityMultiplier = 1) {
   // Define what to place and how many (based on island size)
   const totalTiles = map.length * map[0].length;
   const resourceDefs = [
-    { type: 4, label: 'tree',     count: Math.floor(totalTiles * 0.08 * densityMultiplier) },  // 8% → trees (was 4%)
-    { type: 2, label: 'stone',    count: Math.floor(totalTiles * 0.06 * densityMultiplier) }, // 6% → rocks (was 2.5%)
-    { type: 6, label: 'bush',     count: Math.floor(totalTiles * 0.04 * densityMultiplier) },  // 4% → bushes (was 2%)
-    { type: 13, label: 'tallGrass', count: Math.floor(totalTiles * 0.04 * densityMultiplier) }, // 4% → tall grass (was 3%)
+    { type: 4, label: 'tree',     count: Math.floor(totalTiles * 0.04 * densityMultiplier) },  // 4% → trees (giảm)
+    { type: 2, label: 'stone',    count: Math.floor(totalTiles * 0.03 * densityMultiplier) }, // 3% → rocks (giảm)
+    { type: 6, label: 'bush',     count: Math.floor(totalTiles * 0.02 * densityMultiplier) },  // 2% → bushes (giảm)
+    { type: 13, label: 'tallGrass', count: Math.floor(totalTiles * 0.03 * densityMultiplier) }, // 3% → tall grass
   ];
 
   let placed = 0;
@@ -1537,6 +1551,18 @@ function invItemClick(id){
       showToast("🌱 Plant mode ON — click a farm plot (brown tilled soil) to plant seed!",2500);
     }else{
       showToast("🌱 Plant mode OFF",1000);
+    }
+    renderInvGrid(); renderEquipPanel(); renderStatsDisplay(); updateHUD();
+    return;
+  }
+  // Shovel: dig ground to create farm plot
+  if(id === "shovel"){
+    showToast("🪓 Chọn ô đất (cỏ/cát) để đào! (click vào map)",2000);
+    GS.digMode = !GS.digMode;
+    if(GS.digMode){
+      showToast("🪓 Dig mode ON — click grass/sand/dirt to create farm plot!",2500);
+    }else{
+      showToast("🪓 Dig mode OFF",1000);
     }
     renderInvGrid(); renderEquipPanel(); renderStatsDisplay(); updateHUD();
     return;
@@ -2089,8 +2115,57 @@ window.togglePebble = window.togglePebble || function() { showToast("⚠️ Game
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 12: MAIN GAME SCENE
 // ═══════════════════════════════════════════════════════════════════
+
+window.useDigItem = function(){
+  const inv = GS.player.inventory;
+  const shovelEntry = inv.find(i => i.id === "shovel" && (i.count||0) > 0);
+  if(!shovelEntry){showToast("❌ Không có xẻng! Chế tạo xẻng trước.");return;}
+  GS.digMode = !GS.digMode;
+  GS.plantMode = false;
+  const btn = document.querySelector('[onclick="window.useDigItem()"]');
+  if(GS.digMode){
+    showToast("🪓 Chế độ Đào — click vào ô cỏ/cát để tạo đất trồng!",2500);
+    if(btn) btn.classList.add("dig-active");
+  }else{
+    showToast("🪓 Tắt đào",1000);
+    if(btn) btn.classList.remove("dig-active");
+  }
+};
+window.usePlantItem = function(){
+  const inv = GS.player.inventory;
+  const seedEntry = inv.find(i => i.id === "seed" && (i.count||0) > 0);
+  if(!seedEntry){showToast("❌ Không có hạt! Thu hoạch bụi cây để lấy hạt.");return;}
+  GS.plantMode = !GS.plantMode;
+  GS.digMode = false;
+  const btn = document.querySelector('[onclick="window.usePlantItem()"]');
+  if(GS.plantMode){
+    showToast("🌱 Chế độ Trồng — click vào ô đất đã đào (màu nâu) để trồng!",2500);
+    if(btn) btn.classList.add("plant-active");
+  }else{
+    showToast("🌱 Tắt trồng",1000);
+    if(btn) btn.classList.remove("plant-active");
+  }
+};
 k.scene("game", ()=>{
-  // Hide loading indicator
+  /
+
+function digToFarm(tx,ty){
+  const idata=getIslandData(GS.currentIsland);
+  const tt=getTile(ty,tx,idata.map);
+  if(tt!==0&&tt!==1&&tt!==8&&tt!==10&&tt!==13){showToast("❌ Không thể đào ở đây! Chỉ đất cỏ/cát mới đào được.",1500);return false;}
+  if(idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty)){showToast("❌ Đã có công trình ở đây!",1000);return false;}
+  idata.map[ty][tx]=14;
+  const k=tx+","+ty;
+  if(!idata.farmPlots) idata.farmPlots={};
+  idata.farmPlots[k]={planted:false,crop:null,stage:-1,plantedAt:0,watered:false};
+  showToast("✅ Đã đào đất! Giờ có thể trồng cây.",1200);
+  return true;
+}
+
+var _digModeListeners = _digModeListeners || [];
+function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
+
+/ Hide loading indicator
   const loader = document.getElementById("sprite-loader");
   if (loader) loader.style.display = "none";
   console.log("🎮 Đang khởi tạo...");
@@ -2245,7 +2320,7 @@ k.scene("game", ()=>{
       const playerObj=getPlayer();
       if(playerObj){
         const distToPlayer=Math.sqrt((playerObj.pos.x-enemy.pos.x)**2+(playerObj.pos.y-enemy.pos.y)**2);
-        if(distToPlayer<TILE*5){
+        if(distToPlayer<TILE*9){
           // Chase the player
           const dx=playerObj.pos.x-enemy.pos.x,dy=playerObj.pos.y-enemy.pos.y,d=Math.sqrt(dx*dx+dy*dy);
           enemy.pos.x+=(dx/d)*enemy.spd*k.dt();
@@ -2924,6 +2999,48 @@ k.scene("game", ()=>{
       if (!cw.growing) cw.age += dt * 0.01;
       else { cw.age += dt * 0.02; if (cw.age >= 1) cw.growing = false; } // calf matures in ~50s
 
+      // Defend against nearby monsters
+      let nearMonster = null;
+      let nearMonDist = 999;
+      for (const co of cowObjects) {
+        if (!co.data || co.data.dead || co.data === cw) continue;
+      }
+      // Find nearest enemy within range
+      const allEnemies = k.get("enemy");
+      for (const e of allEnemies) {
+        if (e.dead) continue;
+        const ed = Math.abs(e.pos.x/64 - cw.tileX) + Math.abs(e.pos.y/64 - cw.tileY);
+        if (ed < 7 && ed < nearMonDist) { nearMonster = e; nearMonDist = ed; }
+      }
+      if (nearMonster && cw.hp > 5) {
+        // Move toward monster to defend
+        const mtx = Math.floor(nearMonster.pos.x / TILE);
+        const mty = Math.floor(nearMonster.pos.y / TILE);
+        const dx = mtx - cw.tileX, dy = mty - cw.tileY;
+        const dist = Math.abs(dx) + Math.abs(dy);
+        if (dist > 1) {
+          // Move toward monster
+          let nx = cw.tileX + (dx > 0 ? 1 : dx < 0 ? -1 : 0);
+          let ny = cw.tileY + (dy > 0 ? 1 : dy < 0 ? -1 : 0);
+          // Check not solid
+          if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+            const t = getTile(ny, nx, map);
+            if (!isSolid(t) && t !== 14 && t !== 9 && t !== 3) { cw.tileX = nx; cw.tileY = ny; }
+          }
+        } else {
+          // Attack monster - deal damage
+          if (Math.random() < 0.02) {
+            const dmg = 2 + (cw.defense||0);
+            nearMonster.hp = (nearMonster.hp || 10) - dmg;
+            showFloating(nearMonster.pos.x, nearMonster.pos.y-16, '-'+dmg+'HP', [153,204,77]);
+            // Counter-attack: monster hits cow
+            cw.hp -= 3;
+            if (cw.hp <= 0) { cw.dead = true; cw.hp = 0; showToast('💀 '+cw.name+' bị quái đánh bại!',2000); }
+          }
+        }
+        continue; // Skip wandering, cow is defending
+      }
+
       // Wander within pen (or school area)
       if (Math.random() < 0.015) {
         const bounds = cw.inSchool ? {x1:3,y1:3,x2:9,y2:9} : cowPenArea;
@@ -2961,7 +3078,18 @@ k.scene("game", ()=>{
         const p = cowPenArea;
         const px = p.x1+2+Math.floor(Math.random()*(p.x2-p.x1-4));
         const py = p.y1+2+Math.floor(Math.random()*(p.y2-p.y1-4));
-        cows.push({id:cows.length,name:"B\u00ea #"+(cows.length+1),hp:15,maxHp:15,hunger:80,age:0,growing:true,tileX:px,tileY:py,homeX:px,homeY:py,lastFeed:0,mood:"🐮",happiness:60,maxHappiness:100,dead:false});
+                // Genetics: pass on improved stats from parents
+        let bonusHp = 0, bonusDef = 0;
+        const parent1 = fed[0], parent2 = fed[1];
+        if (parent1.genetics) { bonusHp += parent1.genetics.hpBonus || 0; bonusDef += parent1.genetics.defBonus || 0; }
+        if (parent2.genetics) { bonusHp += parent2.genetics.hpBonus || 0; bonusDef += parent2.genetics.defBonus || 0; }
+        // Random mutation (5% chance for +2 HP, 3% chance for +1 def)
+        const mutHp = Math.random() < 0.05 ? 2 : 0;
+        const mutDef = Math.random() < 0.03 ? 1 : 0;
+        const calfHp = 15 + Math.floor(bonusHp/2) + mutHp;
+        const calfDef = Math.floor(bonusDef/2) + mutDef;
+        const calfGen = { hpBonus: Math.floor(bonusHp/2) + mutHp, defBonus: calfDef };
+        cows.push({id:cows.length,name:"B\u00ea #"+(cows.length+1),hp:calfHp,maxHp:calfHp,hunger:80,age:0,growing:true,tileX:px,tileY:py,homeX:px,homeY:py,lastFeed:0,mood:"🐮",happiness:60,maxHappiness:100,dead:false,genetics:calfGen,defense:calfDef});
         cowBreedTimer = 0;
         showToast(`🐮 B\u00ea m\u1edbi! (${cows.filter(c=>!c.dead).length}/${GS.maxCows})`,2500);
         // Rebuild cow entities
@@ -2986,7 +3114,12 @@ k.scene("game", ()=>{
   }
 
   // ─── Initial enemies ─────────────────────────────────────────
-  for(let i=0;i<3+Math.floor(def.diff*0.5);i++) spawnEnemy();
+  // Spawn enemy packs (3 waves, groups of 2-4)
+  const packCount = 2 + Math.floor(def.diff * 0.8);
+  const packSize = 2 + Math.floor(def.diff * 0.5);
+  for(let i=0;i<packCount;i++) {
+    for(let j=0;j<packSize;j++) spawnEnemy();
+  }
 
   // ─── Dock ────────────────────────────────────────────────────
   const DOCK_X=Math.floor(COLS/2),DOCK_Y=ROWS-2;
@@ -3136,6 +3269,16 @@ k.scene("game", ()=>{
       if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
       return;
     }
+    // Dig mode: click grass/sand to create farm plot
+    if(GS.digMode){
+      const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
+      if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS){ GS.digMode=false; showToast("🪓 Dig mode cancelled",1000); return; }
+      if(!hasInvItem("shovel",1)){showToast("❌ Hết xẻng!");GS.digMode=false;return;}
+      const result=digToFarm(tix,tiy);
+      if(result) removeInvItem("shovel",1);
+      GS.digMode=false;
+      return;
+    }
     // Plant mode: click a farm plot to plant a seed
     if(GS.plantMode){
       const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
@@ -3148,7 +3291,7 @@ k.scene("game", ()=>{
         const fp=getFarmPlot(tix,tiy);
         if(fp.planted){showToast("❌ Already planted here!",1000);return;}
         removeInvItem("seed",1);
-        const crops=["wheat","carrot","tomato"];
+        const crops=["wheat","carrot","tomato","grape","melon","lemon","banana","pineapple","cherry","coconut"];
         fp.planted=true; fp.crop=crops[Math.floor(Math.random()*crops.length)];
         fp.plantedAt=Date.now(); fp.watered=false; fp.stage=0;
         showToast("🌱 Planted "+fp.crop+"! Click seed again to plant more.");
@@ -3307,7 +3450,7 @@ k.scene("game", ()=>{
       }
       // Stage 3: ready to harvest — show fruit/veg emoji
       if(stage>=3){
-        const emojis={wheat:"🌾",carrot:"🥕",tomato:"🍅"};
+        const emojis={wheat:"🌾",carrot:"🥕",tomato:"🍅",grape:"🍇",melon:"🍈",lemon:"🍋",banana:"🍌",pineapple:"🍍",cherry:"🍒",coconut:"🥥"};
         objs.push(k.add([k.text(emojis[fp.crop]||"🌾",{size:18}),k.pos(px+22,py+20),k.z(5)]));
       }
       _cropVisuals[key]=objs;
@@ -3350,7 +3493,7 @@ k.scene("game", ()=>{
     if(!fp.planted){
       if(!hasInvItem("seed")){showToast("❌ ❌ Hết hạt! Hãy thu hoạch bụi cây!");return;}
       removeInvItem("seed",1);
-      const crops=["wheat","carrot","tomato"];
+      const crops=["wheat","carrot","tomato","grape","melon","lemon","banana","pineapple","cherry","coconut"];
       fp.planted=true;fp.crop=crops[Math.floor(Math.random()*crops.length)];
       fp.plantedAt=Date.now();fp.watered=false;fp.stage=0;
       showToast(`🌱 Planted ${fp.crop}!`);
