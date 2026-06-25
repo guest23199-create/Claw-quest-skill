@@ -2147,7 +2147,6 @@ window.usePlantItem = function(){
   }
 };
 k.scene("game", ()=>{
-  /
 
 function digToFarm(tx,ty){
   const idata=getIslandData(GS.currentIsland);
@@ -2165,7 +2164,7 @@ function digToFarm(tx,ty){
 var _digModeListeners = _digModeListeners || [];
 function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
 
-/ Hide loading indicator
+// Hide loading indicator
   const loader = document.getElementById("sprite-loader");
   if (loader) loader.style.display = "none";
   console.log("🎮 Đang khởi tạo...");
