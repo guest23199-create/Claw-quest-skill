@@ -2583,36 +2583,66 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
   // Spawn pebble near the player initially
   const pebSx=sx+25,pebSy=sy+10;
 
-  // Pebble body (cat)
+  // Pebble body (cat) - redesigned to look like 🐱 emoji
   pebbleObj=k.add([
     k.circle(TILE/2-3),k.pos(pebSx,pebSy+3),CAT_COLOR,
     k.outline(2,k.color(0,0,0)),k.z(10),k.area(),"pebble",
     {moving:false},
   ]);
-  const pebĐầu=k.add([k.circle(TILE/2-4),k.pos(pebSx,pebSy-4),CAT_COLOR,k.outline(2,k.color(0,0,0)),k.z(11)]);
-  const pebEarL=k.add([k.polygon([k.vec2(pebSx-12,pebSy-6),k.vec2(pebSx-6,pebSy-20),k.vec2(pebSx-2,pebSy-6)]),CAT_DARK,k.z(11)]);
-  const pebEarR=k.add([k.polygon([k.vec2(pebSx+12,pebSy-6),k.vec2(pebSx+6,pebSy-20),k.vec2(pebSx+2,pebSy-6)]),CAT_DARK,k.z(11)]);
-  const pebEarInnerL=k.add([k.polygon([k.vec2(pebSx-10,pebSy-7),k.vec2(pebSx-6,pebSy-16),k.vec2(pebSx-3,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
-  const pebEarInnerR=k.add([k.polygon([k.vec2(pebSx+10,pebSy-7),k.vec2(pebSx+6,pebSy-16),k.vec2(pebSx+3,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
-  const pebEyeL=k.add([k.circle(4),k.pos(pebSx-7,pebSy-6),k.color(255,255,255),k.outline(1,k.color(128,128,128)),k.z(12)]);
-  const pebEyeR=k.add([k.circle(4),k.pos(pebSx+7,pebSy-6),k.color(255,255,255),k.outline(1,k.color(128,128,128)),k.z(12)]);
-  const pebPupilL=k.add([k.circle(2.5),k.pos(pebSx-6,pebSy-5),k.color(0,0,0),k.z(13)]);
-  const pebPupilR=k.add([k.circle(2.5),k.pos(pebSx+8,pebSy-5),k.color(0,0,0),k.z(13)]);
-  const pebNose=k.add([k.circle(2),k.pos(pebSx,pebSy-1),k.color(255,128,153),k.z(12)]);
+  // Bigger round head (emoji style)
+  const pebDau=k.add([k.circle(TILE/2-5),k.pos(pebSx,pebSy-5),CAT_COLOR,k.outline(2,k.color(0,0,0)),k.z(11)]);
+  // Pointy cat ears
+  const pebEarL=k.add([k.polygon([k.vec2(pebSx-14,pebSy-6),k.vec2(pebSx-6,pebSy-26),k.vec2(pebSx,pebSy-6)]),CAT_DARK,k.z(11)]);
+  const pebEarR=k.add([k.polygon([k.vec2(pebSx+14,pebSy-6),k.vec2(pebSx+6,pebSy-26),k.vec2(pebSx,pebSy-6)]),CAT_DARK,k.z(11)]);
+  // Pink inner ears
+  const pebEarInnerL=k.add([k.polygon([k.vec2(pebSx-11,pebSy-7),k.vec2(pebSx-6,pebSy-21),k.vec2(pebSx-2,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
+  const pebEarInnerR=k.add([k.polygon([k.vec2(pebSx+11,pebSy-7),k.vec2(pebSx+6,pebSy-21),k.vec2(pebSx+2,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
+  // Forehead tabby stripes (3 small dark orange lines)
+  const pebStripeM=k.add([k.rect(3,7),k.pos(pebSx-1.5,pebSy-18),CAT_DARK,k.opacity(0.7),k.z(12)]);
+  const pebStripeL=k.add([k.rect(2.5,5),k.pos(pebSx-7,pebSy-17),CAT_DARK,k.opacity(0.5),k.z(12)]);
+  const pebStripeR=k.add([k.rect(2.5,5),k.pos(pebSx+5,pebSy-17),CAT_DARK,k.opacity(0.5),k.z(12)]);
+  // Big round eyes with catchlights (kawaii style)
+  const pebEyeL=k.add([k.circle(5.5),k.pos(pebSx-8,pebSy-6),k.color(255,255,255),k.outline(1.5,k.color(80,80,80)),k.z(12)]);
+  const pebEyeR=k.add([k.circle(5.5),k.pos(pebSx+8,pebSy-6),k.color(255,255,255),k.outline(1.5,k.color(80,80,80)),k.z(12)]);
+  const pebPupilL=k.add([k.circle(3.5),k.pos(pebSx-7,pebSy-5),k.color(30,30,30),k.z(13)]);
+  const pebPupilR=k.add([k.circle(3.5),k.pos(pebSx+9,pebSy-5),k.color(30,30,30),k.z(13)]);
+  // Catchlights (white dots in eyes)
+  const pebCatchL=k.add([k.circle(1.8),k.pos(pebSx-6,pebSy-8),k.color(255,255,255),k.z(14)]);
+  const pebCatchR=k.add([k.circle(1.8),k.pos(pebSx+10,pebSy-8),k.color(255,255,255),k.z(14)]);
+  // Pink nose (inverted triangle)
+  const pebNose=k.add([k.polygon([k.vec2(pebSx,pebSy+1),k.vec2(pebSx-3,pebSy+4),k.vec2(pebSx+3,pebSy+4)]),k.color(255,128,153),k.z(12)]);
+  // Cute "w" shaped mouth
+  const pebMouth=k.add([k.polygon([k.vec2(pebSx-5,pebSy+5),k.vec2(pebSx-2,pebSy+8),k.vec2(pebSx,pebSy+6),k.vec2(pebSx+2,pebSy+8),k.vec2(pebSx+5,pebSy+5)]),k.color(80,40,30),k.z(13)]);
+  // Rosy pink cheeks
+  const pebCheekL=k.add([k.circle(4),k.pos(pebSx-14,pebSy+3),k.color(255,150,150),k.opacity(0.4),k.z(12)]);
+  const pebCheekR=k.add([k.circle(4),k.pos(pebSx+14,pebSy+3),k.color(255,150,150),k.opacity(0.4),k.z(12)]);
 
+  // Whiskers (3 on each side)
   const pebWhiskers=[];
   const pebWhiskerData=[
-    [pebSx-10,pebSy-2,pebSx-18,pebSy-4],[pebSx-10,pebSy-1,pebSx-20,pebSy-1],[pebSx-10,pebSy,pebSx-18,pebSy+2],
-    [pebSx+10,pebSy-2,pebSx+18,pebSy-4],[pebSx+10,pebSy-1,pebSx+20,pebSy-1],[pebSx+10,pebSy,pebSx+18,pebSy+2],
+    [pebSx-10,pebSy+1,pebSx-20,pebSy-1],[pebSx-10,pebSy+3,pebSx-22,pebSy+3],[pebSx-10,pebSy+5,pebSx-20,pebSy+7],
+    [pebSx+10,pebSy+1,pebSx+20,pebSy-1],[pebSx+10,pebSy+3,pebSx+22,pebSy+3],[pebSx+10,pebSy+5,pebSx+20,pebSy+7],
   ];
   for(const wd of pebWhiskerData){
     const midX=(wd[0]+wd[2])/2,midY=(wd[1]+wd[3])/2;
-    const w=k.add([k.rect(10,1),k.pos(midX-5,midY),k.color(230,230,230),k.opacity(0.7),k.z(11)]);
+    const w=k.add([k.rect(12,1),k.pos(midX-6,midY),k.color(200,200,200),k.opacity(0.8),k.z(11)]);
     w._ax=wd[0];w._ay=wd[1];w._bx=wd[2];w._by=wd[3];w._mx=midX;w._my=midY;
     pebWhiskers.push(w);
   }
 
-  const pebCatParts=[pebĐầu,pebEarL,pebEarR,pebEarInnerL,pebEarInnerR,pebEyeL,pebEyeR,pebPupilL,pebPupilR,pebNose,...pebWhiskers];
+  // Small paws at the bottom
+  const pebPawL=k.add([k.ellipse(5,4),k.pos(pebSx-9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
+  const pebPawR=k.add([k.ellipse(5,4),k.pos(pebSx+9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
+
+  // Tail (curved, made of small circles going up and to the left)
+  const pebTail=[];
+  const tailPositions=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
+  for(const tp of tailPositions){
+    const seg=k.add([k.circle(4),k.pos(pebSx+tp[0],pebSy+tp[1]),CAT_DARK,k.outline(1,k.color(0,0,0)),k.z(9)]);
+    pebTail.push(seg);
+  }
+
+  const pebCatParts=[pebDau,pebEarL,pebEarR,pebEarInnerL,pebEarInnerR,pebStripeM,pebStripeL,pebStripeR,pebEyeL,pebEyeR,pebPupilL,pebPupilR,pebCatchL,pebCatchR,pebNose,pebMouth,pebCheekL,pebCheekR,pebPawL,pebPawR,...pebWhiskers];
 
   // ─── PEBBLE FREE-ROAM AI STATE MACHINE ──────────
   let roamState = 'roaming';     // roaming | investigating | sniffing | going_home | resting
@@ -2703,21 +2733,41 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
     const sniffBounce = (roamState === 'sniffing' || roamState === 'resting') ? Math.sin(Date.now() * 0.004) * 1.5 : 0;
     const bobY = pBobY + sniffBounce;
 
-    pebĐầu.pos = k.vec2(ppx, bobY);
+    // Head center
+    pebDau.pos = k.vec2(ppx, bobY);
+    // Ears (anchored to head center)
     pebEarL.pos = k.vec2(ppx, bobY); pebEarR.pos = k.vec2(ppx, bobY);
     pebEarInnerL.pos = k.vec2(ppx, bobY); pebEarInnerR.pos = k.vec2(ppx, bobY);
-    pebEyeL.pos = k.vec2(ppx - 7, bobY - 2); pebEyeR.pos = k.vec2(ppx + 7, bobY - 2);
-    pebPupilL.pos = k.vec2(ppx - 6, bobY - 1); pebPupilR.pos = k.vec2(ppx + 8, bobY - 1);
-    pebNose.pos = k.vec2(ppx, bobY + 3);
+    // Forehead stripes
+    pebStripeM.pos = k.vec2(ppx - 1.5, bobY - 13);
+    pebStripeL.pos = k.vec2(ppx - 7, bobY - 12);
+    pebStripeR.pos = k.vec2(ppx + 5, bobY - 12);
+    // Eyes with catchlights
+    pebEyeL.pos = k.vec2(ppx - 8, bobY - 1); pebEyeR.pos = k.vec2(ppx + 8, bobY - 1);
+    pebPupilL.pos = k.vec2(ppx - 7, bobY); pebPupilR.pos = k.vec2(ppx + 9, bobY);
+    pebCatchL.pos = k.vec2(ppx - 6, bobY - 3); pebCatchR.pos = k.vec2(ppx + 10, bobY - 3);
+    // Nose (inverted triangle)
+    pebNose.pos = k.vec2(ppx, bobY + 5);
+    // Mouth (w shape)
+    pebMouth.pos = k.vec2(ppx, bobY + 8);
+    // Rosy cheeks
+    pebCheekL.pos = k.vec2(ppx - 14, bobY + 4); pebCheekR.pos = k.vec2(ppx + 14, bobY + 4);
+    // Paws at bottom
+    pebPawL.pos = k.vec2(ppx - 9, bobY + 28); pebPawR.pos = k.vec2(ppx + 9, bobY + 28);
+    // Tail segments (curved line behind body)
+    const tailPos=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
+    for(let i=0; i<pebTail.length && i<tailPos.length; i++){
+      pebTail[i].pos = k.vec2(ppx + tailPos[i][0], bobY + tailPos[i][1]);
+    }
 
     // Whisker bounce during sniff
     const wBounce = (roamState === 'sniffing') ? Math.sin(Date.now() * 0.006) * 0.8 : 0;
-    const wData = [[-10,-2,-18,-4],[-10,-1,-20,-1],[-10,0,-18,2],[10,-2,18,-4],[10,-1,20,-1],[10,0,18,2]];
+    const wData = [[-10,1,-20,-1],[-10,3,-22,3],[-10,5,-20,7],[10,1,20,-1],[10,3,22,3],[10,5,20,7]];
     for (let i = 0; i < 6 && i < pebWhiskers.length; i++) {
       const w = pebWhiskers[i];
       const wd = wData[i];
       const mx = ppx + wd[0], my = bobY + wd[1] + wBounce;
-      w.pos = k.vec2(mx - 5, my);
+      w.pos = k.vec2(mx - 6, my);
     }
   }
 
@@ -3805,23 +3855,30 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
         startDialogue();
       }
 
-      // Update pebble cat parts while walking
+      // Update pebble cat parts while walking (new design)
       if (pebMoved) {
         const ppx = pebbleObj.pos.x, ppy = pebbleObj.pos.y;
         const pBobY = ppy - 4;
-        pebĐầu.pos = k.vec2(ppx, pBobY);
+        pebDau.pos = k.vec2(ppx, pBobY);
         pebEarL.pos = k.vec2(ppx, pBobY); pebEarR.pos = k.vec2(ppx, pBobY);
         pebEarInnerL.pos = k.vec2(ppx, pBobY); pebEarInnerR.pos = k.vec2(ppx, pBobY);
-        pebEyeL.pos = k.vec2(ppx-7, pBobY-2); pebEyeR.pos = k.vec2(ppx+7, pBobY-2);
-        pebPupilL.pos = k.vec2(ppx-6, pBobY-1); pebPupilR.pos = k.vec2(ppx+8, pBobY-1);
-        pebNose.pos = k.vec2(ppx, pBobY+3);
+        pebStripeM.pos = k.vec2(ppx - 1.5, pBobY - 13); pebStripeL.pos = k.vec2(ppx - 7, pBobY - 12); pebStripeR.pos = k.vec2(ppx + 5, pBobY - 12);
+        pebEyeL.pos = k.vec2(ppx-8, pBobY-1); pebEyeR.pos = k.vec2(ppx+8, pBobY-1);
+        pebPupilL.pos = k.vec2(ppx-7, pBobY); pebPupilR.pos = k.vec2(ppx+9, pBobY);
+        pebCatchL.pos = k.vec2(ppx-6, pBobY-3); pebCatchR.pos = k.vec2(ppx+10, pBobY-3);
+        pebNose.pos = k.vec2(ppx, pBobY+5);
+        pebMouth.pos = k.vec2(ppx, pBobY+8);
+        pebCheekL.pos = k.vec2(ppx-14, pBobY+4); pebCheekR.pos = k.vec2(ppx+14, pBobY+4);
+        pebPawL.pos = k.vec2(ppx-9, pBobY+28); pebPawR.pos = k.vec2(ppx+9, pBobY+28);
+        const tailPos=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
+        for(let i=0; i<pebTail.length && i<tailPos.length; i++){ pebTail[i].pos = k.vec2(ppx + tailPos[i][0], pBobY + tailPos[i][1]); }
         if (pebWhiskers.length >= 6) {
-          const wData = [[-10,-2,-18,-4],[-10,-1,-20,-1],[-10,0,-18,2],[10,-2,18,-4],[10,-1,20,-1],[10,0,18,2]];
+          const wData = [[-10,1,-20,-1],[-10,3,-22,3],[-10,5,-20,7],[10,1,20,-1],[10,3,22,3],[10,5,20,7]];
           for (let i = 0; i < 6; i++) {
             const w = pebWhiskers[i];
             const wd = wData[i];
             const mx = ppx + wd[0], my = pBobY + wd[1];
-            w.pos = k.vec2(mx-5, my);
+            w.pos = k.vec2(mx-6, my);
           }
         }
       }
@@ -3848,14 +3905,21 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
       if (pebbleObj) {
         const ppx = pebbleObj.pos.x, ppy = pebbleObj.pos.y;
         const pBobY = ppy - 4;
-        pebĐầu.pos = k.vec2(ppx, pBobY);
+        pebDau.pos = k.vec2(ppx, pBobY);
         pebEarL.pos = k.vec2(ppx, pBobY); pebEarR.pos = k.vec2(ppx, pBobY);
         pebEarInnerL.pos = k.vec2(ppx, pBobY); pebEarInnerR.pos = k.vec2(ppx, pBobY);
-        pebEyeL.pos = k.vec2(ppx-7, pBobY-2); pebEyeR.pos = k.vec2(ppx+7, pBobY-2);
-        pebPupilL.pos = k.vec2(ppx-6, pBobY-1); pebPupilR.pos = k.vec2(ppx+8, pBobY-1);
-        pebNose.pos = k.vec2(ppx, pBobY+3);
+        pebStripeM.pos = k.vec2(ppx - 1.5, pBobY - 13); pebStripeL.pos = k.vec2(ppx - 7, pBobY - 12); pebStripeR.pos = k.vec2(ppx + 5, pBobY - 12);
+        pebEyeL.pos = k.vec2(ppx-8, pBobY-1); pebEyeR.pos = k.vec2(ppx+8, pBobY-1);
+        pebPupilL.pos = k.vec2(ppx-7, pBobY); pebPupilR.pos = k.vec2(ppx+9, pBobY);
+        pebCatchL.pos = k.vec2(ppx-6, pBobY-3); pebCatchR.pos = k.vec2(ppx+10, pBobY-3);
+        pebNose.pos = k.vec2(ppx, pBobY+5);
+        pebMouth.pos = k.vec2(ppx, pBobY+8);
+        pebCheekL.pos = k.vec2(ppx-14, pBobY+4); pebCheekR.pos = k.vec2(ppx+14, pBobY+4);
+        pebPawL.pos = k.vec2(ppx-9, pBobY+28); pebPawR.pos = k.vec2(ppx+9, pBobY+28);
+        const tailPos=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
+        for(let i=0; i<pebTail.length && i<tailPos.length; i++){ pebTail[i].pos = k.vec2(ppx + tailPos[i][0], pBobY + tailPos[i][1]); }
         if (pebWhiskers.length >= 6) {
-          const wData = [[-10,-2,-18,-4],[-10,-1,-20,-1],[-10,0,-18,2],[10,-2,18,-4],[10,-1,20,-1],[10,0,18,2]];
+          const wData = [[-10,1,-20,-1],[-10,3,-22,3],[-10,5,-20,7],[10,1,20,-1],[10,3,22,3],[10,5,20,7]];
           for (let i = 0; i < 6; i++) {
             const w = pebWhiskers[i];
             const wd = wData[i];
