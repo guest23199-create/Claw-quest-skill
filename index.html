@@ -485,6 +485,17 @@ try {
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
   }
+  // Handle Telegram viewport changes (keyboard show/hide)
+  window.Telegram.WebApp.onEvent("viewportChanged", function() {
+    // Trigger resize event so our handler re-positions camera
+    window.dispatchEvent(new Event("resize"));
+  });
+  // Enable back button
+  window.Telegram.WebApp.BackButton.onClick(function() {
+    window.Telegram.WebApp.BackButton.hide();
+    // Navigate back via kaboom if possible
+    try { if (typeof k !== "undefined" && k.go) k.go("title"); } catch(e) {}
+  });
 } catch(_) {}
 
 // SECTION 1: CONSTANTS
@@ -4442,6 +4453,16 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
     k.camScale(Math.min(window.innerWidth, window.innerHeight) / ((isLandscapeInit ? 8 : 14) * TILE));
   }
   console.log("✅ Khởi tạo game xong");
+  // ─── Window resize handler for Telegram Mini App ───
+  const onResize = () => {
+    if (playerObj && playerObj.pos) {
+      k.camPos(playerObj.pos.x, playerObj.pos.y);
+      const landscape = window.innerWidth > window.innerHeight;
+      k.camScale(Math.min(window.innerWidth, window.innerHeight) / ((landscape ? 8 : 14) * TILE));
+    }
+  };
+  window.addEventListener("resize", onResize);
+
   } catch(e) {
     console.error("❌ Game scene error:", e);
     const errDiv = document.createElement("div");
