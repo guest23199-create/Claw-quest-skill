@@ -440,6 +440,13 @@ document.addEventListener("DOMContentLoaded", setupChat);
 document.addEventListener("DOMContentLoaded", function() {
   document.querySelectorAll(".task-btn").forEach(btn => {
     btn.addEventListener("click", function() {
+      try {
+        const task = btn.dataset.task;
+        if(window.setPebbleTask && task) window.setPebbleTask(task);
+      } catch(e) {}
+    });
+  });
+});
 
 // ─── Window error handler: show errors on screen ───
 window.onerror = function(msg, url, line, col, err) {
@@ -4911,6 +4918,19 @@ k.scene("arena", ()=>{
   const AX = (W - AT * AW) / 2, AY = (H - AT * AH) / 2 + 30;
   let cw=1, am=[], ago=false, avic=false, pk=0, ek=0;
   let php=GS.player.hp, pmhp=GS.player.maxHp, pehp=GS.pebble.hp, pemhp=GS.pebble.maxHp;
+  function showFloating(x,y,text,color){
+    const ft=k.add([k.text(text,{size:13}),k.pos(x-15,y),k.color(color[0],color[1],color[2]),k.z(20)]);
+    let life=0; ft.onUpdate(()=>{life+=k.dt();ft.pos.y-=30*k.dt();ft.opacity=Math.max(0,1-life/0.8);if(life>0.8)k.destroy(ft);});
+  }
+  function checkLevelUp(){
+    let needed=GS.player.level*10;
+    while(GS.player.xp>=needed){
+      GS.player.xp-=needed;GS.player.level++;GS.player.maxHp+=5;GS.player.hp=GS.player.maxHp;
+      GS.player.attack++;GS.player.defense++;
+      showToast("🎉 Cấp "+GS.player.level+"!",2000);
+      needed=GS.player.level*10;
+    }
+  }
   let abf={pa:0,pd:0,pea:0,ped:0,hp:0,rv:0,kb:GS.arenaKillBuff||0};
   let sc=GS.silverCoins||0;
   if(sc>0){abf.pa=Math.min(sc,5);abf.pea=Math.max(0,Math.min(sc-5,3));abf.hp=Math.floor(sc/3);}if(abf.kb>0){pk=Math.min(pk+abf.kb,2);GS.arenaKillBuff=0;pk>0&&showToast("⚡ +"+abf.kb+" Kill Buff từ Merchant House!",2000);}
