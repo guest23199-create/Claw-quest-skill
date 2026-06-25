@@ -4467,6 +4467,8 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
     console.error("❌ Game scene error:", e);
     const errDiv = document.createElement("div");
     errDiv.style.cssText = "position:fixed;top:100px;left:10px;right:10px;background:rgba(200,0,0,0.95);color:#fff;padding:16px;z-index:99999;font-size:14px;font-family:monospace;white-space:pre-wrap;border-radius:8px;border:2px solid #ff0;";
+    errDiv.textContent = "🚨 GAME INIT ERROR: " + (e.message || e);
+    document.body.appendChild(errDiv);
     console.error("🚨 GAME INIT ERROR:", e.message || e, e.stack || "");
     showToast("⚠️ Game init error - check console", 3000);
   }
