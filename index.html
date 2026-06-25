@@ -777,15 +777,26 @@ const BUILDINGS = {
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 2: KABOOM INIT
 // ═══════════════════════════════════════════════════════════════════
-const k = kaboom({
-  width:W, height:H,
-  stretch:true,
-  // letterbox removed — canvas dimensions match viewport exactly
-  background:[30,55,90],
-  root:document.getElementById("game-wrap"),
-  touchToMouse:true,
-  global:false,
-});
+var k;
+try {
+  k = kaboom({
+    width:W, height:H,
+    stretch:true,
+    // letterbox removed — canvas dimensions match viewport exactly
+    background:[30,55,90],
+    root:document.getElementById("game-wrap"),
+    touchToMouse:true,
+    global:false,
+  });
+} catch(e) {
+  console.error("Kaboom init error:", e);
+  document.getElementById("sprite-loader").innerHTML =
+    '<div style="font-size:40px;margin-bottom:12px">❌</div>' +
+    '<div style="color:#ff6b6b;font-weight:bold;font-size:16px">Không thể khởi tạo game!</div>' +
+    '<div style="color:#8899bb;font-size:11px;margin-top:6px">' + (e.message || e) + '</div>' +
+    '<div style="margin-top:12px"><button onclick="location.reload()" style="background:#f0c060;color:#000;padding:8px 24px;border-radius:8px;font-size:14px;font-weight:bold;border:none;cursor:pointer">⟳ Thử lại</button></div>';
+  throw e; // Re-throw to stop execution
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 2b: LOAD SPRITES (CDN — fallback to procedural if fail)
