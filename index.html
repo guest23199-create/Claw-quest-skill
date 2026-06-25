@@ -4438,6 +4438,35 @@ k.scene("title", ()=>{
   k.add([k.text("🧑 Hành Trình Khám Phá 7 Hòn Đảo",{size:13}),k.pos(W/2,152),k.anchor("center"),k.color(179,179,204)]);
   k.add([k.text("🐱 Pebble tự do dạo chơi — has its own home!",{size:11}),k.pos(W/2,167),k.anchor("center"),k.color(232,161,64)]);
 
+  // Warrior Cow on title
+  const wcx=W/2-80,wcy=225;
+  // Cape
+  k.add([k.rect(10,24),k.pos(wcx-5,wcy+8),k.color(200,40,40),k.z(2)]);
+  // Cow body (white)
+  k.add([k.ellipse(16,14),k.pos(wcx-8,wcy+6),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
+  // Spots
+  k.add([k.circle(4),k.pos(wcx-4,wcy+6),k.color(35,35,35),k.z(3)]);
+  k.add([k.circle(3),k.pos(wcx+4,wcy+10),k.color(35,35,35),k.z(3)]);
+  // Armor
+  k.add([k.ellipse(12,10),k.pos(wcx-6,wcy+6),k.color(160,100,45),k.opacity(0.8),k.z(3)]);
+  k.add([k.rect(14,3),k.pos(wcx-7,wcy+3),k.color(200,170,50),k.opacity(0.9),k.z(3)]);
+  // Head
+  k.add([k.ellipse(10,9),k.pos(wcx+10,wcy),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
+  k.add([k.circle(2),k.pos(wcx+12,wcy-1),k.color(0,0,0),k.z(4)]); // Eye
+  // Helmet
+  k.add([k.ellipse(10,4),k.pos(wcx+10,wcy-4),k.color(180,130,50),k.opacity(0.9),k.z(4)]);
+  k.add([k.rect(2,8),k.pos(wcx+9,wcy-12),k.color(220,50,50),k.z(4)]); // Plume
+  // Horns
+  k.add([k.polygon([k.vec2(wcx+4,wcy-4),k.vec2(wcx+1,wcy-10),k.vec2(wcx+6,wcy-4)]),k.color(200,180,140),k.z(3)]);
+  // Sword
+  k.add([k.rect(2,16),k.pos(wcx+18,wcy+2),k.color(200,200,210),k.outline(0.5,k.color(100,100,100)),k.z(4)]);
+  k.add([k.rect(4,3),k.pos(wcx+17,wcy),k.color(180,160,80),k.z(4)]); // Handle
+  k.add([k.circle(2),k.pos(wcx+19,wcy-2),k.color(255,50,50),k.z(4)]); // Gem
+  // Legs
+  for(let wi=0;wi<4;wi++){k.add([k.rect(3,8),k.pos(wcx-10+wi*6,wcy+18),k.color(250,248,240),k.outline(0.5,k.color(35,35,35)),k.z(2)]);}
+  // Label
+  k.add([k.text("🐮 Bò Chiến Binh",{size:8}),k.pos(wcx+6,wcy+32),k.anchor("center"),k.color(153,204,77)]);
+
   // Player character on title (farmer with cowboy hat) — smaller
   const tcx=W/2-20,tcy=225;
   k.add([k.rect(18,14),k.pos(tcx-9,tcy+5),k.color(200,50,50),k.outline(2,k.color(30,30,60))]);
