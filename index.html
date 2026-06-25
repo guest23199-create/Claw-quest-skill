@@ -165,6 +165,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
   <!-- ─── Mini Action Bar (compact floating buttons) ─── -->
   <div id="mini-bar">
+    <button class="mb-btn" onclick="window.openPebbleChat()" title="Chat với Pebble">💬</button>
     <button class="mb-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️</button>
     <button class="mb-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨</button>
     <button class="mb-btn" onclick="window.useHealItem()" title="Hồi Máu">💊</button>
@@ -298,6 +299,20 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 
 <div class="toast" id="toast"></div>
 
+<!-- ─── PEBBLE CHAT MODAL ─── -->
+<div class="modal-overlay" id="modal-pebble-chat">
+  <div class="modal-box" style="max-width:380px;text-align:center;">
+    <h2>💬 Chat với Pebble</h2>
+    <div id="chat-messages" style="max-height:240px;overflow-y:auto;text-align:left;padding:6px;margin:6px 0;background:rgba(0,0,0,0.3);border-radius:8px;font-size:12px;color:#fff;line-height:1.5;min-height:80px;"></div>
+    <div style="display:flex;gap:4px;">
+      <input id="chat-input" type="text" placeholder="Nhập tin nhắn..." style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:12px;outline:none;">
+      <button id="chat-send" style="background:rgba(232,161,64,0.2);border:1px solid #e8a140;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;cursor:pointer;">Gửi</button>
+    </div>
+    <div style="margin-top:6px;font-size:9px;color:#8899bb;">Gõ "help" để xem danh sách lệnh</div>
+    <button class="modal-close" style="margin-top:6px;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:4px 16px;border-radius:8px;font-size:11px;cursor:pointer;">Đóng</button>
+  </div>
+</div>
+
 <!-- ─── PEBBLE DIALOGUE BUBBLE ─── -->
 <div id="pebble-dialogue" style="position:fixed;bottom:46px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:2px solid #e8a140;border-radius:14px;padding:12px 18px;z-index:150;display:none;max-width:380px;width:92%;color:#fff;font-size:14px;text-align:center;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
   <div id="dialogue-speaker" style="font-weight:bold;color:#f0c060;margin-bottom:4px;font-size:13px;"></div>
@@ -323,18 +338,122 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 </div>
 
 <script>
+// ─── Pebble Chat System ───
+const PEBBLE_CHAT_RESPONSES = {
+  "hello":["Meo meo! Chào bạn! 🐱","Chào! Bạn khỏe không? 🐾","Meo! Rất vui được gặp bạn! 🌟"],
+  "hi":["Meo meo! 👋","Chào bạn hiền! 🐱"],
+  "help":["Mình có thể: đi theo (follow), bảo vệ (defend), thu thập (gather), đứng yên (stay) 🐾","Hỏi mình về đảo, quái, hoặc đồ ăn! 🍎"],
+  "follow":["Mình sẽ đi theo bạn! 👣","Dẫn đường đi! Mình theo sau 🐾"],
+  "defend":["Mình sẽ bảo vệ bạn! 🛡️","Có quái cứ để mình lo! ⚔️"],
+  "gather":["Mình đi nhặt đồ đây! 🌲","Nhặt táo với gỗ thôi! 🍎🪵"],
+  "stay":["OK, mình đứng yên đây 📍","Vâng, mình chờ bạn!"],
+  "arena":["Đấu trường vui lắm! Mình cùng chiến đấu! ⚔️","Vào arena đi! Mình đánh cùng! 🐱⚔️"],
+  "fight":["Chiến đấu thôi! ⚔️","Mình khỏe lắm! Để mình lo! 💪"],
+  "food":["Đói quá! Cho mình xin ít đồ ăn! 🍎","Có táo không? Mình thích táo! 🍎"],
+  "apple":["Táo ngon tuyệt! 🍎","Cho mình xin một quả táo nhé! 🐱🍎"],
+  "fish":["Cá! Cá! Mình thích cá! 🐟","Đi câu cá đi! 🎣"],
+  "island":["Mình thích khám phá đảo mới! 🏝️","Đi đảo khác chơi đi! ⛵"],
+  "boss":["Boss khó lắm! Chuẩn bị kỹ vào! 👑","Cùng nhau đánh boss nhé! ⚔️"],
+  "home":["Nhà mình ở gần bờ biển! 🏠","Về nhà thôi! 🏠"],
+  "love":["Mình cũng yêu bạn! ❤️🐱","Meo meo! Thương bạn! 💕"],
+  "good":["Tốt quá! 🎉","Mình vui! 😊"],
+  "bad":["Đừng buồn! Mình ở đây mà! 🐱","Có chuyện gì vậy? Mình lắng nghe 💛"],
+  "bye":["Tạm biệt! Hẹn gặp lại! 👋🐱","Bye bye! Nhớ gọi mình nhé! 🐾"],
+  "skill":["Mình có 3 skill: Slash, Pounce, Screech! ⚡","Học skill trong tab Pebble nhé! 📚"],
+  "task":["Giao việc cho mình qua nút Pebble! 🐱","Follow/Defend/Gather/Stay tùy bạn! 👣"],
+  "map":["Bản đồ đẹp lắm! Có nhiều đảo để khám phá! 🗺️","Đi đến bến tàu để du lịch! ⛵"],
+};
+const PEBBLE_FALLBACK = [
+  "Meo? 🐱","Mình không hiểu lắm! Giải thích đi! 🤔","Hỏi mình về: help, follow, defend, arena... 📚",
+  "Meo meo? 😊","Chơi gì vui không? 🎮","Mình đang dạo chơi! 🌿","Nói gì đó hay đi! 💬",
+];
+
+window.openPebbleChat = function(){
+  document.getElementById("modal-pebble-chat").classList.add("show");
+  const msgDiv = document.getElementById("chat-messages");
+  if(msgDiv.children.length === 0){
+    addChatMsg("🐱 Pebble", "Meo meo! Chào bạn! Mình là Pebble đây! 🐱", msgDiv);
+    addChatMsg("🐱 Pebble", "Gõ 'help' để xem mình có thể làm gì nhé! 📚", msgDiv);
+  }
+  setTimeout(()=>{
+    const inp = document.getElementById("chat-input");
+    if(inp) inp.focus();
+  }, 300);
+};
+
+function addChatMsg(sender, text, container){
+  if(!container) container = document.getElementById("chat-messages");
+  const div = document.createElement("div");
+  div.style.marginBottom = "4px";
+  div.style.padding = "4px 6px";
+  div.style.borderRadius = "6px";
+  if(sender === "🧑 Bạn"){
+    div.style.background = "rgba(46,204,113,0.1)";
+    div.style.textAlign = "right";
+    div.innerHTML = `<span style="color:#8899bb;font-size:10px;">${sender}</span><br><span style="color:#fff;">${text}</span>`;
+  } else {
+    div.style.background = "rgba(232,161,64,0.1)";
+    div.style.textAlign = "left";
+    div.innerHTML = `<span style="color:#e8a140;font-size:10px;font-weight:bold;">${sender}</span><br><span style="color:#fff;">${text}</span>`;
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function getPebbleResponse(input){
+  const lower = input.toLowerCase().trim();
+  
+  // Check for keywords
+  for(const [key, responses] of Object.entries(PEBBLE_CHAT_RESPONSES)){
+    if(lower.includes(key)){
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
+  }
+  
+  // If the input mentions pebble's name
+  if(lower.includes("pebble") || lower.includes("mèo") || lower.includes("cat")){
+    return "Mình nghe! Có gì không bạn? 🐱👂";
+  }
+  
+  // Numbers or questions
+  if(lower.includes("?") || lower.includes("ai") || lower.includes("gì") || lower.includes("sao")){
+    return "Hmm, để mình nghĩ... 🤔 Mình không rõ lắm! Hỏi 'help' đi! 📚";
+  }
+  
+  // Default random response
+  return PEBBLE_FALLBACK[Math.floor(Math.random() * PEBBLE_FALLBACK.length)];
+}
+
+// Chat send handler
+function setupChat(){
+  const sendBtn = document.getElementById("chat-send");
+  const input = document.getElementById("chat-input");
+  const msgDiv = document.getElementById("chat-messages");
+  if(!sendBtn || !input) return;
+  
+  function sendMessage(){
+    const text = input.value.trim();
+    if(!text) return;
+    input.value = "";
+    addChatMsg("🧑 Bạn", text, msgDiv);
+    setTimeout(() => {
+      const response = getPebbleResponse(text);
+      addChatMsg("🐱 Pebble", response, msgDiv);
+    }, 400 + Math.random() * 400);
+  }
+  
+  sendBtn.addEventListener("click", sendMessage);
+  input.addEventListener("keypress", (e) => {
+    if(e.key === "Enter") sendMessage();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", setupChat);
+
 // ─── Pebble Task UI event handlers ───
 document.addEventListener("DOMContentLoaded", function() {
   document.querySelectorAll(".task-btn").forEach(btn => {
     btn.addEventListener("click", function() {
-      const task = this.dataset.task;
-      if (typeof window.setPebbleTask === 'function') {
-        window.setPebbleTask(task);
-      }
-      window.closeModals();
-    });
-  });
-});
 
 // ─── Window error handler: show errors on screen ───
 window.onerror = function(msg, url, line, col, err) {
@@ -4488,32 +4607,135 @@ k.scene("instructions", ()=>{
   // Stars
   for(let i=0;i<30;i++) k.add([k.circle(1+Math.random()*1.5),k.pos(Math.random()*W,Math.random()*H),k.color(255,255,255),k.opacity(0.2+Math.random()*0.5)]);
 
-  k.add([k.text("📖 LUẬT CHƠI",{size:28}),k.pos(W/2,40),k.anchor("center"),k.color(230,191,97)]);
+  k.add([k.text("📖 SÁCH HƯỚNG DẪN",{size:22}),k.pos(W/2,25),k.anchor("center"),k.color(230,191,97)]);
 
-  const instructions=[
-    "🧑  DI CHUYỂN: Click vào ô đất để đi đến đó",
-    "🪓  THU THẬP: Click gần cây (🌲), đá (🪨), bụi (🌿)",
-    "⚔️  CHIẾN ĐẤU: Click vào quái để tấn công",
-    "🐱  Pebble tự do khám phá, có nhà riêng 🏠",
-    "🔨  CHẾ TẠO: Click nút Craft để làm vũ khí/giáp",
-    "🏗️  XÂY DỰNG: Click Build, chọn đất để đặt",
-    "🗺️  HÒN ĐẢO: Đi đến bến tàu (⛵) để di chuyển",
-    "💾  LƯU: Tự động lưu mỗi 5 phút",
-    "",
-    "🏪  NHÀ THƯƠNG GIA: Vòng quay may mắn! Slot Machine 3×3!",
-    "    Ghé thăm Merchant House trên bản đồ và thử vận may!",
-    "    Quay trúng 3 biểu tượng giống nhau để nhận thưởng!",
-    "    Giải Jackpot: +5 Silver Coins! Có thể đổi đồ quý hiếm.",
+  // Page system
+  let page = 0;
+  const pages = [
+    // Page 0: Basic
+    [
+      "🎯 CƠ BẢN",
+      "🖱️ Click đất → di chuyển",
+      "🖱️ Click gần cây/đá/bụi → thu thập",
+      "🖱️ Click quái → tấn công",
+      "",
+      "📦 TÚI ĐỒ (📦)",
+      "• Click vật phẩm để dùng/trang bị",
+      "• Weapon: ⚔️ | Armor: 🛡️ | Consumable: ❤️",
+      "• Có thể gắn đồ cho Pebble (tab 🐱)",
+      "",
+      "🔨 CHẾ TẠO (✨)",
+      "• Dùng gỗ, đá, táo để chế tạo",
+      "• Rìu 🪓: +2 gỗ | Cuốc ⛏️: +2 đá",
+      "• Kiếm ⚔️: +3 ATK | Khiên 🛡️: +5 DEF",
+    ],
+    // Page 1: Build & Craft
+    [
+      "🏗️ XÂY DỰNG (🏗️)",
+      "• Chọn công trình, đặt trên cỏ/cát",
+      "🏠 Nhà Tạm: hồi 30% HP",
+      "🔥 Lửa Trại: xua quái yếu",
+      "🪵 Xưởng Gỗ: +1 gỗ mỗi lần",
+      "⛏️ Mỏ Đá: +1 đá mỗi lần",
+      "🏪 Chợ: đổi gỗ/táo → vàng",
+      "🏛️ Nhà Buôn: vòng quay Slot Machine",
+      "⚔️ Đấu Trường: chiến sóng quái",
+      "",
+      "⛵ DU LỊCH",
+      "• Đi đến bến tàu để sang đảo khác",
+      "• Mỗi đảo có quái riêng + Boss",
+    ],
+    // Page 2: Pebble
+    [
+      "🐱 PEBBLE (Mèo đồng hành)",
+      "• Tự do dạo chơi, có nhà riêng 🏠",
+      "• Bấm nút Pebble để giao việc:",
+      "",
+      "  🔄 Tự Do: đi dạo bình thường",
+      "  👣 Đi Theo: bám theo nhân vật",
+      "  🛡️ Bảo Vệ: đi theo + đánh quái",
+      "  🌲 Thu Thập: nhặt tài nguyên",
+      "  📍 Đứng Yên: ở yên tại chỗ",
+      "",
+      "💬 CHAT VỚI PEBBLE",
+      "• Gõ /pebble + lời nhắn trong game",
+      "• Pebble sẽ trả lời theo cảm xúc!",
+    ],
+    // Page 3: Equipment & Skills
+    [
+      "⚔️ TRANG BỊ",
+      "• Trang bị vũ khí, giáp cho nhân vật",
+      "• 🐱 Pebble có 4 slot trang bị riêng",
+      "• Click item → OK (bạn) / Cancel (Pebble)",
+      "",
+      "⚡ KỸ NĂNG PEBBLE",
+      "• 🐾 Claw Slash (5 kills): +2 ATK",
+      "• 🦘 Pounce (15 kills): +2 DEF",
+      "• 🗣️ Screech (30 kills): +3 AoE DMG",
+      "• Vào tab 🐱 Pebble để mở kỹ năng",
+    ],
+    // Page 4: Arena
+    [
+      "⚔️ ĐẤU TRƯỜNG",
+      "• Xây Đấu Trường trên đảo",
+      "• Chiến đấu sóng quái (Wave)",
+      "• Wave 1: 3 quái, mỗi wave +1",
+      "• Tối đa 10 quái mỗi wave",
+      "• Kill system: ai 2 kill trước thắng",
+      "• Chết hồi 15HP, chết lần 2 thua",
+      "",
+      "🎰 NHÀ BUÔN (SLOT MACHINE)",
+      "• Quay 3x3, trúng hàng/cột/chéo",
+      "• Jackpot: +5 Silver Coin + Kill Buff",
+      "• Silver Coin → Buffs trong đấu trường",
+    ],
   ];
 
-  for(let i=0;i<instructions.length;i++){
-    const col=i<8?[200,200,220]:[232,161,64];
-    k.add([k.text(instructions[i],{size:11}),k.pos(30,80+i*17),k.color(col[0],col[1],col[2]),k.z(5)]);
+  const uiTitle = k.add([k.text("",{size:12}),k.pos(W/2,45),k.anchor("center"),k.color(255,215,0),k.z(10)]);
+  const uiLines = [];
+
+  function renderPage(pg){
+    // Clear old lines
+    for(const o of uiLines) try{k.destroy(o)}catch(e){}
+    uiLines.length = 0;
+    
+    const data = pages[pg];
+    for(let i=0;i<data.length;i++){
+      const isHead = data[i].startsWith("🎯")||data[i].startsWith("🏗️")||data[i].startsWith("🐱")||data[i].startsWith("⚔️")||data[i].startsWith("⚡");
+      const isSub = data[i].startsWith("  ");
+      const sz = isHead ? 12 : (isSub ? 9 : 10);
+      const col = isHead ? [255,215,0] : (isSub ? [153,153,179] : [200,200,220]);
+      const y = 58 + i * 17;
+      const obj = k.add([k.text(data[i],{size:sz}),k.pos(25,y),k.color(col[0],col[1],col[2]),k.z(5)]);
+      uiLines.push(obj);
+    }
+    
+    // Page indicator
+    const pgText = k.add([k.text("Trang "+(pg+1)+"/"+pages.length,{size:10}),k.pos(W/2,H-50),k.anchor("center"),k.color(128,128,153),k.z(10)]);
+    uiLines.push(pgText);
   }
 
-  // Back button
-  const bb=k.add([k.text("← Quay lại",{size:16}),k.pos(W/2,H-45),k.anchor("center"),k.color(128,204,255),k.z(10),k.area()]);
-  bb.onClick(()=>k.go("title"));
+  // Prev/Next buttons
+  const prevBtn = k.add([k.rect(50,24),k.pos(15,H-30),k.color(60,60,80),k.z(10),k.area()]);
+  const prevText = k.add([k.text("◀",{size:14}),k.pos(40,H-18),k.anchor("center"),k.color(200,200,220),k.z(11)]);
+  uiLines.push(prevBtn); uiLines.push(prevText);
+  
+  const nextBtn = k.add([k.rect(50,24),k.pos(W-65,H-30),k.color(60,60,80),k.z(10),k.area()]);
+  const nextText = k.add([k.text("▶",{size:14}),k.pos(W-40,H-18),k.anchor("center"),k.color(200,200,220),k.z(11)]);
+  uiLines.push(nextBtn); uiLines.push(nextText);
+  
+  const backBtn = k.add([k.rect(60,24),k.pos(W/2-30,H-30),k.color(46,160,67),k.z(10),k.area()]);
+  const backText = k.add([k.text("🔙 Xong",{size:11}),k.pos(W/2,H-18),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  uiLines.push(backBtn); uiLines.push(backText);
+
+  renderPage(0);
+
+  prevBtn.onClick(()=>{if(page>0){page--;renderPage(page);}});
+  nextBtn.onClick(()=>{if(page<pages.length-1){page++;renderPage(page);}});
+  backBtn.onClick(()=>k.go("title"));
+  k.onKeyPress("left",()=>{if(page>0){page--;renderPage(page);}});
+  k.onKeyPress("right",()=>{if(page<pages.length-1){page++;renderPage(page);}});
+  k.onKeyPress("escape",()=>k.go("title"));
 });
 
 // ═══════════════════════════════════════════════════════════════════
