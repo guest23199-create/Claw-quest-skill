@@ -1468,6 +1468,20 @@ window.useHealItem = function(){
   showToast("❌ No healing items!", 1500);
 };
 
+window.setPebbleTask = function(task) {
+  GS.pebbleTask = task || "none";
+  if(task === "none") GS.pebbleMode = "roam";
+  else if(task === "follow") GS.pebbleMode = "follow";
+  else if(task === "defend") GS.pebbleMode = "defend";
+  else if(task === "gather") GS.pebbleMode = "gather";
+  else if(task === "stay") GS.pebbleMode = "stay";
+  const el = document.getElementById("pebble-current-task");
+  if(el) {
+    const labels = {none:"Tự do",follow:"👣 Đi theo",defend:"🛡️ Bảo vệ",gather:"🌲 Thu thập",stay:"📍 Đứng yên"};
+    el.textContent = "Hiện tại: " + (labels[task] || task);
+  }
+  // Update pebble task UI if panel is open
+};
 window.toggleInv = function(){
   window.closeModals();
   document.getElementById("modal-inv").classList.add("show");
