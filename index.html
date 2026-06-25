@@ -743,9 +743,15 @@ const IMG_BASE = "https://cdn.jsdelivr.net/gh/guest23199-create/Claw-quest-skill
 const spritePromises = [];
 function loadSpriteSafe(name, src, opts) {
   try {
-    const p = opts ? k.loadSprite(name, src, opts) : k.loadSprite(name, src);
+    // Kaboom v3000 loadSprite requires SpriteData object, not plain URL
+    const spriteData = (typeof src === 'string') ? {
+      frames: [src],
+      width: (opts && opts.width) || TILE,
+      height: (opts && opts.height) || TILE,
+    } : src;
+    const p = k.loadSprite(name, spriteData);
     if (p && p.catch) {
-      spritePromises.push(p.catch(e => console.warn(`Sprite "${name}" failed to load: ${src}`, e)));
+      spritePromises.push(p.catch(e => console.warn(`Sprite "${name}" failed to load`, e)));
     }
   } catch(e) {
     console.warn(`Sprite "${name}" load error:`, e);
