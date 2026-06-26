@@ -2258,7 +2258,42 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
 // Hide loading indicator
   const loader = document.getElementById("sprite-loader");
   if (loader) { loader.style.display = "none"; clearTimeout(window._moduleLoadTimeout); }
-  console.log("🎮 Đang khởi tạo...");
+    // ─── Hoisted variables (accessible to all scene functions) ───
+  // Player, Pebble, and game objects
+  let playerObj = null, isMoving = false, moveTarget = null;
+  let pebbleObj = null;
+  let pebCatParts = [];
+  let enemyObjs = [];
+  let activeBoss = null;
+  let buildingObjs = [];
+  // Dialogue state  
+  let currentDialogue = null;
+  let dialogueIndex = 0;
+  let dialogueTimer = 0;
+  let dialogueActive = false;
+  let lastDialogueUsed = -1;
+  // Pebble roam AI state
+  let roamState = 'roaming';
+  let roamTarget = null;
+  let roamHomeTimer = 0;
+  let roamStateTimer = 0;
+  let roamLastHomeCheck = 0;
+  let sniffMark = null;
+  // Pebble calling
+  let pebbleCallPhase = "idle";
+  let pebbleWalkTarget = null;
+  let pebbleTimer = 0;
+  let pebSpeed = 70;
+  // Auto farm
+  let autoFarmEnabled = false;
+  let autoFarmState = 'idle';
+  let autoFarmTarget = null;
+  let autoFarmCooldown = 0;
+  let autoFarmLastPos = null;
+  let autoFarmStartTime = 0;
+  let _af_playerTileX = 0;
+  let _af_playerTileY = 0;
+console.log("🎮 Đang khởi tạo...");
   try {
   const islandId=GS.currentIsland;
   const def=ISLAND_DEFS[islandId];
@@ -2285,7 +2320,7 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
   // ─── TILE RENDERING — handled in k.onDraw() via k.draw...() ──
   // Tiles are drawn in immediate mode using k.drawRect/k.drawCircle/k.drawLine
   // See k.onDraw() callback below for the full implementation  // ─── BUILDINGS (enhanced sprites) ────────────────────────────
-  const buildingObjs=[];
+
   function renderBuildings(){
     for(const o of buildingObjs) try{k.destroy(o)}catch(e){}
     buildingObjs.length=0;
@@ -2570,7 +2605,6 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
   }
 
   // ─═══ PLAYER — Humanoid/Cat with Green Hat (main character) ═══──
-  let playerObj=null,isMoving=false,moveTarget=null;
   const sx=Math.floor(COLS/2)*TILE+TILE/2,sy=Math.floor(ROWS/2)*TILE+TILE/2;
 
   function getPlayer(){return playerObj;}
@@ -2629,7 +2663,6 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
   k.camPos(playerObj.pos.x, playerObj.pos.y);
 
   // ─═══ PEBBLE — Orange Cat Companion (follower) ═══──
-  let pebbleObj=null;
   const CAT_COLOR=k.color(232,161,64);
   const CAT_DARK=k.color(199,128,38);
 
