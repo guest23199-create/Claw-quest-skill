@@ -266,8 +266,11 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <div class="modal-overlay" id="modal-build"><div class="modal-box">
   <span class="modal-close" onclick="window.closeModals()">&times;</span>
   <h2>🏗️ Build</h2>
-  <div class="modal-sub">Click grass, sand, beach, or path tile</div>
+  <div class="modal-sub">Click grass, sand, beach, path, or clear tree/stone tiles</div>
   <div id="build-list"></div>
+  <div style="margin-top:8px;text-align:center">
+    <button onclick="window.cancelBuildMode()" style="background:rgba(200,40,40,0.7);color:#fff;padding:5px 16px;border-radius:6px;font-size:11px;border:1px solid rgba(255,100,100,0.3);cursor:pointer">✖ Hủy xây dựng</button>
+  </div>
 </div></div>
 
 <!-- ─── TRAVEL MODAL ─── -->
@@ -1427,7 +1430,14 @@ function showToast(msg,dur=1500){
 }
 window.closeModals = function(){
   document.querySelectorAll(".modal-overlay").forEach(m=>m.classList.remove("show"));
-};
+}
+
+window.cancelBuildMode = function() {
+  GS.buildMode = null;
+  if (ghostObj) { try { if (ghostObj && ghostObj.exists) k.destroy(ghostObj); } catch(e) {} ghostObj = null; }
+  window.closeModals();
+  showToast("✅ Đã hủy xây dựng", 800);
+};;
 document.querySelectorAll(".modal-close").forEach(b=>b.addEventListener("click",window.closeModals));
 document.querySelectorAll(".modal-overlay").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)window.closeModals();}));
 
@@ -1912,7 +1922,7 @@ window.toggleBuild = function(){
     const card=document.createElement("div");
     card.className="build-card"+(ok?"":" cant");
     card.innerHTML=`<div class="bc-icon">${b.icon}</div><div class="bc-name">${b.name}</div><div class="bc-cost">🪵${b.costs.w} 🪨${b.costs.s}</div>`;
-    if(ok)card.addEventListener("click",()=>{GS.buildMode=k;window.closeModals();showToast(`🏗️ Select a grass/sand tile for ${b.name}`,2000);});
+    if(ok)card.addEventListener("click",()=>{GS.buildMode=k;window.closeModals();showToast(`🏗️ Chọn ô đất (cỏ/cát/đá/cây) để xây ${b.icon} ${b.name}`,2000);});
     grid.appendChild(card);
   }
   L.appendChild(grid);
@@ -3419,9 +3429,16 @@ console.log("🎮 Đang khởi tạo...");
     const pos = k.mousePos();
     if(window._clickConsumed){window._clickConsumed=false;return;}
     if(GS.buildMode){
+      // Right-click or secondary click cancels build mode
+      if (pos.right || pos.button === 2) {
+        GS.buildMode = null;
+        if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
+        showToast("✅ Đã hủy xây dựng", 800);
+        return;
+      }
       const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
       if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS){
-        showToast("❌ Out of bounds!",800);
+        showToast("❌ Hết phạm vi bản đồ! Click chuột phải để hủy",1200);
         GS.buildMode=null;
         if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
         return;
@@ -3429,7 +3446,6 @@ console.log("🎮 Đang khởi tạo...");
       const tt=getTile(tiy, tix, map);
       if(tt===0||tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13||tt===15){
         if(placeBuilding(tix,tiy,GS.buildMode)){renderBuildings();}
-        // placeBuilding resets GS.buildMode on success
       }else showToast("❌ Không thể xây ở đây! Chọn cỏ, cát, hoặc phá cây/đá!",1200);
       if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
       return;
@@ -3495,6 +3511,20 @@ console.log("🎮 Đang khởi tạo...");
 
   k.onMouseMove((pos)=>{
     if(GS.buildMode) updateGhost(pos);
+  });
+  // Escape key or long-press cancels build/dig/plant mode
+  k.onKeyPress("escape", ()=>{
+    if (GS.buildMode) {
+      GS.buildMode = null;
+      if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
+      showToast("✅ Đã hủy xây dựng", 800);
+    } else if (GS.digMode) {
+      GS.digMode = false;
+      showToast("🪓 Đã hủy đào đất", 800);
+    } else if (GS.plantMode) {
+      GS.plantMode = false;
+      showToast("🌱 Đã hủy trồng cây", 800);
+    }
   });
 
   // Resource gathering — uses PLAYER bonuses

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a5f"/>
+      <stop offset="100%" style="stop-color:#0d1b2a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0c060"/>
+      <stop offset="100%" style="stop-color:#d4942a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <!-- Sword -->
+  <rect x="240" y="80" width="32" height="200" rx="4" fill="#c0c0c0"/>
+  <rect x="235" y="260" width="42" height="20" rx="3" fill="#d4942a"/>
+  <rect x="232" y="275" width="48" height="12" rx="2" fill="#a07020"/>
+  <!-- Shield -->
+  <path d="M360 140 Q380 140 380 180 L380 260 Q380 300 320 340 Q260 300 260 260 L260 180 Q260 140 280 140 Z" fill="#e8a140" stroke="#c08030" stroke-width="6"/>
+  <circle cx="320" cy="240" r="30" fill="#f0c060" stroke="#d4942a" stroke-width="4"/>
+  <text x="320" y="252" font-size="36" font-weight="bold" fill="#1a3a5f" text-anchor="middle" font-family="sans-serif">C</text>
+  <!-- Pickaxe -->
+  <line x1="180" y1="340" x2="100" y2="420" stroke="#a0a0a0" stroke-width="14" stroke-linecap="round"/>
+  <path d="M80 420 L120 440 L140 400 L100 380 Z" fill="#8B4513" stroke="#6B3410" stroke-width="3"/>
+  <!-- Stars -->
+  <circle cx="120" cy="100" r="6" fill="#fff" opacity="0.8"/>
+  <circle cx="400" cy="80" r="4" fill="#fff" opacity="0.6"/>
+  <circle cx="80" cy="300" r="3" fill="#fff" opacity="0.5"/>
+  <circle cx="440" cy="200" r="5" fill="#fff" opacity="0.7"/>
+  <!-- Title text -->
+  <text x="256" y="420" font-size="28" font-weight="bold" fill="url(#gold)" text-anchor="middle" font-family="sans-serif">CLAW QUEST</text>
+  <text x="256" y="455" font-size="16" fill="#8899bb" text-anchor="middle" font-family="sans-serif">⚔️ Sinh Tồn Trên Đảo</text>
+</svg>
