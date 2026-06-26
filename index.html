@@ -161,7 +161,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <div id="island-label">🏝️ Starter Isle</div>
 
   <!-- ─── Resources ─── -->
-  <div id="resources">
+  <div id="scan-status" style="position:fixed;top:50px;right:8px;background:rgba(0,0,0,0.7);padding:2px 8px;border-radius:6px;font-size:9px;color:#88ccff;z-index:15;display:none;border:1px solid rgba(100,200,255,0.2);max-width:160px;text-align:right;"></div>
+<div id="resources">
     <div><span class="rlab">🪵Gỗ</span><span class="rval" id="r-wood">0</span><span class="rlab">🪨Đá</span><span class="rval" id="r-stone">0</span><span class="rlab">🍎TA</span><span class="rval" id="r-food">0</span></div>
     <div><span class="rlab">🪙Vàng</span><span class="rval" id="r-gold">0</span><span class="rlab">🥈Bạc</span><span class="rval" id="r-silver">0</span></div>
   </div>
@@ -178,7 +179,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
       <button class="bot-btn" onclick="window.useDigItem()" title="Đào Đất">🪓 Đào</button>
       <button class="bot-btn" onclick="window.usePlantItem()" title="Trồng Cây">🌾 Trồng</button>
       <button class="bot-btn" onclick="window.toggleInv()" title="Kho Đồ">📦 Đồ</button>
-      <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()" title="Auto">⚙️ Auto</button>
+      <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()" title="Auto">🤖 Auto Kham Pha</button>
     </div>
   </div>
 
@@ -364,8 +365,14 @@ window.openPebbleChat = function(){
   document.getElementById("modal-pebble-chat").classList.add("show");
   const msgDiv = document.getElementById("chat-messages");
   if(msgDiv.children.length === 0){
-    addChatMsg("🐱 Pebble", "Meo meo! Chào bạn! Mình là Pebble đây! 🐱", msgDiv);
-    addChatMsg("🐱 Pebble", "Gõ 'help' để xem mình có thể làm gì nhé! 📚", msgDiv);
+    var sum = (typeof getPebbleMemorySummary === "function") ? getPebbleMemorySummary() : "Minh moi den!";
+    addChatMsg("🐱 Pebble", "Meo meo! Chao ban! Minh co tri nho moi roi! 🐱🧠", msgDiv);
+    addChatMsg("🐱 Pebble", "🧠 Minh nho: " + sum, msgDiv);
+    addChatMsg("🐱 Pebble", "Go 'help', hoi ve 'hom nay', 'nha', 'dao' hoac 'nho'! 📚", msgDiv);
+  } else {
+    if (typeof getPebbleMemorySummary === "function") {
+      addChatMsg("🐱 Pebble", "🧠 Nho moi: " + getPebbleMemorySummary(), msgDiv);
+    }
   }
   setTimeout(()=>{
     const inp = document.getElementById("chat-input");
@@ -394,10 +401,24 @@ function addChatMsg(sender, text, container){
 
 function getPebbleResponse(input){
   const lower = input.toLowerCase().trim();
+  const islandId = GS ? GS.currentIsland : "unknown";
+  
+  // Check memory-aware responses first
+  if (typeof pebbleGetTimeAwareResponse === "function") {
+    const memoryResponse = pebbleGetTimeAwareResponse(input, islandId);
+    if (memoryResponse !== null) {
+      pebbleMemory.conversationHistory.push({input, time: Date.now()});
+      if (pebbleMemory.conversationHistory.length > 10) pebbleMemory.conversationHistory.shift();
+      return memoryResponse;
+    }
+  }
   
   // Check for keywords
   for(const [key, responses] of Object.entries(PEBBLE_CHAT_RESPONSES)){
     if(lower.includes(key)){
+      if (["gather","follow","defend","stay","task"].includes(key) && typeof pebbleRememberEvent === "function") {
+        pebbleRememberEvent("Player asked about "+key, islandId, Math.floor(playerObj?playerObj.pos.x/TILE:0), Math.floor(playerObj?playerObj.pos.y/TILE:0));
+      }
       return responses[Math.floor(Math.random() * responses.length)];
     }
   }
@@ -407,8 +428,11 @@ function getPebbleResponse(input){
     return "Mình nghe! Có gì không bạn? 🐱👂";
   }
   
-  // Numbers or questions
+  // Numbers or questions - use memory
   if(lower.includes("?") || lower.includes("ai") || lower.includes("gì") || lower.includes("sao")){
+    if (typeof getPebbleMemorySummary === "function") {
+      return "Hmm, để mình nghĩ... 🤔 " + getPebbleMemorySummary() + " 📚";
+    }
     return "Hmm, để mình nghĩ... 🤔 Mình không rõ lắm! Hỏi 'help' đi! 📚";
   }
   
@@ -2091,6 +2115,52 @@ function updateĐói(dt){
 }
 
 // ═══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// SECTION 11a: PEBBLE MEMORY SYSTEM
+// ══════════════════════════════════════════════════════════════════
+let pebbleMemory = {
+  visitedPlaces: [],
+  observedResources: 0,
+  observedBuildings: [],
+  recentEvents: [],
+  conversationHistory: [],
+  lastSaveTime: Date.now(),
+};
+const MAX_MEMORY_PLACES = 30;
+const MAX_MEMORY_EVENTS = 20;
+function pebbleRememberPlace(island, tileX, tileY, description) {
+  pebbleMemory.visitedPlaces.unshift({island,tileX,tileY,time:new Date().toLocaleTimeString(),description});
+  if (pebbleMemory.visitedPlaces.length > MAX_MEMORY_PLACES) pebbleMemory.visitedPlaces.pop();
+}
+function pebbleRememberEvent(event, island, tileX, tileY) {
+  pebbleMemory.recentEvents.unshift({time:Date.now(),timeStr:new Date().toLocaleTimeString(),event,island,tileX,tileY});
+  if (pebbleMemory.recentEvents.length > MAX_MEMORY_EVENTS) pebbleMemory.recentEvents.pop();
+}
+function pebbleRememberResource(t) { pebbleMemory.observedResources += 1; }
+function pebbleRememberBuilding(b) { if (!pebbleMemory.observedBuildings.includes(b)) pebbleMemory.observedBuildings.push(b); }
+function getPebbleMemorySummary() {
+  var p=[];
+  if(pebbleMemory.visitedPlaces.length>0){var r=pebbleMemory.visitedPlaces.slice(0,3);var s=r.map(function(p){return p.description+'('+p.time+')';});p.push('Hom nay: '+s.join(', '));}
+  if(pebbleMemory.observedBuildings.length>0)p.push('Nha co: '+pebbleMemory.observedBuildings.join(', '));
+  if(pebbleMemory.recentEvents.length>0){var r=pebbleMemory.recentEvents.slice(0,2);var s=r.map(function(e){return e.event+'('+e.timeStr+')';});p.push('Gan day: '+s.join(', '));}
+  if(pebbleMemory.observedResources>0)p.push('Thay ~'+pebbleMemory.observedResources+' tai nguyen');
+  if(p.length===0)p.push('Minh moi den!');
+  return p.join('. ');
+}
+function pebbleGetTimeAwareResponse(input, islandId) {
+  var l=input.toLowerCase().trim();var h=new Date().getHours();
+  if(l.indexOf('chao')>=0||l.indexOf('hello')>=0||l.indexOf('hi')>=0){var g=h<12?'sang':h<18?'chieu':'toi';return 'Chao! '+g+'! Minh nho '+(pebbleMemory.visitedPlaces.length||'vai')+' noi!';}
+  if(l.indexOf('hom nay')>=0||l.indexOf('lam gi')>=0||l.indexOf('di dau')>=0){return 'De minh nho... '+getPebbleMemorySummary();}
+  if(l.indexOf('nha')>=0||l.indexOf('can cu')>=0||l.indexOf('base')>=0){var b=pebbleMemory.observedBuildings;return b.length>0?'Nha co: '+b.join(', ')+'!':'Chua co nha!';}
+  if(l.indexOf('tai nguyen')>=0||l.indexOf('cay')>=0||l.indexOf('da')>=0){return 'Thay '+(pebbleMemory.observedResources||'vai')+' tai nguyen o '+islandId;}
+  if(l.indexOf('dao')>=0||l.indexOf('island')>=0||l.indexOf('noi')>=0){var v=[];for(var i=0;i<pebbleMemory.visitedPlaces.length;i++){if(v.indexOf(pebbleMemory.visitedPlaces[i].island)<0)v.push(pebbleMemory.visitedPlaces[i].island);}return v.length>0?'Da kham pha: '+v.join(', '):'Chi o day thoi!';}
+  if(l.indexOf('quai')>=0||l.indexOf('enemy')>=0||l.indexOf('monster')>=0){return 'Co quai vat! Can than!';}
+  if(l.indexOf('bo')>=0||l.indexOf('cow')>=0){return 'Bo dang o chuong!';}
+  if(l.indexOf('nho')>=0||l.indexOf('remember')>=0){if(pebbleMemory.visitedPlaces.length>0){return 'Minh nho: '+pebbleMemory.visitedPlaces[0].description+' luc '+pebbleMemory.visitedPlaces[0].time;}return 'Chua nho gi!';}
+  return null;
+}
+
 // SECTION 11b: AUTO FARM
 // ═══════════════════════════════════════════════════════════════════
 let autoFarmEnabled = false;
@@ -2116,7 +2186,7 @@ window.toggleAutoFarm = function() {
     autoFarmCooldown = 0;
   } else {
     autoFarmState = 'idle';
-    showToast('⚙️ Auto Farm ON', 1000);
+    showToast('🤖 Auto: dang tu dong kham pha...', 1500);
   }
 };
 
@@ -2990,6 +3060,20 @@ console.log("🎮 Đang khởi tạo...");
         }
         arrived = roamStepToward(roamTarget, roamSpeed * 0.8);
         if (arrived || roamStateTimer > 5) {
+          // Remember this place in Pebble's memory
+          if (investigateTarget && typeof pebbleRememberPlace === "function") {
+            var objType = investigateTarget.type;
+            var desc = "";
+            if (objType === 4) desc = "mot cay xanh";
+            else if (objType === 2) desc = "mot mo da";
+            else if (objType === 6 || objType === 8 || objType === 13) desc = "bui cay hoac co";
+            else desc = "mot noi thu vi";
+            pebbleRememberPlace(GS.currentIsland,
+              Math.floor(pebbleObj.pos.x / TILE),
+              Math.floor(pebbleObj.pos.y / TILE),
+              desc);
+            pebbleRememberResource(objType);
+          }
           // Arrived at object — sniff!
           roamState = 'sniffing';
           roamStateTimer = 0;
@@ -3042,6 +3126,20 @@ console.log("🎮 Đang khởi tạo...");
       }
     }
 
+    // Scan for nearby buildings and remember them
+    if (Math.random() < 0.02 && typeof pebbleRememberBuilding === "function") {
+      var ptx = Math.floor(pebbleObj.pos.x / TILE);
+      var pty = Math.floor(pebbleObj.pos.y / TILE);
+      var scanData = getIslandData(GS.currentIsland);
+      if (scanData && scanData.buildings) {
+        for (var bi = 0; bi < scanData.buildings.length; bi++) {
+          var b = scanData.buildings[bi];
+          if (Math.abs(b.tileX - ptx) <= 3 && Math.abs(b.tileY - pty) <= 3) {
+            pebbleRememberBuilding(b.name || b.type || "building");
+          }
+        }
+      }
+    }
     // Update pebble visual parts
     const moving = roamState === 'roaming' || roamState === 'investigating' || roamState === 'going_home';
     updatePebbleParts(moving, pebbleObj);
@@ -3723,9 +3821,42 @@ console.log("🎮 Đang khởi tạo...");
   // Initialize farm plots on scene start
   renderCropVisuals();
 
-  // ─── AUTO FARM UPDATE ────────────────────────────────────────
+  // ─── AUTO FARM UPDATE ────────────────────────────────────────  // ---- AUTO-SCAN ----
+  let scanCooldown = 0;
+  let scanBuildingList = [];
+  
+  function doAutoScan(dt) {
+    scanCooldown -= dt;
+    if (scanCooldown > 0) return;
+    scanCooldown = 3;
+    if (!playerObj) return;
+    var px = Math.floor(playerObj.pos.x / TILE);
+    var py = Math.floor(playerObj.pos.y / TILE);
+    var scanR = 6;
+    var mapData = getIslandData(GS.currentIsland).map;
+    var res = {tree:0,stone:0,bush:0,grass:0};
+    var enemies = 0;
+    for (var dy=-scanR;dy<=scanR;dy++){for(var dx=-scanR;dx<=scanR;dx++){var tx=px+dx,ty=py+dy;if(tx<0||tx>=COLS||ty<0||ty>=ROWS)continue;var tile=getTile(ty,tx,mapData);if(tile===4)res.tree++;else if(tile===2)res.stone++;else if(tile===6)res.bush++;else if(tile===8||tile===13)res.grass++;}}
+    var buildings=[];
+    if(idata&&idata.buildings){for(var bi=0;bi<idata.buildings.length;bi++){var b=idata.buildings[bi];if(Math.abs(b.tileX-px)<=scanR&&Math.abs(b.tileY-py)<=scanR){buildings.push(b.name||b.type||"building");}}}
+    if(typeof enemyObjs!=="undefined"&&enemyObjs){for(var ei=0;ei<enemyObjs.length;ei++){if(!enemyObjs[ei]||enemyObjs[ei]._dead)continue;var ex=Math.floor(enemyObjs[ei].pos.x/TILE);var ey=Math.floor(enemyObjs[ei].pos.y/TILE);if(Math.abs(ex-px)<=scanR&&Math.abs(ey-py)<=scanR)enemies++;}}
+    var parts = [];
+    if(res.tree>0)parts.push("🌳"+res.tree);
+    if(res.stone>0)parts.push("🧨"+res.stone);
+    if(res.bush>0)parts.push("🌱"+res.bush);
+    if(buildings.length>0)parts.push("🏕"+buildings.length);
+    if(enemies>0)parts.push("👹"+enemies);
+    var scanEl=document.getElementById("scan-status");
+    if(scanEl){if(parts.length>0){scanEl.textContent=parts.join(" | ");scanEl.style.display="block";}else{scanEl.style.display="none";}}
+    if(enemies>0&&typeof pebbleRememberEvent==="function"){pebbleRememberEvent("Thay "+enemies+" quai",GS.currentIsland,px,py);}
+    if(buildings.length>0&&typeof pebbleRememberBuilding==="function"){for(var bi=0;bi<buildings.length;bi++){pebbleRememberBuilding(buildings[bi]);}}
+  }
+  
+  // ---- AUTO FARM UPDATE ----
   function autoFarmUpdate(dt) {
     if (!playerObj) return;
+    doAutoScan(dt);
+        if (!playerObj) return;
     // Track player tile for findNearestResource
     _af_playerTileX = Math.floor(playerObj.pos.x / TILE);
     _af_playerTileY = Math.floor(playerObj.pos.y / TILE);
@@ -3781,7 +3912,7 @@ console.log("🎮 Đang khởi tạo...");
         autoFarmTarget = findNearestResource();
         if (!autoFarmTarget) {
           if (!autoFarmNoResourceMsg) {
-            showToast('⛏️ No resources nearby!', 1500);
+            showToast('🤖 Auto: khong co tai nguyen gan day!', 2000);
             autoFarmNoResourceMsg = true;
           }
           return;
@@ -3797,7 +3928,7 @@ console.log("🎮 Đang khởi tạo...");
         // BFS path from current tile
         autoFarmPath = bfsPath(_af_playerTileX, _af_playerTileY, autoFarmTarget.tx, autoFarmTarget.ty);
         if (autoFarmPath === null) {
-          showToast('⛔ No path to resource!', 1000);
+          showToast('🤖 Auto: khong tim thay duong!', 1200);
           autoFarmTarget = null;
           return;
         }
