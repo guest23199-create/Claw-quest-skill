@@ -2284,15 +2284,6 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
   let pebbleWalkTarget = null;
   let pebbleTimer = 0;
   let pebSpeed = 70;
-  // Auto farm
-  let autoFarmEnabled = false;
-  let autoFarmState = 'idle';
-  let autoFarmTarget = null;
-  let autoFarmCooldown = 0;
-  let autoFarmLastPos = null;
-  let autoFarmStartTime = 0;
-  let _af_playerTileX = 0;
-  let _af_playerTileY = 0;
 console.log("🎮 Đang khởi tạo...");
   try {
   const islandId=GS.currentIsland;
