@@ -3838,6 +3838,7 @@ console.log("🎮 Đang khởi tạo...");
     var enemies = 0;
     for (var dy=-scanR;dy<=scanR;dy++){for(var dx=-scanR;dx<=scanR;dx++){var tx=px+dx,ty=py+dy;if(tx<0||tx>=COLS||ty<0||ty>=ROWS)continue;var tile=getTile(ty,tx,mapData);if(tile===4)res.tree++;else if(tile===2)res.stone++;else if(tile===6)res.bush++;else if(tile===8||tile===13)res.grass++;}}
     var buildings=[];
+    var idata = getIslandData(GS.currentIsland);
     if(idata&&idata.buildings){for(var bi=0;bi<idata.buildings.length;bi++){var b=idata.buildings[bi];if(Math.abs(b.tileX-px)<=scanR&&Math.abs(b.tileY-py)<=scanR){buildings.push(b.name||b.type||"building");}}}
     if(typeof enemyObjs!=="undefined"&&enemyObjs){for(var ei=0;ei<enemyObjs.length;ei++){if(!enemyObjs[ei]||enemyObjs[ei]._dead)continue;var ex=Math.floor(enemyObjs[ei].pos.x/TILE);var ey=Math.floor(enemyObjs[ei].pos.y/TILE);if(Math.abs(ex-px)<=scanR&&Math.abs(ey-py)<=scanR)enemies++;}}
     var parts = [];
