@@ -2728,8 +2728,8 @@ console.log("🎮 Đang khởi tạo...");
   }
 
   // Small paws at the bottom
-  const pebPawL=k.add([k.ellipse(5,4),k.pos(pebSx-9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
-  const pebPawR=k.add([k.ellipse(5,4),k.pos(pebSx+9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
+  const pebPawL=k.add([k.rect(5,4),k.pos(pebSx-9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
+  const pebPawR=k.add([k.rect(5,4),k.pos(pebSx+9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
 
   // Tail (curved, made of small circles going up and to the left)
   const pebTail=[];
@@ -4746,18 +4746,18 @@ k.scene("title", ()=>{
   // Cape
   k.add([k.rect(10,24),k.pos(wcx-5,wcy+8),k.color(200,40,40),k.z(2)]);
   // Cow body (white)
-  k.add([k.ellipse(16,14),k.pos(wcx-8,wcy+6),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
+  k.add([k.rect(16,14),k.pos(wcx-8,wcy+6),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
   // Spots
   k.add([k.circle(4),k.pos(wcx-4,wcy+6),k.color(35,35,35),k.z(3)]);
   k.add([k.circle(3),k.pos(wcx+4,wcy+10),k.color(35,35,35),k.z(3)]);
   // Armor
-  k.add([k.ellipse(12,10),k.pos(wcx-6,wcy+6),k.color(160,100,45),k.opacity(0.8),k.z(3)]);
+  k.add([k.rect(12,10),k.pos(wcx-6,wcy+6),k.color(160,100,45),k.opacity(0.8),k.z(3)]);
   k.add([k.rect(14,3),k.pos(wcx-7,wcy+3),k.color(200,170,50),k.opacity(0.9),k.z(3)]);
   // Head
-  k.add([k.ellipse(10,9),k.pos(wcx+10,wcy),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
+  k.add([k.rect(10,9),k.pos(wcx+10,wcy),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
   k.add([k.circle(2),k.pos(wcx+12,wcy-1),k.color(0,0,0),k.z(4)]); // Eye
   // Helmet
-  k.add([k.ellipse(10,4),k.pos(wcx+10,wcy-4),k.color(180,130,50),k.opacity(0.9),k.z(4)]);
+  k.add([k.rect(10,4),k.pos(wcx+10,wcy-4),k.color(180,130,50),k.opacity(0.9),k.z(4)]);
   k.add([k.rect(2,8),k.pos(wcx+9,wcy-12),k.color(220,50,50),k.z(4)]); // Plume
   // Horns
   k.add([k.polygon([k.vec2(wcx+4,wcy-4),k.vec2(wcx+1,wcy-10),k.vec2(wcx+6,wcy-4)]),k.color(200,180,140),k.z(3)]);
