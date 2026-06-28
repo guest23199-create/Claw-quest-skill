@@ -915,6 +915,7 @@ const GS = {
   gameTicks:0,
   arenaKillBuff:0,
   };
+window.GS = GS;
 function getIslandData(id) {
   if (!GS.islands[id]) GS.islands[id] = {buildings:[],map:null,enemies:[],enemyTimer:0,farmPlots:{}};
   return GS.islands[id];
@@ -5492,6 +5493,11 @@ k.scene("arena", ()=>{
 window._clickConsumed=false;
 k.go("title");
 console.log("🐱 Claw Quest V12 — Hero + Pebble + Merchant House + Arena Edition loaded!");
+window.getPebbleMemorySummary = getPebbleMemorySummary;
+window.pebbleGetTimeAwareResponse = pebbleGetTimeAwareResponse;
+window.pebbleRememberEvent = pebbleRememberEvent;
+window.pebbleMemory = pebbleMemory;
+window.GS = GS;
 </script>
 </body>
 </html>
