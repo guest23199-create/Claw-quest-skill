@@ -61,12 +61,12 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 .bot-btn.on{background:rgba(240,192,96,0.25);border-color:#f0c060;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 0 8px rgba(240,192,96,0.3)}
 .bot-btn.dig-active{background:rgba(240,192,96,0.4);border-color:#f0c060;box-shadow:0 0 10px rgba(255,215,0,0.35)}
 .bot-btn.plant-active{background:rgba(46,204,113,0.4);border-color:#2ecc71;box-shadow:0 0 10px rgba(46,204,113,0.3)}
-/* ─── D-PAD (pixel-style circular buttons, ref: blue-rimmed round control) ─── */
+/* ─── JOYSTICK (virtual analog stick, pixel-style, replaces 4-button D-pad) ─── */
 #dpad{position:fixed;bottom:60px;left:8px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
 #dpad>*{pointer-events:auto}
-.dpad-row{display:flex;gap:3px;justify-content:center}
-.dpad-btn{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#2a4870,#16243e);border:3px solid #0a1424;box-shadow:inset 0 0 0 2px #3a5a8a,inset 0 2px 4px rgba(255,255,255,0.1),0 3px 0 rgba(0,0,0,0.4);color:#cfe0ff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:none;transition:background 0.1s;outline:none;text-shadow:1px 1px 0 rgba(0,0,0,0.5)}
-.dpad-btn:active,.dpad-btn.pressed{background:radial-gradient(circle at 35% 30%,#3a5a8a,#243a5c);border-color:#f0c060;box-shadow:inset 0 0 0 2px #f0c060,0 1px 0 rgba(0,0,0,0.4);transform:translateY(1px)}
+#joystick-base{width:104px;height:104px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1c2e4e,#0e1830);border:3px solid #0a1424;box-shadow:inset 0 0 0 2px #3a5a8a,inset 0 3px 8px rgba(0,0,0,0.5),0 3px 0 rgba(0,0,0,0.4);position:relative;touch-action:none}
+#joystick-knob{width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#5a85c5,#2a4870);border:3px solid #0a1424;box-shadow:inset 0 0 0 2px #7ec8ff,inset 0 2px 4px rgba(255,255,255,0.2),0 3px 6px rgba(0,0,0,0.5);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transition:box-shadow 0.1s;pointer-events:none}
+#joystick-base.active #joystick-knob{box-shadow:inset 0 0 0 2px #f0c060,inset 0 2px 4px rgba(255,255,255,0.25),0 0 12px rgba(240,192,96,0.4)}
 /* ─── MODALS (pixel-style frame, ref: CRAFTING panel with cyan border) ─── */
 .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.78);display:none;align-items:center;justify-content:center;z-index:100}
 .modal-overlay.show{display:flex}
@@ -140,7 +140,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #top-bar .tb-name{font-size:10px;min-width:40px}
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
-.dpad-btn{width:42px;height:42px;font-size:18px}
+#joystick-base{width:88px;height:88px}
+#joystick-knob{width:38px;height:38px}
 #bottom-actions{bottom:70px;right:4px;padding:4px 6px;gap:2px;border-radius:10px}
 .bot-btn{font-size:9px;padding:4px 5px;min-width:34px;border-radius:6px}
 }
@@ -150,7 +151,8 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #top-bar .tb-name{font-size:10px;min-width:40px}
 #island-label{font-size:10px;padding:2px 8px;top:46px;left:4px}
 #dpad{bottom:50px;left:4px}
-.dpad-btn{width:42px;height:42px;font-size:18px}
+#joystick-base{width:88px;height:88px}
+#joystick-knob{width:38px;height:38px}
 #bottom-actions{bottom:70px;right:8px;padding:4px 6px;gap:2px;border-radius:10px}
 .bot-btn{font-size:9px;padding:4px 5px;min-width:34px;border-radius:6px}
 .modal-box{padding:10px;max-width:98%}
@@ -221,16 +223,14 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
 
-  <!-- ─── D-PAD ─── -->
+  <!-- ─── JOYSTICK (analog virtual stick, replaces 4-button D-pad) ─── -->
   <div id="dpad">
-    <div class="dpad-row"><button class="dpad-btn" data-dir="up">↑</button></div>
-    <div class="dpad-row">
-      <button class="dpad-btn" data-dir="left">←</button>
-      <button class="dpad-btn" data-dir="down">↓</button>
-      <button class="dpad-btn" data-dir="right">→</button>
+    <div id="joystick-base">
+      <div id="joystick-knob"></div>
     </div>
     <div style="font-size:7px;color:rgba(255,255,255,0.3);text-align:center;margin-top:2px;">DI CHUYỂN</div>
   </div>
+
 
   <!-- ─── HUD (hidden, kept for script compatibility / cow & companion data) ─── -->
   <div id="hud" style="display:none">
@@ -3553,6 +3553,7 @@ console.log("🎮 Đang khởi tạo...");
   // ─── CONTINUOUS MOVEMENT (Keyboard + D-pad) ────────
   const SPEED = 150; // pixels per second
   const heldDirs = { left:false, right:false, up:false, down:false };
+  const joyVec = { x: 0, y: 0 }; // continuous analog vector from virtual joystick (overrides heldDirs when nonzero)
   function setDir(dir, pressed) {
     heldDirs[dir] = pressed;
     if (pressed && autoFarmEnabled) {
@@ -3568,18 +3569,82 @@ console.log("🎮 Đang khởi tạo...");
     k.onKeyDown(key, () => setDir(dir, true));
     k.onKeyRelease(key, () => setDir(dir, false));
   }
-  // D-pad handlers
-  document.querySelectorAll(".dpad-btn").forEach(btn => {
-    const dir = btn.dataset.dir;
-    const press = () => { setDir(dir, true); btn.classList.add("pressed"); };
-    const release = () => { setDir(dir, false); btn.classList.remove("pressed"); };
-    btn.addEventListener("mousedown", press);
-    btn.addEventListener("mouseup", release);
-    btn.addEventListener("mouseleave", release);
-    btn.addEventListener("touchstart", press, {passive:true});
-    btn.addEventListener("touchend", release, {passive:true});
-    btn.addEventListener("touchcancel", release, {passive:true});
+  // ─── Virtual Joystick (analog stick) — replaces 4-button D-pad ───
+  const joyBase = document.getElementById("joystick-base");
+  const joyKnob = document.getElementById("joystick-knob");
+  let joyActive = false, joyTouchId = null;
+  const JOY_RADIUS = 36; // max knob travel distance in px (matches base size)
+  const JOY_DEADZONE = 0.15; // ignore tiny movements near center
+
+  function joyUpdateVector(dx, dy) {
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const clamped = Math.min(dist, JOY_RADIUS);
+    const angle = Math.atan2(dy, dx);
+    const kx = Math.cos(angle) * clamped;
+    const ky = Math.sin(angle) * clamped;
+    joyKnob.style.transform = `translate(${kx - 23}px, ${ky - 23}px)`;
+    const norm = clamped / JOY_RADIUS;
+    if (norm < JOY_DEADZONE) {
+      heldDirs.left = heldDirs.right = heldDirs.up = heldDirs.down = false;
+      joyVec.x = 0; joyVec.y = 0;
+      return;
+    }
+    // Continuous analog vector for smooth movement (used instead of boolean dirs when active)
+    joyVec.x = Math.cos(angle) * norm;
+    joyVec.y = Math.sin(angle) * norm;
+    // Also set boolean dirs for compatibility with auto-farm pause logic etc.
+    heldDirs.left = joyVec.x < -0.2; heldDirs.right = joyVec.x > 0.2;
+    heldDirs.up = joyVec.y < -0.2; heldDirs.down = joyVec.y > 0.2;
+    if (autoFarmEnabled) {
+      autoFarmState = 'idle'; autoFarmTarget = null; autoFarmPath = []; autoFarmCooldown = 0.5;
+    }
+  }
+  function joyReset() {
+    joyActive = false; joyTouchId = null;
+    joyKnob.style.transform = "translate(-50%,-50%)";
+    heldDirs.left = heldDirs.right = heldDirs.up = heldDirs.down = false;
+    joyVec.x = 0; joyVec.y = 0;
+    joyBase.classList.remove("active");
+  }
+  function joyGetLocalPos(clientX, clientY) {
+    const rect = joyBase.getBoundingClientRect();
+    return { x: clientX - (rect.left + rect.width / 2), y: clientY - (rect.top + rect.height / 2) };
+  }
+  joyBase.addEventListener("mousedown", (e) => {
+    joyActive = true; joyBase.classList.add("active");
+    const p = joyGetLocalPos(e.clientX, e.clientY);
+    joyUpdateVector(p.x, p.y);
   });
+  window.addEventListener("mousemove", (e) => {
+    if (!joyActive) return;
+    const p = joyGetLocalPos(e.clientX, e.clientY);
+    joyUpdateVector(p.x, p.y);
+  });
+  window.addEventListener("mouseup", () => { if (joyActive) joyReset(); });
+
+  joyBase.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    joyActive = true; joyTouchId = t.identifier; joyBase.classList.add("active");
+    const p = joyGetLocalPos(t.clientX, t.clientY);
+    joyUpdateVector(p.x, p.y);
+  }, { passive: false });
+  window.addEventListener("touchmove", (e) => {
+    if (!joyActive) return;
+    for (const t of e.changedTouches) {
+      if (t.identifier === joyTouchId) {
+        const p = joyGetLocalPos(t.clientX, t.clientY);
+        joyUpdateVector(p.x, p.y);
+      }
+    }
+  }, { passive: true });
+  window.addEventListener("touchend", (e) => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === joyTouchId) joyReset();
+    }
+  }, { passive: true });
+  window.addEventListener("touchcancel", () => { if (joyActive) joyReset(); }, { passive: true });
+
 
   // Click handler
   k.onMousePress(()=>{
@@ -4213,18 +4278,25 @@ console.log("🎮 Đang khởi tạo...");
     if (GS.gameTicks % 30 === 0) updateĐói(k.dt());
 
     // ── Move PLAYER ──
-    // Continuous movement (keyboard / D-pad)
-    const hasDir = heldDirs.left||heldDirs.right||heldDirs.up||heldDirs.down;
+    // Continuous movement (keyboard discrete dirs OR analog joystick vector)
+    const joyMagnitude = Math.sqrt(joyVec.x * joyVec.x + joyVec.y * joyVec.y);
+    const hasDir = heldDirs.left||heldDirs.right||heldDirs.up||heldDirs.down||joyMagnitude > 0;
     if (hasDir && playerObj) {
       // Cancel click-to-move target
       isMoving = false; moveTarget = null; playerObj.moving = true;
-      let mx = 0, my = 0;
-      if (heldDirs.left) mx -= 1; if (heldDirs.right) mx += 1;
-      if (heldDirs.up) my -= 1; if (heldDirs.down) my += 1;
+      let mx = 0, my = 0, speedScale = 1;
+      if (joyMagnitude > 0) {
+        // Analog joystick: direction normalized, but speed scales with how far the stick is pushed
+        mx = joyVec.x; my = joyVec.y;
+        speedScale = Math.min(joyMagnitude, 1);
+      } else {
+        if (heldDirs.left) mx -= 1; if (heldDirs.right) mx += 1;
+        if (heldDirs.up) my -= 1; if (heldDirs.down) my += 1;
+      }
       const len = Math.sqrt(mx * mx + my * my);
       if (len > 0) {
-        const dx = (mx / len) * SPEED * k.dt();
-        const dy = (my / len) * SPEED * k.dt();
+        const dx = (mx / len) * SPEED * speedScale * k.dt();
+        const dy = (my / len) * SPEED * speedScale * k.dt();
         const margin = 10;
         // Check X movement independently for wall sliding
         const tryX = playerObj.pos.x + dx;
