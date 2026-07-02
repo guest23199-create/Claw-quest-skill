@@ -207,20 +207,30 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
 
-  <!-- ─── Bottom Action Buttons (always visible) ─── -->
+  <!-- ─── Quick-Action Toolbar (smart popup per button) ─── -->
   <div id="bottom-actions">
     <div class="ba-row">
       <button class="bot-btn" onclick="window.openPebbleChat()" title="Chat">💬 Chat</button>
-      <button class="bot-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️ Xây</button>
-      <button class="bot-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨ Chế Tạo</button>
-      <button class="bot-btn" onclick="window.useHealItem()" title="Hồi Máu">💊 Máu</button>
+      <button class="bot-btn" onclick="window.quickDig()" id="btn-dig" title="Đào Đất">🪓 Đào</button>
+      <button class="bot-btn" onclick="window.quickPlant()" id="btn-plant" title="Trồng Cây">🌾 Trồng</button>
+      <button class="bot-btn" onclick="window.quickHeal()" id="btn-heal" title="Hồi Máu">💊 Máu</button>
     </div>
     <div class="ba-row">
-      <button class="bot-btn" onclick="window.useDigItem()" title="Đào Đất">🪓 Đào</button>
-      <button class="bot-btn" onclick="window.usePlantItem()" title="Trồng Cây">🌾 Trồng</button>
+      <button class="bot-btn" onclick="window.quickWeapon()" id="btn-weapon" title="Vũ Khí">⚔️ Vũ Khí</button>
+      <button class="bot-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️ Xây</button>
+      <button class="bot-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨ Chế Tạo</button>
       <button class="bot-btn" onclick="window.toggleInv()" title="Kho Đồ">📦 Đồ</button>
-      <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()" title="Auto">🤖 Auto Kham Pha</button>
     </div>
+    <div class="ba-row">
+      <button class="bot-btn" id="btn-autofarm" onclick="window.toggleAutoFarm()" title="Auto" style="flex:2">🤖 Auto Kham Phá</button>
+    </div>
+  </div>
+
+  <!-- ─── Quick-Action Popup (shared) ─── -->
+  <div id="quick-popup" style="display:none;position:fixed;bottom:230px;right:8px;z-index:200;background:#16243e;border:2px solid #0a1424;box-shadow:inset 0 0 0 1px #4a7fc9,0 4px 16px rgba(0,0,0,0.6);border-radius:8px;padding:10px;min-width:200px;max-width:260px;">
+    <div id="quick-popup-title" style="font-size:11px;font-weight:bold;color:#7ec8ff;margin-bottom:8px;text-align:center;border-bottom:1px solid #2a4870;padding-bottom:6px;"></div>
+    <div id="quick-popup-body" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;"></div>
+    <button onclick="window.closeQuickPopup()" style="margin-top:8px;width:100%;background:#8b1a1a;border:2px solid #c0392b;color:#fff;border-radius:5px;padding:5px;font-size:11px;cursor:pointer;">✕ Đóng</button>
   </div>
 
   <!-- ─── JOYSTICK (analog virtual stick, replaces 4-button D-pad) ─── -->
@@ -541,19 +551,17 @@ window.addEventListener("unhandledrejection", function(e) {
 });
 
 // ─── Module load fallback ───
-// Shows error if module script fails to load within 15 seconds
+// Shows error if module script fails to load within 30 seconds
 (function(){
   window._moduleLoadTimeout = setTimeout(function(){
     var loader = document.getElementById("sprite-loader");
-    if(loader){
-      loader.innerHTML = '<div style="font-size:40px;margin-bottom:12px">❌</div><div style="color:#ff6b6b;font-weight:bold;font-size:16px">Không thể tải game!</div><div style="color:#8899bb;font-size:11px;margin-top:6px">Vui lòng kiểm tra kết nối mạng<br>và thử lại sau.</div><div style="margin-top:12px"><button onclick="location.reload()" style="background:#f0c060;color:#000;padding:8px 24px;border-radius:8px;font-size:14px;font-weight:bold;border:none;cursor:pointer">⟳ Thử lại</button></div>';
+    if(loader && loader.style.display !== "none"){
+      loader.innerHTML = '<div style="font-size:40px;margin-bottom:12px">❌</div>'
+        + '<div style="color:#ff6b6b;font-weight:bold;font-size:16px">Không thể tải game!</div>'
+        + '<div style="color:#8899bb;font-size:11px;margin-top:6px">Vui lòng kiểm tra kết nối mạng<br>và thử lại sau.<br><br>💡 Mẹo: Mở game trên GitHub Pages<br>(có internet) thay vì file nội bộ.</div>'
+        + '<div style="margin-top:12px"><button onclick="location.reload()" style="background:#f0c060;color:#000;padding:8px 24px;border-radius:8px;font-size:14px;font-weight:bold;border:none;cursor:pointer">⟳ Thử lại</button></div>';
     }
-    var errBanner = document.getElementById("error-banner");
-    if(errBanner){
-      errBanner.textContent = "⚠ Module load timeout - check network";
-      errBanner.style.display = "block";
-    }
-  }, 15000);
+  }, 30000);
 })();
 </script>
 
@@ -2353,36 +2361,190 @@ window.togglePebble = window.togglePebble || function() { showToast("⚠️ Game
 // SECTION 12: MAIN GAME SCENE
 // ═══════════════════════════════════════════════════════════════════
 
-window.useDigItem = function(){
-  const inv = GS.player.inventory;
-  const shovelEntry = inv.find(i => i.id === "shovel" && (i.count||0) > 0);
-  if(!shovelEntry){showToast("❌ Không có xẻng! Chế tạo xẻng trước.");return;}
-  GS.digMode = !GS.digMode;
-  GS.plantMode = false;
-  const btn = document.querySelector('[onclick="window.useDigItem()"]');
-  if(GS.digMode){
-    showToast("🪓 Chế độ Đào — click vào ô cỏ/cát để tạo đất trồng!",2500);
-    if(btn) btn.classList.add("dig-active");
-  }else{
-    showToast("🪓 Tắt đào",1000);
-    if(btn) btn.classList.remove("dig-active");
-  }
+// ─── Quick-Action Popup System ───────────────────────────────────
+window.closeQuickPopup = function(){
+  document.getElementById("quick-popup").style.display = "none";
+  document.querySelectorAll(".bot-btn.on").forEach(b => b.classList.remove("on"));
 };
-window.usePlantItem = function(){
-  const inv = GS.player.inventory;
-  const seedEntry = inv.find(i => i.id === "seed" && (i.count||0) > 0);
-  if(!seedEntry){showToast("❌ Không có hạt! Thu hoạch bụi cây để lấy hạt.");return;}
-  GS.plantMode = !GS.plantMode;
-  GS.digMode = false;
-  const btn = document.querySelector('[onclick="window.usePlantItem()"]');
-  if(GS.plantMode){
-    showToast("🌱 Chế độ Trồng — click vào ô đất đã đào (màu nâu) để trồng!",2500);
-    if(btn) btn.classList.add("plant-active");
-  }else{
-    showToast("🌱 Tắt trồng",1000);
-    if(btn) btn.classList.remove("plant-active");
+function openQuickPopup(title, bodyHTML, anchorBtnId){
+  window.closeQuickPopup();
+  const popup = document.getElementById("quick-popup");
+  document.getElementById("quick-popup-title").textContent = title;
+  document.getElementById("quick-popup-body").innerHTML = bodyHTML;
+  popup.style.display = "block";
+  if(anchorBtnId) document.getElementById(anchorBtnId)?.classList.add("on");
+  // Close on outside tap
+  setTimeout(() => {
+    const outsideClose = (e) => {
+      if(!popup.contains(e.target) && !e.target.closest(".bot-btn")){
+        window.closeQuickPopup();
+        document.removeEventListener("pointerdown", outsideClose);
+      }
+    };
+    document.addEventListener("pointerdown", outsideClose);
+  }, 100);
+}
+function makeQBtn(icon, label, sublabel, enabled, onclick){
+  return `<button onclick="${onclick}" style="
+    display:flex;align-items:center;gap:8px;width:100%;
+    background:${enabled?"#1c2e4e":"#101820"};
+    border:2px solid ${enabled?"#3a5a8a":"#1e2e3e"};
+    border-radius:6px;padding:7px 10px;cursor:${enabled?"pointer":"not-allowed"};
+    opacity:${enabled?1:0.45};color:#fff;text-align:left;
+  ">
+    <span style="font-size:20px;min-width:26px">${icon}</span>
+    <span style="flex:1">
+      <div style="font-size:11px;font-weight:bold">${label}</div>
+      ${sublabel?`<div style="font-size:9px;color:#9fb8d8">${sublabel}</div>`:""}
+    </span>
+  </button>`;
+}
+
+// 🪓 ĐÀO — bật chế độ đào, hoặc hướng dẫn chế tạo xẻng
+window.quickDig = function(){
+  const hasShovel = hasInvItem("shovel", 1);
+  const shovelCnt = (GS.player.inventory.find(i=>i.id==="shovel")?.count)||0;
+  if(hasShovel){
+    // Toggle dig mode directly, no popup needed
+    window.closeQuickPopup();
+    GS.digMode = !GS.digMode; GS.plantMode = false;
+    const btn = document.getElementById("btn-dig");
+    if(GS.digMode){
+      showToast("🪓 Chế độ Đào — click ô cỏ/cát để đào đất trồng!",2500);
+      btn?.classList.add("dig-active");
+    } else {
+      showToast("🪓 Tắt đào",1000);
+      btn?.classList.remove("dig-active");
+    }
+    return;
   }
+  // No shovel → show crafting hint popup
+  const canCraft = GS.resources.wood>=2 && GS.resources.stone>=2;
+  const body = makeQBtn("🪓","Xẻng","Chế tạo: 2🪵+2🪨", canCraft,
+    canCraft ? "window.closeQuickPopup();window.toggleCraft();" : "window.closeQuickPopup();showToast('❌ Cần 2🪵+2🪨 để chế tạo xẻng!',2000);");
+  openQuickPopup("🪓 Đào Đất", body, "btn-dig");
 };
+
+// 🌾 TRỒNG — popup chọn hạt giống, hoặc đặt nước
+window.quickPlant = function(){
+  const inv = GS.player.inventory;
+  // Collect available seeds/plant items
+  const plantableIds = ["seed","water"];
+  const found = inv.filter(i => plantableIds.includes(i.id) && (i.count||0)>0);
+  const hasFarm = (()=>{
+    try{
+      const idata = getIslandData(GS.currentIsland);
+      return idata.farmPlots && Object.values(idata.farmPlots).some(p=>!p.planted);
+    }catch(e){return false;}
+  })();
+
+  let body = "";
+  // Dig mode shortcut (need shovel first)
+  const hasShovel = hasInvItem("shovel",1);
+  body += makeQBtn("🪓","Đào Đất Trước","Tạo ô đất để trồng",hasShovel,
+    hasShovel ? "window.closeQuickPopup();window.quickDig();" : "window.closeQuickPopup();showToast('❌ Cần xẻng! Bấm Chế Tạo.',2000);");
+
+  if(found.length === 0){
+    body += makeQBtn("🌱","Hạt Giống","Chưa có — thu hoạch bụi cây hoặc mua",false,"");
+  } else {
+    for(const entry of found){
+      const info = ITEMS[entry.id]||{};
+      const cnt = entry.count||0;
+      body += makeQBtn(info.icon||"🌱", `${info.name||entry.id} (x${cnt})`,
+        hasFarm ? "Click ô đất nâu để trồng" : "Cần đào đất trước",
+        hasFarm,
+        hasFarm ? `window.closeQuickPopup();GS.plantMode=true;GS.digMode=false;document.getElementById('btn-plant')?.classList.add('plant-active');showToast('🌱 Click ô đất nâu để trồng!',2500);` :
+                  `window.closeQuickPopup();showToast('❌ Cần đào đất trước! Dùng nút Đào.',2000);`
+      );
+    }
+  }
+  // Water shortcut
+  const hasWater = hasInvItem("water",1);
+  body += makeQBtn("💧","Tưới Nước","Tăng tốc thu hoạch x2",hasWater,
+    hasWater ? `window.closeQuickPopup();GS.waterMode=true;showToast('💧 Click ô đã trồng để tưới!',2500);` :
+               `window.closeQuickPopup();showToast('❌ Cần nước! Chế tạo ở mục Chế Tạo.',2000);`);
+
+  openQuickPopup("🌾 Trồng Cây", body, "btn-plant");
+};
+
+// 💊 MÁU — popup danh sách vật phẩm hồi máu có thể dùng ngay
+window.quickHeal = function(){
+  const inv = GS.player.inventory;
+  const healIds = ["potion","food","milk","pie","coffee","candy","noodles","beer"];
+  const available = inv.filter(i => healIds.includes(i.id) && (i.count||0)>0);
+  const hpPct = GS.player.hp / GS.player.maxHp;
+
+  let body = "";
+  // HP status header
+  const hpColor = hpPct > 0.6 ? "#2ecc71" : hpPct > 0.3 ? "#f1c40f" : "#e74c3c";
+  body += `<div style="text-align:center;font-size:10px;margin-bottom:4px">
+    ❤️ HP: <span style="color:${hpColor};font-weight:bold">${Math.round(GS.player.hp)}/${GS.player.maxHp}</span>
+  </div>`;
+
+  if(available.length === 0 && GS.resources.food <= 0){
+    body += makeQBtn("❌","Không có đồ hồi máu","Thu thập thức ăn hoặc chế tạo Potion",false,"");
+  }
+  // Food resource shortcut
+  if(GS.resources.food > 0){
+    body += makeQBtn("🍎",`Thức Ăn (x${GS.resources.food})`,"+10 Đói, +3 HP",true,
+      `window.closeQuickPopup();window.useHealItem();`);
+  }
+  // Inventory heal items
+  for(const entry of available){
+    const info = ITEMS[entry.id]||{};
+    const cnt = entry.count||0;
+    body += makeQBtn(info.icon||"💊", `${info.name||entry.id} (x${cnt})`, info.desc||"",true,
+      `window.closeQuickPopup();(()=>{
+        const info=ITEMS['${entry.id}'];
+        if(info&&info.use){const msg=info.use(GS.player);removeInvItem('${entry.id}',1);showToast(msg||'💊 Used ${info.name||entry.id}',1500);}
+        renderInvGrid?.();updateHUD?.();
+      })()`);
+  }
+  openQuickPopup("💊 Hồi Máu", body, "btn-heal");
+};
+
+// ⚔️ VŨ KHÍ — popup danh sách vũ khí/công cụ để trang bị
+window.quickWeapon = function(){
+  const inv = GS.player.inventory;
+  const weaponIds = ["sword","axe","bow","shovel","pickaxe","shield","helmet","chestplate","boots"];
+  const available = inv.filter(i => weaponIds.includes(i.id) && (i.count||0)>0);
+  const equipped = GS.player.equipped||{};
+
+  let body = "";
+  if(available.length === 0){
+    body += makeQBtn("⚔️","Chưa có vũ khí/công cụ","Chế tạo ở mục ✨ Chế Tạo",false,"");
+    body += makeQBtn("✨","Mở Chế Tạo","Tạo Sword, Axe, Shield...",true,
+      "window.closeQuickPopup();window.toggleCraft();");
+  } else {
+    for(const entry of available){
+      const info = ITEMS[entry.id]||{};
+      const cnt = entry.count||0;
+      const isEq = Object.values(equipped).includes(entry.id);
+      body += makeQBtn(info.icon||"⚔️",
+        `${info.name||entry.id} (x${cnt})${isEq?" ✓ Đang đeo":""}`,
+        info.desc||"",true,
+        `window.closeQuickPopup();(()=>{
+          const info=ITEMS['${entry.id}'];
+          if(info&&info.slot&&GS.player.equipped){
+            GS.player.equipped[info.slot]='${entry.id}';
+            GS.player.atk=(GS.player.atk||5)+(info.atk||0);
+            GS.player.def=(GS.player.def||0)+(info.def||0);
+            showToast('✅ Đã trang bị '+(info.icon||'')+(info.name||'${entry.id}')+'!',1500);
+            updateHUD?.();
+          } else {
+            showToast('⚠️ '+(info.name||'${entry.id}')+': '+(info.desc||''),1500);
+          }
+        })()`
+      );
+    }
+  }
+  openQuickPopup("⚔️ Vũ Khí & Công Cụ", body, "btn-weapon");
+};
+
+window.useDigItem = window.quickDig; // backward compat
+window.usePlantItem = window.quickPlant;
+window.useHealItem = window.quickHeal;
+
 k.scene("game", ()=>{
 
 function digToFarm(tx,ty){
