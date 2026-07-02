@@ -582,13 +582,13 @@ try {
 
 // SECTION 1: CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
-const TILE = 64, COLS = 48, ROWS = 34;
+const TILE = 64, COLS = 96, ROWS = 68;
 const W = Math.max((document.getElementById('game-wrap').clientWidth || window.innerWidth || 360), 360);
 const H = Math.max((document.getElementById('game-wrap').clientHeight || window.innerHeight || 480), 480);
 // Logical world size (for tile grid placement)
 const WORLD_W = COLS * TILE, WORLD_H = ROWS * TILE;
-const TYPES = ["grass","sand","stone","water","tree","mountain","bush","beach","path","deep_water","grass_flower","dense_forest","cliff","tall_grass","farm_plot","palm","brick"];
-const SOLID = {3:1,4:1,5:1,9:1,11:1,12:1};
+const TYPES = ["grass","sand","stone","water","tree","mountain","bush","beach","path","deep_water","grass_flower","dense_forest","cliff","tall_grass","farm_plot","palm","brick","wall"];
+const SOLID = {3:1,4:1,5:1,9:1,11:1,12:1,17:1};
 function isSolid(t){return SOLID[t]===1;}
 const GATHER = {2:"stone",4:"wood",6:"food",8:"food",13:"food"};
 function canGather(t){return GATHER[t]!==undefined;}
@@ -795,6 +795,8 @@ const ITEMS = {
   milk:    {id:"milk",    name:"Milk",      icon:"🥛", type:"consumable", desc:"Fresh milk! Restores 15 HP and 10 Đói",
             use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+15);p.hunger=Math.min(p.maxĐói,p.hunger+10);return"🥛 Drank fresh milk! +15 HP, +10 Đói";}},
   silver_coin:{id:"silver_coin",name:"Silver Coin",icon:"🥈",type:"currency",desc:"Shiny silver coin — rare merchant currency!"},
+  brick:     {id:"brick",     name:"Gạch",     icon:"🧱", type:"material", desc:"Dùng để lát nền gạch (mục Xây)"},
+  wall_item: {id:"wall_item", name:"Tường Gỗ",  icon:"🪵", type:"material", desc:"Dùng để xây tường rào chặn quái (mục Xây)"},
   // ─── Slot Machine Prize Items ───
   pie:{id:"pie",name:"Pie",icon:"🥧",type:"consumable",desc:"Hearty pie! Restores 20 HP.",
     use:(p)=>{p.hp=Math.min(p.maxHp,p.hp+20);return"🥧 Ate pie! +20 HP";}},
@@ -824,14 +826,17 @@ const CRAFT_RECIPES = [
   {name:"Cape",        icon:"🧣", id:"cape",     costs:{w:3,s:7,f:1}, desc:"+1 All stats"},
   {name:"Xẻng",        icon:"🪓", id:"shovel",   costs:{w:2,s:2,f:0}, desc:"Đào đất trồng cây (dùng trên cỏ)"},
   {name:"Water",       icon:"💧", id:"water",    costs:{w:1,s:0,f:0}, desc:"Waters crops (2x growth)"},
-  {name:"Gạch",        icon:"🧱", id:"brick",    costs:{w:1,s:2,f:0}, desc:"Dùng để xây nền gạch (mục Xây)"},
+  {name:"Gạch",       icon:"🧱", id:"brick",     costs:{w:1,s:2,f:0}, desc:"Dùng để xây nền gạch (mục Xây)"},
+  {name:"Tường Gỗ",  icon:"🪵", id:"wall_item", costs:{w:3,s:1,f:0}, desc:"Dùng để xây tường rào chặn quái (mục Xây)"},
 ];
 
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 1d: BUILDINGS
 // ═══════════════════════════════════════════════════════════════════
 const BUILDINGS = {
-  brick_floor:{name:"Nền Gạch",icon:"🧱",costs:{w:0,s:0}, desc:"Đặt nền gạch (cần 🧱 Gạch trong Đồ, chế tạo ở mục ✨ Chế Tạo)", isFloor:true, needsItem:"brick"},
+  brick_floor:{name:"Nền Gạch",icon:"🧱",costs:{w:0,s:0}, desc:"Đặt nền gạch (cần 🧱 Gạch trong Đồ)", isFloor:true, needsItem:"brick"},
+  wall_floor:  {name:"Tường Rào",icon:"🪵",costs:{w:0,s:0}, desc:"Chặn đường quái (cần 🪵 Tường trong Đồ)", isFloor:true, needsItem:"wall_item", tileId:17},
+  defense_tower:{name:"Tháp Phòng Thủ",icon:"🗼",costs:{w:15,s:20}, desc:"Tự bắn quái trong bán kính 3 ô"},
   shelter:{name:"Nhà Tạm",icon:"🏠",costs:{w:5,s:0}, desc:"Hồi phục HP"},
   campfire:{name:"Lửa Trại",icon:"🔥",costs:{w:3,s:0}, desc:"Xua đuổi quái yếu"},
   woodcutter:{name:"Xưởng Gỗ",icon:"🪵",costs:{w:10,s:0}, desc:"+1 gỗ mỗi lần"},
@@ -1011,7 +1016,7 @@ function getPebbleStats(){
 function generateStarterIsland() {
   let g = Array.from({length: ROWS}, () => Array(COLS).fill(0)); // Start all grass
   const cx = COLS / 2, cy = ROWS / 2;
-  const rx = 30, ry = 22; // Bigger radius → land covers most of map
+  const rx = COLS * 0.625, ry = ROWS * 0.647; // Bigger radius → land covers most of map (scales with map size)
 
   // Generate main island: water only at edges
   for (let y = 0; y < ROWS; y++) {
@@ -2001,15 +2006,16 @@ function placeBuilding(tx,ty,type){
   // Can be placed ANYWHERE: grass, sand, stone, water, trees, etc. — instantly overwrites the tile.
   if(bi.isFloor){
     if(bi.needsItem && !hasInvItem(bi.needsItem,1)){
-      showToast(`❌ Cần 🧱 Gạch trong Đồ! Hãy chế tạo ở mục ✨ Chế Tạo trước.`,2000);
+      showToast(`❌ Cần ${ITEMS[bi.needsItem]?.icon||'?'} ${ITEMS[bi.needsItem]?.name||bi.needsItem} trong Đồ! Chế tạo ở mục ✨ Chế Tạo trước.`,2000);
       return false;
     }
+    const floorTileId = bi.tileId !== undefined ? bi.tileId : 16;
     const existing = getTile(ty, tx, idata.map);
-    if(existing === 16){showToast("⚠️ Đã có gạch ở đây rồi!",800);return false;}
+    if(existing === floorTileId){showToast("⚠️ Đã có ở đây rồi!",800);return false;}
     if(bi.needsItem) removeInvItem(bi.needsItem,1);
     else { GS.resources.wood-=bi.costs.w; GS.resources.stone-=bi.costs.s; }
-    setTile(ty, tx, 16, idata.map);
-    if(existing === 3 || existing === 9) showToast(`🧱 Đã lấp và lát gạch trên nước!`,1000);
+    setTile(ty, tx, floorTileId, idata.map);
+    if(existing === 3 || existing === 9) showToast(`✅ Đã lấp và đặt ${bi.icon} ${bi.name} trên nước!`,1000);
     else showToast(`✅ Đã đặt ${bi.icon} ${bi.name}!`,800);
     updateHUD();
     return true;
@@ -2520,7 +2526,26 @@ console.log("🎮 Đang khởi tạo...");
           buildingObjs.push(k.add([k.text("⚔️",{size:16}),k.pos(bx+TILE/2-8,by+4),k.z(6)]));
           break;
         }
-        case"merchant_house":{
+        case"defense_tower":{
+          // Base: stone platform
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(90,80,70),k.opacity(0.95),k.z(4),k.area(),"building"]));
+          // Tower body
+          buildingObjs.push(k.add([k.rect(TILE-16,TILE-16),k.pos(bx+8,by+8),k.color(110,95,80),k.opacity(0.95),k.z(5)]));
+          // Battlements (top)
+          for(let mb=0;mb<3;mb++){
+            buildingObjs.push(k.add([k.rect(10,8),k.pos(bx+8+mb*14,by+4),k.color(100,85,70),k.opacity(0.95),k.z(6)]));
+          }
+          // Arrow slit windows
+          buildingObjs.push(k.add([k.rect(3,10),k.pos(bx+TILE/2-1,by+TILE/2-4),k.color(30,20,15),k.opacity(0.9),k.z(7)]));
+          // Tower flag
+          buildingObjs.push(k.add([k.rect(1.5,12),k.pos(bx+TILE/2-0.75,by),k.color(80,60,40),k.z(7)]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(0,0),k.vec2(9,-4),k.vec2(0,-8)]),k.pos(bx+TILE/2,by+2),k.color(200,50,50),k.opacity(0.95),k.z(8)]));
+          // Range indicator (faint circle, only in build mode for debug)
+          const tw=k.add([k.text("🗼",{size:12}),k.pos(bx+4,by+4),k.z(9)]);
+          tw._towerTileX=b.tileX; tw._towerTileY=b.tileY;
+          buildingObjs.push(tw);
+          break;
+        }
           buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(140,50,40),k.opacity(0.9),k.z(4),k.area(),"building"]));
           buildingObjs.push(k.add([k.polygon([k.vec2(bx-4,by+TILE/2),k.vec2(bx+TILE/2,by-6),k.vec2(bx+TILE+4,by+TILE/2)]),k.color(210,170,50),k.opacity(0.95),k.z(4)]));
           buildingObjs.push(k.add([k.rect(TILE-2,4),k.pos(bx+1,by+TILE/2-8),k.color(190,150,40),k.opacity(0.9),k.z(4)]));
@@ -3667,9 +3692,9 @@ console.log("🎮 Đang khởi tạo...");
       }
       const tt=getTile(tiy, tix, map);
       const bi=BUILDINGS[GS.buildMode];
-      const canPlaceHere = (bi && bi.isFloor) // floor tiles (brick) can go anywhere, no restriction
+      const canPlaceHere = (bi && bi.isFloor)
         ? true
-        : (tt===0||tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13||tt===15||tt===16);
+        : (tt===0||tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13||tt===15||tt===16||tt===17);
       if(canPlaceHere){
         const placed = placeBuilding(tix,tiy,GS.buildMode);
         if(placed){
@@ -4461,6 +4486,72 @@ console.log("🎮 Đang khởi tạo...");
     enemySpawnTimer+=k.dt();
     if(enemySpawnTimer>8&&enemyObjs.length<5+Math.floor(def.diff*0.5)){enemySpawnTimer=0;spawnEnemy();}
 
+    // ─── DEFENSE TOWER auto-shoot ───────────────────────────────
+    const TOWER_RANGE = TILE * 3.5; // ~3.5 tile radius
+    const TOWER_SHOOT_INTERVAL = 2.2; // seconds between shots per tower
+    for(const b of idata.buildings){
+      if(b.type !== "defense_tower") continue;
+      if(!b._shootTimer) b._shootTimer = Math.random() * TOWER_SHOOT_INTERVAL; // stagger shots
+      b._shootTimer -= k.dt();
+      if(b._shootTimer > 0) continue;
+      // Find closest enemy in range
+      const towerPx = (b.tileX + 0.5) * TILE;
+      const towerPy = (b.tileY + 0.5) * TILE;
+      let closest = null, closestDist = Infinity;
+      for(const eObj of enemyObjs){
+        if(!eObj.exists()) continue;
+        const d = Math.hypot(eObj.pos.x - towerPx, eObj.pos.y - towerPy);
+        if(d < TOWER_RANGE && d < closestDist){ closestDist = d; closest = eObj; }
+      }
+      // Also target boss
+      if(activeBoss && activeBoss.exists()){
+        const bd = Math.hypot(activeBoss.pos.x - towerPx, activeBoss.pos.y - towerPy);
+        if(bd < TOWER_RANGE && bd < closestDist){ closestDist = bd; closest = activeBoss; }
+      }
+      if(closest){
+        b._shootTimer = TOWER_SHOOT_INTERVAL;
+        // Spawn arrow projectile
+        const dir = k.vec2(closest.pos.x - towerPx, closest.pos.y - towerPy).unit();
+        const arrow = k.add([
+          k.rect(10, 4), k.pos(towerPx, towerPy),
+          k.color(200, 160, 60), k.z(8), k.area(),
+          { vel: dir.scale(320), lifetime: 1.5, dmg: 8 + Math.floor(GS.player.atk * 0.4), "_arrow": true }
+        ]);
+        arrow.onUpdate(() => {
+          arrow.pos = arrow.pos.add(arrow.vel.scale(k.dt()));
+          arrow.lifetime -= k.dt();
+          if(arrow.lifetime <= 0){ try{k.destroy(arrow)}catch(e){} return; }
+          // Hit detection
+          for(const eObj of enemyObjs){
+            if(!eObj.exists()) continue;
+            if(eObj.pos.dist(arrow.pos) < 22){
+              eObj.hp -= arrow.dmg;
+              showFloating(eObj.pos.x, eObj.pos.y - 20, `-${arrow.dmg}`, [255, 120, 50]);
+              if(eObj.hp <= 0){
+                GS.resources.wood = Math.min(GS.resources.wood + (eObj.eTy?.wood||0), 9999);
+                GS.resources.stone = Math.min(GS.resources.stone + (eObj.eTy?.stone||0), 9999);
+                GS.resources.food = Math.min(GS.resources.food + (eObj.eTy?.food||0), 9999);
+                try{k.destroy(eObj)}catch(e){}
+                enemyObjs.splice(enemyObjs.indexOf(eObj),1);
+                updateHUD();
+              }
+              try{k.destroy(arrow)}catch(e){}
+              return;
+            }
+          }
+          if(activeBoss && activeBoss.exists() && activeBoss.pos.dist(arrow.pos) < 30){
+            activeBoss.hp -= arrow.dmg;
+            showFloating(activeBoss.pos.x, activeBoss.pos.y - 20, `-${arrow.dmg}`, [255, 120, 50]);
+            try{k.destroy(arrow)}catch(e){}
+          }
+        });
+        showToast(`🗼 Tháp bắn! -${arrow.dmg}❤️`, 800);
+      } else {
+        b._shootTimer = TOWER_SHOOT_INTERVAL * 0.3; // check again sooner if no target
+      }
+    }
+
+
     // Boss AI
     if (activeBoss && activeBoss.exists() && playerObj) {
       const bd = activeBoss.pos.dist(playerObj.pos);
@@ -4855,6 +4946,24 @@ console.log("🎮 Đang khởi tạo...");
             }
             break;
 
+          case 17: // Wall (defensive barrier, player-built) — solid, blocks movement
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(74, 58, 42), z: 3 });
+            {
+              // Wooden palisade look: vertical log posts with rounded tops
+              const postW = s / 5;
+              for (let pIdx = 0; pIdx < 5; pIdx++) {
+                const postX = px + pIdx * postW;
+                const postSeed = (x * 11 + y * 7 + pIdx * 3) % 3;
+                const postShade = postSeed === 0 ? k.rgb(96, 74, 50) : (postSeed === 1 ? k.rgb(82, 62, 42) : k.rgb(68, 50, 34));
+                k.drawRect({ pos: k.vec2(postX + 1, py + 4), width: postW - 2, height: s - 8, color: postShade });
+                k.drawCircle({ pos: k.vec2(postX + postW/2, py + 4), radius: (postW-2)/2, color: postShade });
+              }
+              // top shadow band + bottom shadow for depth
+              k.drawRect({ pos: k.vec2(px, py), width: s, height: 3, color: k.rgb(0,0,0), opacity: 0.25 });
+              k.drawRect({ pos: k.vec2(px, py + s - 5), width: s, height: 5, color: k.rgb(0,0,0), opacity: 0.3 });
+            }
+            break;
+
           default:
             k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(56, 128, 31) });
         }
@@ -4863,7 +4972,7 @@ console.log("🎮 Đang khởi tạo...");
           0: [12, 46, 9], 1: [129, 118, 81], 2: [34, 77, 19], 3: [12, 53, 92],
           4: [30, 40, 20], 5: [71, 71, 77], 6: [137, 115, 76], 7: [75, 48, 22],
           8: [29, 69, 15], 9: [6, 24, 54], 10: [34, 77, 19], 11: [9, 36, 6],
-          12: [36, 32, 36], 13: [38, 70, 22], 15: [34, 77, 19], 16: [95, 50, 36]
+          12: [36, 32, 36], 13: [38, 70, 22], 15: [34, 77, 19], 16: [95, 50, 36], 17: [60, 46, 32]
         };
         // Only check up-neighbor (simplified)
         if (y > 0 && getTile(y - 1, x, map) !== t) {
