@@ -785,7 +785,10 @@ const ITEMS = {
   bow:     {id:"bow",     name:"Bow",       icon:"🏹", type:"weapon",    atk:4,  desc:"+4 Tấn Công"},
   cape:    {id:"cape",    name:"Cape",      icon:"🧣", type:"accessory", def:1, atk:1, desc:"+1 All stats"},
   // ─── Farming Items ───
-  seed:    {id:"seed",    name:"Seed",      icon:"🌰", type:"material",   desc:"Plant in farm plots"},
+  seed:      {id:"seed",      name:"Hạt Giống",  icon:"🌰", type:"seed", desc:"Hạt giống thông thường"},
+  seed_orange:{id:"seed_orange",name:"Hạt Cam",   icon:"🟠", type:"seed", sprite:"seed_bag_orange", cropSprite:"crop_tree",   cropIcon:"🍊", growTime:45, desc:"Mọc thành cây cam sau ~45 giây"},
+  seed_melon: {id:"seed_melon", name:"Hạt Dưa",  icon:"🔵", type:"seed", sprite:"seed_bag_blue",   cropSprite:"crop_sprout", cropIcon:"🍈", growTime:60, desc:"Mọc thành dưa sau ~60 giây"},
+  seed_veggie:{id:"seed_veggie",name:"Hạt Rau",  icon:"🟢", type:"seed", sprite:"seed_bag_green",  cropSprite:"crop_mature", cropIcon:"🥬", growTime:30, desc:"Mọc nhanh nhất — rau sau ~30 giây"},
   // Fruit crops
   grape:   {id:"grape",   name:"Nho",       icon:"🍇", type:"fruit",     desc:"Trái nho ngọt ngào"},
   melon:   {id:"melon",   name:"Dưa Hấu",   icon:"🍈", type:"fruit",     desc:"Dưa hấu mát lạnh"},
@@ -834,8 +837,11 @@ const CRAFT_RECIPES = [
   {name:"Cape",        icon:"🧣", id:"cape",     costs:{w:3,s:7,f:1}, desc:"+1 All stats"},
   {name:"Xẻng",        icon:"🪓", id:"shovel",   costs:{w:2,s:2,f:0}, desc:"Đào đất trồng cây (dùng trên cỏ)"},
   {name:"Water",       icon:"💧", id:"water",    costs:{w:1,s:0,f:0}, desc:"Waters crops (2x growth)"},
-  {name:"Gạch",       icon:"🧱", id:"brick",     costs:{w:1,s:2,f:0}, desc:"Dùng để xây nền gạch (mục Xây)"},
-  {name:"Tường Gỗ",  icon:"🪵", id:"wall_item", costs:{w:3,s:1,f:0}, desc:"Dùng để xây tường rào chặn quái (mục Xây)"},
+  {name:"Gạch",       icon:"🧱", id:"brick",      costs:{w:1,s:2,f:0}, desc:"Dùng để xây nền gạch (mục Xây)"},
+  {name:"Tường Gỗ",  icon:"🪵", id:"wall_item",  costs:{w:3,s:1,f:0}, desc:"Dùng để xây tường rào chặn quái (mục Xây)"},
+  {name:"Hạt Cam",   icon:"🟠", id:"seed_orange",costs:{w:0,s:0,f:3}, desc:"Trồng ra cây cam 🍊 (~45 giây)"},
+  {name:"Hạt Dưa",   icon:"🔵", id:"seed_melon", costs:{w:0,s:0,f:4}, desc:"Trồng ra dưa 🍈 (~60 giây)"},
+  {name:"Hạt Rau",   icon:"🟢", id:"seed_veggie",costs:{w:0,s:0,f:2}, desc:"Trồng ra rau 🥬 (~30 giây nhanh nhất)"},
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -920,6 +926,22 @@ loadSpriteSafe("palm_tree_sprite", `${IMG_BASE}/palm_tree.png`, { width: TILE, h
 loadSpriteSafe("mine_tile_sprite", `${IMG_BASE}/mine_tile.png`, { width: TILE, height: TILE });
 loadSpriteSafe("warrior_cow",  `${IMG_BASE}/warrior_cow.png`, { width: TILE, height: TILE });
 
+// ── Tileset textures (user uploaded pixel art) ──
+loadSpriteSafe("tile_grass",   `${IMG_BASE}/1000180088.png`);   // cỏ+đất tileset 128x128
+loadSpriteSafe("tile_water",   `${IMG_BASE}/1000180195.png`);   // lục giác xanh nước 80x88
+loadSpriteSafe("fx_water",     `${IMG_BASE}/1000180157.png`);   // nước bắn tung tóe 163x163
+
+// ── Hạt giống & cây trưởng thành ──
+// Seed bag sprites (3 loại túi)
+loadSpriteSafe("seed_bag_orange", `${IMG_BASE}/1000180134.png`); // túi vàng cam — Hạt Cam
+loadSpriteSafe("seed_bag_blue",   `${IMG_BASE}/1000180135.png`); // túi xanh nhạt — Hạt Dưa
+loadSpriteSafe("seed_bag_green",  `${IMG_BASE}/1000180136.png`); // túi xanh lá   — Hạt Rau
+// Grown plant sprites
+loadSpriteSafe("crop_sprout",   `${IMG_BASE}/1000180083.png`);   // cây con 16x16 (giai đoạn 1-2)
+loadSpriteSafe("crop_tree",     `${IMG_BASE}/1000180133.png`);   // cây+đất 16x16 (giai đoạn 3)
+loadSpriteSafe("crop_flower",   `${IMG_BASE}/1000180198.png`);   // hoa tím 32x32 (thu hoạch)
+loadSpriteSafe("crop_mature",   `${IMG_BASE}/1000180183.png`);   // cây trưởng thành 16x16
+
 // ═══════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 2c: ISLAND THEMES & PROCEDURAL BACKGROUND
@@ -964,6 +986,7 @@ const GS = {
   islands:{},
   buildMode:null,
   plantMode:false,
+  activeSeedType:"seed_orange", // which seed type is selected for planting
   digMode:false,
   gameTicks:0,
   arenaKillBuff:0,
@@ -2425,46 +2448,54 @@ window.quickDig = function(){
   openQuickPopup("🪓 Đào Đất", body, "btn-dig");
 };
 
-// 🌾 TRỒNG — popup chọn hạt giống, hoặc đặt nước
+// 🌾 TRỒNG — popup chọn 1 trong 3 loại hạt giống
 window.quickPlant = function(){
   const inv = GS.player.inventory;
-  // Collect available seeds/plant items
-  const plantableIds = ["seed","water"];
-  const found = inv.filter(i => plantableIds.includes(i.id) && (i.count||0)>0);
-  const hasFarm = (()=>{
-    try{
-      const idata = getIslandData(GS.currentIsland);
-      return idata.farmPlots && Object.values(idata.farmPlots).some(p=>!p.planted);
-    }catch(e){return false;}
-  })();
+  const seedIds = ["seed_orange","seed_melon","seed_veggie","seed"];
+  const hasShovel = hasInvItem("shovel",1);
 
   let body = "";
-  // Dig mode shortcut (need shovel first)
-  const hasShovel = hasInvItem("shovel",1);
-  body += makeQBtn("🪓","Đào Đất Trước","Tạo ô đất để trồng",hasShovel,
-    hasShovel ? "window.closeQuickPopup();window.quickDig();" : "window.closeQuickPopup();showToast('❌ Cần xẻng! Bấm Chế Tạo.',2000);");
+  // Step 1: Đào đất trước
+  body += makeQBtn("🪓","Đào Đất Trước","Tạo ô đất nâu để gieo hạt",hasShovel,
+    hasShovel ? "window.closeQuickPopup();window.quickDig();" : "window.closeQuickPopup();showToast('❌ Cần xẻng! Bấm ✨ Chế Tạo.',2000);");
 
-  if(found.length === 0){
-    body += makeQBtn("🌱","Hạt Giống","Chưa có — thu hoạch bụi cây hoặc mua",false,"");
-  } else {
-    for(const entry of found){
-      const info = ITEMS[entry.id]||{};
-      const cnt = entry.count||0;
-      body += makeQBtn(info.icon||"🌱", `${info.name||entry.id} (x${cnt})`,
-        hasFarm ? "Click ô đất nâu để trồng" : "Cần đào đất trước",
-        hasFarm,
-        hasFarm ? `window.closeQuickPopup();GS.plantMode=true;GS.digMode=false;document.getElementById('btn-plant')?.classList.add('plant-active');showToast('🌱 Click ô đất nâu để trồng!',2500);` :
-                  `window.closeQuickPopup();showToast('❌ Cần đào đất trước! Dùng nút Đào.',2000);`
-      );
-    }
+  // Kiểm tra có ô đất trống không
+  let hasFarmPlot = false;
+  try {
+    const idata = getIslandData(GS.currentIsland);
+    const map = idata.map;
+    if(map) for(let r=0;r<ROWS&&!hasFarmPlot;r++) for(let c=0;c<COLS&&!hasFarmPlot;c++) if(map[r]&&map[r][c]===14) hasFarmPlot=true;
+  } catch(e){}
+
+  // Hiển thị từng loại hạt giống
+  const seedDefs = [
+    {id:"seed_orange", icon:"🟠", label:"Hạt Cam 🍊",   sub:"3🍎 | Mọc sau ~45 giây", time:45},
+    {id:"seed_melon",  icon:"🔵", label:"Hạt Dưa 🍈",   sub:"4🍎 | Mọc sau ~60 giây", time:60},
+    {id:"seed_veggie", icon:"🟢", label:"Hạt Rau 🥬",   sub:"2🍎 | Nhanh nhất ~30 giây", time:30},
+  ];
+
+  for(const sd of seedDefs){
+    const cnt = (inv.find(i=>i.id===sd.id)?.count)||0;
+    const has = cnt > 0;
+    body += makeQBtn(sd.icon,
+      `${sd.label} (x${cnt})`,
+      has ? (hasFarmPlot ? sd.sub : "Cần đào đất trước! 🪓") : "Chưa có — Chế Tạo bằng Thức Ăn 🍎",
+      has && hasFarmPlot,
+      has && hasFarmPlot
+        ? `window.closeQuickPopup();GS.activeSeedType='${sd.id}';GS.plantMode=true;GS.digMode=false;document.getElementById('btn-plant')?.classList.add('plant-active');showToast('🌱 Đang gieo ${sd.label} — click ô đất nâu!',2500);`
+        : has ? `window.closeQuickPopup();showToast('❌ Cần đào đất trước!',2000);`
+              : `window.closeQuickPopup();window.toggleCraft();`
+    );
   }
-  // Water shortcut
-  const hasWater = hasInvItem("water",1);
-  body += makeQBtn("💧","Tưới Nước","Tăng tốc thu hoạch x2",hasWater,
-    hasWater ? `window.closeQuickPopup();GS.waterMode=true;showToast('💧 Click ô đã trồng để tưới!',2500);` :
-               `window.closeQuickPopup();showToast('❌ Cần nước! Chế tạo ở mục Chế Tạo.',2000);`);
 
-  openQuickPopup("🌾 Trồng Cây", body, "btn-plant");
+  // Tưới nước
+  const hasWater = hasInvItem("water",1);
+  body += makeQBtn("💧","Tưới Nước 💧","Tăng tốc sinh trưởng x2",hasWater,
+    hasWater
+      ? `window.closeQuickPopup();GS.waterMode=true;showToast('💧 Click ô đã trồng để tưới nước!',2500);`
+      : `window.closeQuickPopup();showToast('❌ Chưa có nước. Chế Tạo ở mục ✨.',2000);`);
+
+  openQuickPopup("🌾 Chọn Hạt Giống", body, "btn-plant");
 };
 
 // 💊 MÁU — popup danh sách vật phẩm hồi máu có thể dùng ngay
@@ -3882,22 +3913,27 @@ console.log("🎮 Đang khởi tạo...");
     if(GS.plantMode){
       const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
       if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS){
-        GS.plantMode=false; showToast("🌱 Plant mode cancelled",1000); return;
+        GS.plantMode=false; showToast("🌱 Đã hủy trồng",1000); return;
       }
       const tt=getTile(tiy, tix, map);
       if(tt===14){
-        if(!hasInvItem("seed",1)){showToast("❌ No seeds!");GS.plantMode=false;return;}
+        const seedId = GS.activeSeedType||"seed_orange";
+        if(!hasInvItem(seedId,1)){showToast("❌ Hết hạt! Chế tạo thêm.");GS.plantMode=false;return;}
         const fp=getFarmPlot(tix,tiy);
-        if(fp.planted){showToast("❌ Already planted here!",1000);return;}
-        removeInvItem("seed",1);
-        const crops=["wheat","carrot","tomato","grape","melon","lemon","banana","pineapple","cherry","coconut"];
-        fp.planted=true; fp.crop=crops[Math.floor(Math.random()*crops.length)];
+        if(fp.planted){showToast("❌ Ô này đã có cây rồi!",1000);return;}
+        removeInvItem(seedId,1);
+        const seedInfo = ITEMS[seedId]||{};
+        fp.planted=true;
+        fp.seedType=seedId;
+        fp.crop=seedInfo.cropIcon||"🌾";
+        fp.cropSprite=seedInfo.cropSprite||"crop_sprout";
+        fp.growTime=seedInfo.growTime||45;
         fp.plantedAt=Date.now(); fp.watered=false; fp.stage=0;
-        showToast("🌱 Planted "+fp.crop+"! Click seed again to plant more.");
+        showToast(`🌱 Đã gieo ${seedInfo.icon||"🌱"} ${seedInfo.name||seedId}! Chờ ${fp.growTime}s để thu hoạch.`);
         renderCropVisuals(); updateFarmButton(); updateHUD();
-        GS.plantMode=false;
+        // Keep plant mode on so player can plant more
       }else{
-        showToast("🌱 Click on a farm plot (brown tilled soil) to plant!",1500);
+        showToast("🌱 Click ô đất nâu đã đào để gieo hạt!",1500);
       }
       return;
     }
@@ -4026,8 +4062,9 @@ console.log("🎮 Đang khởi tạo...");
   function computeCropStage(fp){
     if(!fp.planted) return -1;
     const elapsed=(Date.now()-fp.plantedAt)/1000;
-    const dur=fp.watered?30:60;
-    const s=Math.min(3,Math.floor(elapsed/dur));
+    const growTime = fp.growTime || 45;
+    const stageDur = fp.watered ? growTime*0.5/3 : growTime/3; // watered = 2x faster
+    const s=Math.min(3,Math.floor(elapsed/stageDur));
     if(s!==fp.stage) fp.stage=s;
     return s;
   }
@@ -4042,30 +4079,54 @@ console.log("🎮 Đang khởi tạo...");
       const fp=_farmPlots[key];
       if(!fp.planted) continue;
       const stage=computeCropStage(fp);
-      const px=tx*TILE,py=ty*TILE;
+      const px=tx*TILE, py=ty*TILE;
+      const cx=px+TILE/2, cy=py+TILE/2;
       const objs=[];
-      // Stage 0: small seed dot
-      if(stage>=0){
-        objs.push(k.add([k.circle(2.5),k.pos(px+32,py+38),k.color(160,120,50),k.z(4)]));
+
+      const sprName = fp.cropSprite||"crop_sprout";
+
+      if(stage===0){
+        // Giai đoạn 0: hạt vừa gieo — chấm nhỏ + soil bump
+        objs.push(k.add([k.circle(3),k.pos(cx,cy+8),k.color(140,100,40),k.z(4)]));
+        objs.push(k.add([k.circle(2),k.pos(cx,cy+5),k.color(80,60,30),k.z(4)]));
+      } else if(stage===1){
+        // Giai đoạn 1: mầm nhỏ — dùng sprite crop_sprout nhỏ hoặc vẽ
+        try{
+          objs.push(k.add([k.sprite("crop_sprout"),k.pos(cx-8,cy-8),k.scale(0.8),k.z(4)]));
+        }catch(e){
+          objs.push(k.add([k.rect(4,12),k.pos(cx-2,cy-4),k.color(60,160,60),k.z(4)]));
+          objs.push(k.add([k.circle(5),k.pos(cx,cy-8),k.color(80,190,80),k.z(4)]));
+        }
+      } else if(stage===2){
+        // Giai đoạn 2: cây đang lớn — sprite lớn hơn
+        try{
+          objs.push(k.add([k.sprite(sprName),k.pos(cx-12,cy-16),k.scale(1.4),k.z(4)]));
+        }catch(e){
+          objs.push(k.add([k.rect(5,18),k.pos(cx-2,cy-8),k.color(38,130,38),k.z(4)]));
+          objs.push(k.add([k.circle(10),k.pos(cx,cy-14),k.color(60,170,60),k.z(4)]));
+        }
+        // Chỉ báo trạng thái watered
+        if(fp.watered) objs.push(k.add([k.text("💧",{size:10}),k.pos(cx+8,cy-20),k.z(5)]));
+      } else if(stage>=3){
+        // Giai đoạn 3: chín — dùng sprite harvest + icon trái cây
+        try{
+          objs.push(k.add([k.sprite("crop_flower"),k.pos(cx-16,cy-20),k.scale(1.8),k.z(4)]));
+        }catch(e){
+          objs.push(k.add([k.circle(14),k.pos(cx,cy-8),k.color(50,160,50),k.z(4)]));
+        }
+        // Icon trái cây nổi bật + nhấp nháy
+        const cropEmoji = fp.crop||"🌾";
+        objs.push(k.add([k.text(cropEmoji,{size:20}),k.pos(cx-10,cy-28),k.z(6)]));
+        objs.push(k.add([k.text("✨",{size:9}),k.pos(cx+6,cy-32),k.z(6)]));
       }
-      // Stage 1: small green sprout
-      if(stage>=1){
-        objs.push(k.add([k.rect(3,10),k.pos(px+30,py+32),k.color(51,153,51),k.z(4)]));
-        objs.push(k.add([k.rect(6,4),k.pos(px+29,py+30),k.color(61,173,61),k.z(4)]));
-        objs.push(k.add([k.rect(3,8),k.pos(px+34,py+34),k.color(46,138,46),k.z(4)]));
+
+      // Nhãn tên hạt (nhỏ, dưới ô)
+      if(stage<3){
+        const seedInfo=ITEMS[fp.seedType||"seed_orange"]||{};
+        const pct=Math.min(100,Math.round((stage/3)*100));
+        objs.push(k.add([k.text(`${seedInfo.icon||"🌱"}${pct}%`,{size:8}),k.pos(cx-12,py+TILE-10),k.color(255,255,200),k.z(5)]));
       }
-      // Stage 2: mature plant with leaves
-      if(stage>=2){
-        objs.push(k.add([k.rect(4,14),k.pos(px+30,py+28),k.color(38,115,38),k.z(4)]));
-        objs.push(k.add([k.circle(6),k.pos(px+28,py+28),k.color(61,173,61),k.z(4)]));
-        objs.push(k.add([k.circle(5),k.pos(px+35,py+30),k.color(51,153,51),k.z(4)]));
-        objs.push(k.add([k.circle(4),k.pos(px+31,py+26),k.color(71,184,71),k.z(4)]));
-      }
-      // Stage 3: ready to harvest — show fruit/veg emoji
-      if(stage>=3){
-        const emojis={wheat:"🌾",carrot:"🥕",tomato:"🍅",grape:"🍇",melon:"🍈",lemon:"🍋",banana:"🍌",pineapple:"🍍",cherry:"🍒",coconut:"🥥"};
-        objs.push(k.add([k.text(emojis[fp.crop]||"🌾",{size:18}),k.pos(px+22,py+20),k.z(5)]));
-      }
+
       _cropVisuals[key]=objs;
     }
   }
@@ -4923,18 +4984,18 @@ console.log("🎮 Đang khởi tạo...");
         switch (t) {
           case 0: // Grass — layered base + noise blades + soft texture dots
             k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(46, 112, 26), z: 3 });
-            // diagonal shading band for depth
-            k.drawRect({ pos: k.vec2(px, py), width: s, height: s/2, color: k.rgb(54, 126, 30), opacity: 0.35 });
-            // scattered small grass blades
-            for (let gi = 0; gi < 3; gi++) {
-              const seed = (x * 31 + y * 17 + gi * 53);
-              const bx = px + 6 + (seed % (s - 12));
-              const by = py + 10 + ((seed * 7) % (s - 14));
-              const bh = 5 + (seed % 5);
-              k.drawLine({ p1: k.vec2(bx, by), p2: k.vec2(bx - 1 + (seed%3), by - bh), width: 1.5, color: k.rgb(34, 90, 18), opacity: 0.55 });
+            // Try grass tileset sprite (user uploaded)
+            try { k.drawSprite({ sprite:"tile_grass", pos:k.vec2(px,py), width:s, height:s, z:3, opacity:0.85 }); }
+            catch(e){
+              k.drawRect({ pos: k.vec2(px, py), width: s, height: s/2, color: k.rgb(54, 126, 30), opacity: 0.35 });
+              for (let gi = 0; gi < 3; gi++) {
+                const seed = (x * 31 + y * 17 + gi * 53);
+                const bx = px + 6 + (seed % (s - 12));
+                const by = py + 10 + ((seed * 7) % (s - 14));
+                const bh = 5 + (seed % 5);
+                k.drawLine({ p1: k.vec2(bx, by), p2: k.vec2(bx - 1 + (seed%3), by - bh), width: 1.5, color: k.rgb(34, 90, 18), opacity: 0.55 });
+              }
             }
-            if ((x * 7 + y * 13) % 5 === 0)
-              k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(64, 140, 38), opacity: 0.18 });
             break;
 
           case 1: // Sand — base + speckled grains + subtle dune ripples
@@ -4965,7 +5026,11 @@ console.log("🎮 Đang khởi tạo...");
 
           case 3: // Water — gradient + animated ripple lines + glints
             k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(20, 88, 154), z: 3 });
-            k.drawRect({ pos: k.vec2(px, py + s * 0.5), width: s, height: s * 0.5, color: k.rgb(10, 55, 110), opacity: 0.3 });
+            // Try water texture (hexagon pattern)
+            try { k.drawSprite({ sprite:"tile_water", pos:k.vec2(px,py), width:s, height:s, z:3, opacity:0.7 }); }
+            catch(e){
+              k.drawRect({ pos: k.vec2(px, py + s * 0.5), width: s, height: s * 0.5, color: k.rgb(10, 55, 110), opacity: 0.3 });
+            }
             {
               const w1 = Math.sin(waveTime * 0.0014 + x * 0.7 + y * 1.3);
               const w2 = Math.sin(waveTime * 0.0011 + x * 1.1 + y * 0.6 + 2);
