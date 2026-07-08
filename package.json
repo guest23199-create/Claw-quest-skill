@@ -1,0 +1,15 @@
+{
+  "name": "claw-quest-skill",
+  "version": "1.0.0",
+  "description": "Claw Quest OpenClaw skill — survival island exploration with AI Pebble crew",
+  "main": "src/server.js",
+  "openclaw": {
+    "type": "game",
+    "entry": "SKILL.md",
+    "tools": true,
+    "minVersion": "1.0.0"
+  },
+  "keywords": ["claw-quest", "survival", "game", "ai-crew", "tile-based"],
+  "author": "Pham & Cocorot",
+  "license": "MIT"
+}
