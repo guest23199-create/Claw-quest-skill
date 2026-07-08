@@ -2752,6 +2752,7 @@ console.log("🎮 Đang khởi tạo...");
           buildingObjs.push(tw);
           break;
         }
+        case"merchant_house":{
           buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(140,50,40),k.opacity(0.9),k.z(4),k.area(),"building"]));
           buildingObjs.push(k.add([k.polygon([k.vec2(bx-4,by+TILE/2),k.vec2(bx+TILE/2,by-6),k.vec2(bx+TILE+4,by+TILE/2)]),k.color(210,170,50),k.opacity(0.95),k.z(4)]));
           buildingObjs.push(k.add([k.rect(TILE-2,4),k.pos(bx+1,by+TILE/2-8),k.color(190,150,40),k.opacity(0.9),k.z(4)]));
