@@ -2845,10 +2845,15 @@ console.log("🎮 Đang khởi tạo...");
       if(playerObj){
         const distToPlayer=Math.sqrt((playerObj.pos.x-enemy.pos.x)**2+(playerObj.pos.y-enemy.pos.y)**2);
         if(distToPlayer<TILE*9){
-          // Chase the player
+          // Chase the player — kiểm tra va chạm tường (SOLID) theo từng trục để có thể
+          // trượt dọc theo hàng rào thay vì đi xuyên qua, giúp tường/nhà xây theo hàng
+          // thực sự chặn được quái vật.
           const dx=playerObj.pos.x-enemy.pos.x,dy=playerObj.pos.y-enemy.pos.y,d=Math.sqrt(dx*dx+dy*dy);
-          enemy.pos.x+=(dx/d)*enemy.spd*k.dt();
-          enemy.pos.y+=(dy/d)*enemy.spd*k.dt();
+          const stepX=(dx/d)*enemy.spd*k.dt();
+          const stepY=(dy/d)*enemy.spd*k.dt();
+          const newX=enemy.pos.x+stepX, newY=enemy.pos.y+stepY;
+          if(!isSolid(getTile(Math.floor(enemy.pos.y/TILE), Math.floor(newX/TILE), map))) enemy.pos.x=newX;
+          if(!isSolid(getTile(Math.floor(newY/TILE), Math.floor(enemy.pos.x/TILE), map))) enemy.pos.y=newY;
           // Deal contact damage to player
           if (distToPlayer < TILE * 1.2) {
             if (!enemy._attackTimer) enemy._attackTimer = 0;
@@ -3927,6 +3932,23 @@ console.log("🎮 Đang khởi tạo...");
   k.onMousePress(()=>{
     const pos = k.mousePos();
     if(window._clickConsumed){window._clickConsumed=false;return;}
+    // ─── ƯU TIÊN CHIẾN ĐẤU ───────────────────────────────────────
+    // Nếu bấm trúng (hoặc rất gần) một con quái còn sống, LUÔN tấn công trước tiên,
+    // kể cả khi đang ở chế độ xây dựng/đào — tránh lỗi vừa định đánh quái vừa bị
+    // đặt nhầm công trình ngay trước mắt do 2 sự kiện click tranh nhau.
+    for(const en of enemyObjs){
+      if(en.dead || !en.exists || !en.exists()) continue;
+      if(Math.hypot(pos.x-en.pos.x,pos.y-en.pos.y) < TILE*0.6){
+        attackEnemy(en);
+        return;
+      }
+    }
+    if(activeBoss && activeBoss.exists && activeBoss.exists()){
+      if(Math.hypot(pos.x-activeBoss.pos.x,pos.y-activeBoss.pos.y) < TILE*0.6){
+        window._clickConsumed=false; // để logic tự đánh boss theo khoảng cách (onUpdate) vẫn xử lý bình thường
+        return;
+      }
+    }
     if(GS.buildMode){
       // Right-click or secondary click cancels build mode
       if (pos.right || pos.button === 2) {
