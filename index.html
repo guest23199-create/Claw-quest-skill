@@ -3506,7 +3506,29 @@ console.log("🎮 Đang khởi tạo...");
   }
 
   // School area for surplus cows
-  const SCHOOL_POS = {x:6, y:7};
+  // Trước đây toạ độ này bị cố định cứng {x:6,y:7} nên trên một số bản đồ lại rơi ra ngoài biển,
+  // người chơi không thể đi tới. Giờ tự động dò tìm ô đất hợp lệ gần vị trí mong muốn nhất.
+  function findWalkableSchoolPos(cx, cy, maxRadius){
+    for(let r=0; r<=maxRadius; r++){
+      for(let ddx=-r; ddx<=r; ddx++){
+        for(let ddy=-r; ddy<=r; ddy++){
+          if(Math.max(Math.abs(ddx),Math.abs(ddy))!==r) continue; // chỉ quét viền vòng r, loang dần ra xa
+          const tx=cx+ddx, ty=cy+ddy;
+          let ok = true;
+          // Cả vùng 5x5 (khớp với vùng vẽ bên dưới) phải là đất đi được, không dính nước/vật cản
+          for(let sx=tx-1; sx<=tx+3 && ok; sx++){
+            for(let sy=ty-1; sy<=ty+3 && ok; sy++){
+              if(sx<0||sx>=COLS||sy<0||sy>=ROWS){ ok=false; break; }
+              if(isSolid(getTile(sy, sx, map))) ok=false;
+            }
+          }
+          if(ok) return {x:tx, y:ty};
+        }
+      }
+    }
+    return {x:cx, y:cy}; // hiếm khi xảy ra, dùng lại toạ độ gốc nếu không tìm được ô nào hợp lệ
+  }
+  const SCHOOL_POS = (GS.currentIsland === 'starter_isle') ? findWalkableSchoolPos(6, 7, 20) : {x:6, y:7};
   // Draw school area on starter island
   if (GS.currentIsland === 'starter_isle') {
     for (let sx = SCHOOL_POS.x-1; sx <= SCHOOL_POS.x+3; sx++) {
@@ -3648,7 +3670,7 @@ console.log("🎮 Đang khởi tạo...");
 
       // Wander within pen (or school area)
       if (Math.random() < 0.015) {
-        const bounds = cw.inSchool ? {x1:3,y1:3,x2:9,y2:9} : cowPenArea;
+        const bounds = cw.inSchool ? {x1:SCHOOL_POS.x-1,y1:SCHOOL_POS.y-1,x2:SCHOOL_POS.x+3,y2:SCHOOL_POS.y+3} : cowPenArea;
         let nx, ny, att = 0;
         do {
           nx = bounds.x1 + 1 + Math.floor(Math.random() * (bounds.x2 - bounds.x1 - 2));
