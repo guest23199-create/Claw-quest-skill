@@ -193,6 +193,13 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
 
+  <!-- ─── Mini-map: xem vị trí hiện tại + chạm để đặt công trình từ xa ─── -->
+  <div id="minimap-wrap" style="position:fixed;top:80px;right:8px;z-index:16;pointer-events:auto;text-align:center;">
+    <canvas id="minimap" width="96" height="68" style="width:130px;height:92px;display:block;background:#0a1628;border:2px solid #0a1424;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.55);image-rendering:pixelated;cursor:pointer;"></canvas>
+    <div id="minimap-pos" style="font-size:8px;color:#f0c060;background:rgba(0,0,0,0.65);border-radius:4px;padding:1px 5px;margin-top:2px;display:inline-block;">📍 --,--</div>
+    <div id="minimap-hint" style="font-size:8px;color:#5fe089;background:rgba(0,0,0,0.65);border-radius:4px;padding:1px 5px;margin-top:2px;display:none;">👆 Chạm để đặt tại đây</div>
+  </div>
+
   <!-- ─── Island Label ─── -->
   <div id="island-label">🏝️ Starter Isle</div>
 
@@ -2805,6 +2812,77 @@ console.log("🎮 Đang khởi tạo...");
   }
   renderBuildings();
 
+  // ─── MINI-MAP ──────────────────────────────────────────────────
+  // Màu đại diện cho từng loại tile (khớp thứ tự TYPES ở đầu file)
+  const MINIMAP_COLORS = [
+    "#3a8f4a","#d9c98a","#8a8f96","#1e4a8a","#2f6b3a","#5a5f66","#4a7a3f",
+    "#e0d4a0","#a8895a","#0d2a5c","#4aa85a","#2a5c30","#7a7f86","#4a9a55",
+    "#3a6a2a","#8a5a3a","#a34a2a","#5a5560"
+  ];
+  const mmCanvas = document.getElementById("minimap");
+  const mmCtx = mmCanvas ? mmCanvas.getContext("2d") : null;
+  const mmStatic = document.createElement("canvas");
+  mmStatic.width = COLS; mmStatic.height = ROWS;
+  const mmStaticCtx = mmStatic.getContext("2d");
+  function drawMinimapStatic(){
+    if(!mmStaticCtx) return;
+    for(let ty=0; ty<ROWS; ty++){
+      for(let tx=0; tx<COLS; tx++){
+        const t = getTile(ty, tx, map);
+        mmStaticCtx.fillStyle = MINIMAP_COLORS[t] || "#22304a";
+        mmStaticCtx.fillRect(tx, ty, 1, 1);
+      }
+    }
+  }
+  drawMinimapStatic();
+  let mmLastRebuild = Date.now();
+  function refreshMinimap(){
+    if(!mmCtx) return;
+    // Vẽ lại nền tĩnh mỗi ~2 giây (đủ để phản ánh khai thác/xây dựng làm đổi tile, không tốn hiệu năng mỗi khung hình)
+    if(Date.now() - mmLastRebuild > 2000){ drawMinimapStatic(); mmLastRebuild = Date.now(); }
+    mmCtx.clearRect(0,0,COLS,ROWS);
+    mmCtx.drawImage(mmStatic, 0, 0);
+    // Chấm công trình đã xây (tháp phòng thủ/súng nổi bật màu đỏ, còn lại màu vàng nhạt)
+    for(const b of idata.buildings){
+      mmCtx.fillStyle = (b.type === "defense_tower") ? "#ff4444" : "#ffe066";
+      mmCtx.fillRect(b.tileX, b.tileY, 1, 1);
+    }
+    // Chấm vị trí hiện tại của người chơi
+    if(playerObj && playerObj.pos){
+      const ptx = Math.floor(playerObj.pos.x/TILE), pty = Math.floor(playerObj.pos.y/TILE);
+      mmCtx.fillStyle = "#ffffff";
+      mmCtx.fillRect(ptx-1, pty-1, 3, 3);
+      const posEl = document.getElementById("minimap-pos");
+      if(posEl) posEl.textContent = "📍 " + ptx + "," + pty;
+    }
+    const hintEl = document.getElementById("minimap-hint");
+    if(hintEl) hintEl.style.display = GS.buildMode ? "inline-block" : "none";
+  }
+  if(mmCanvas){
+    mmCanvas.addEventListener("click", (evt)=>{
+      const rect = mmCanvas.getBoundingClientRect();
+      const tix = Math.floor((evt.clientX-rect.left) * (COLS/rect.width));
+      const tiy = Math.floor((evt.clientY-rect.top) * (ROWS/rect.height));
+      if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS) return;
+      if(GS.buildMode){
+        // Đặt công trình (VD Tháp Phòng Thủ/súng) ngay tại vị trí chạm trên mini-map,
+        // không cần di chuyển nhân vật thật sự tới đó.
+        const bi = BUILDINGS[GS.buildMode];
+        const placed = placeBuilding(tix, tiy, GS.buildMode);
+        if(placed){
+          renderBuildings();
+          drawMinimapStatic();
+          showToast((bi ? bi.icon+" "+bi.name : "Công trình") + " đã đặt tại ("+tix+","+tiy+")", 1400);
+          if(!(bi && bi.isFloor)) GS.buildMode = null;
+        } else {
+          showToast("❌ Không đủ tài nguyên để đặt tại đây", 1200);
+        }
+      } else {
+        showToast("📍 Ô bản đồ ("+tix+","+tiy+") — mở menu Xây rồi chạm minimap để đặt công trình từ xa", 1800);
+      }
+    });
+  }
+
   // ─── ENEMIES ─────────────────────────────────────────────────
   const enemyObjs=[];
   let activeBoss = null;
@@ -4977,6 +5055,7 @@ console.log("🎮 Đang khởi tạo...");
       k.camPos(playerObj.pos.x,playerObj.pos.y);
       k.camScale(Math.min(window.innerWidth, window.innerHeight) / (currentVisibleTiles() * TILE));
     }
+    refreshMinimap();
 
     updateHUD();
 
