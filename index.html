@@ -1562,6 +1562,17 @@ window.closeModals = function(){
   document.querySelectorAll(".modal-overlay").forEach(m=>m.classList.remove("show"));
 }
 
+// Ẩn/hiện các HUD của màn chơi chính (joystick di chuyển, thanh hub, tài nguyên, minimap...)
+// khi vào các mini-game riêng biệt (Đấu Trường, Vòng Quay May Mắn...) — tránh hiện joystick
+// vô dụng đè lên màn hình chiến đấu theo lượt khiến người chơi tưởng bấm không được.
+function setGameHUDVisible(visible){
+  const ids = ["top-bar","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad"];
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = visible ? "" : "none";
+  });
+}
+
 window.cancelBuildMode = function() {
   GS.buildMode = null;
   if (ghostObj) { try { if (ghostObj && ghostObj.exists) k.destroy(ghostObj); } catch(e) {} ghostObj = null; }
@@ -2626,6 +2637,7 @@ window._originalHealItem = window.useHealItem;
 window.useHealItem = window.quickHeal;
 
 k.scene("game", ()=>{
+  setGameHUDVisible(true);
 
 function digToFarm(tx,ty){
   const idata=getIslandData(GS.currentIsland);
@@ -5633,6 +5645,7 @@ console.log("🎮 Đang khởi tạo...");
 // SECTION 13: TITLE SCENE (3-Button Menu)
 // ═══════════════════════════════════════════════════════════════════
 k.scene("title", ()=>{
+  setGameHUDVisible(false);
   // Hide loading screen
   const loader = document.getElementById("sprite-loader");
   if (loader) { loader.style.display = "none"; clearTimeout(window._moduleLoadTimeout); }
@@ -5763,6 +5776,7 @@ const SLOT_PRIZES = {
 };
 
 k.scene("slot_machine", ()=>{
+  setGameHUDVisible(false);
   k.add([k.rect(W,H),k.pos(0,0),k.color(20,15,30)]);
   // Tent stripes
   for(let i=0;i<20;i++){
@@ -5977,6 +5991,7 @@ k.scene("slot_machine", ()=>{
 // SECTION 15: INSTRUCTIONS SCENE
 // ═══════════════════════════════════════════════════════════════════
 k.scene("instructions", ()=>{
+  setGameHUDVisible(false);
   k.add([k.rect(W,H),k.pos(0,0),k.color(20,26,46)]);
 
   // Stars
@@ -6117,6 +6132,7 @@ k.scene("instructions", ()=>{
 // SECTION 15: ARENA — Wave combat (20x20)
 // ═══════════════════════════════════════════════════════════════════
 k.scene("arena", ()=>{
+  setGameHUDVisible(false);
   const AW=20, AH=20;
   const AT = Math.min(H, W) / AH;
   const AX = (W - AT * AW) / 2, AY = (H - AT * AH) / 2 + 30;
