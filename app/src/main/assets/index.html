@@ -7,7 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Claw Quest V12 — Sinh Tồn Trên Đảo</title>
-<!-- v=20260630.02 -->
+<!-- v=20260709.FIX-BUILD-VISIBILITY -->
+<!-- Sửa: xây bất kỳ đâu (không giới hạn nước/cỏ) + building luôn hiện trên cùng (z+40) + đá biến mất sau khai thác -->
+<!-- Nếu bạn thấy dòng này khi View Source, bạn đang chạy đúng bản mới nhất -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -109,6 +111,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 .inv-cell.filled:hover{background:#1c2e4e;border-color:#5a85c5;transform:translateY(-1px)}
 .inv-cell.empty{opacity:0.35;justify-content:center;color:#6a80a0;font-size:9px;cursor:default}
 .inv-cell .cell-icon{font-size:20px;filter:drop-shadow(1px 1px 1px rgba(0,0,0,0.5))}
+.inv-cell .cell-icon-img{width:26px;height:26px;image-rendering:pixelated;filter:drop-shadow(1px 1px 1px rgba(0,0,0,0.5))}
 .inv-cell .cell-name{font-size:7px;color:#cfe0ff;text-align:center;line-height:1.1;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .inv-cell .cell-count{position:absolute;bottom:2px;right:3px;font-size:9px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #000,0 0 3px #000}
 .equip-slot{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:6px;padding:5px 8px;min-height:44px;display:flex;align-items:center;gap:6px;margin:2px 0;cursor:pointer;transition:all 0.15s}
@@ -591,6 +594,11 @@ try {
 // SECTION 1: CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
 const TILE = 64, COLS = 96, ROWS = 68;
+// Camera zoom — số ô hiển thị theo chiều ngắn của màn hình. Số càng nhỏ = camera càng zoom gần nhân vật
+// để bạn quan sát rõ cảnh vật và vị trí xây dựng xung quanh mình hơn.
+const VISIBLE_TILES_LANDSCAPE = 6;
+const VISIBLE_TILES_PORTRAIT = 9;
+function currentVisibleTiles(){ return (window.innerWidth > window.innerHeight) ? VISIBLE_TILES_LANDSCAPE : VISIBLE_TILES_PORTRAIT; }
 const W = Math.max((document.getElementById('game-wrap').clientWidth || window.innerWidth || 360), 360);
 const H = Math.max((document.getElementById('game-wrap').clientHeight || window.innerHeight || 480), 480);
 // Logical world size (for tile grid placement)
@@ -800,7 +808,7 @@ const ITEMS = {
   wheat:   {id:"wheat",   name:"Wheat",     icon:"🌾", type:"material",   desc:"Đilden grain"},
   carrot:  {id:"carrot",  name:"Carrot",    icon:"🥕", type:"material",   desc:"Orange vegetable"},
   tomato:  {id:"tomato",  name:"Tomato",    icon:"🍅", type:"material",   desc:"Juicy red fruit"},
-  shovel:  {id:"shovel",  name:"Xẻng",      icon:"🪓", type:"tool",      desc:"Đào đất trồng cây"},
+  shovel:  {id:"shovel",  name:"Xẻng",      icon:"🪓", type:"tool", sprite:"item_shovel", desc:"Đào đất trồng cây"},
   water:   {id:"water",   name:"Water",     icon:"💧", type:"material",   desc:"Waters crops — speeds growth 2x"},
   grass:   {id:"grass",   name:"Grass",     icon:"🌿", type:"material",   desc:"Fresh green grass for feeding animals"},
   milk:    {id:"milk",    name:"Milk",      icon:"🥛", type:"consumable", desc:"Fresh milk! Restores 15 HP and 10 Đói",
@@ -848,8 +856,8 @@ const CRAFT_RECIPES = [
 // SECTION 1d: BUILDINGS
 // ═══════════════════════════════════════════════════════════════════
 const BUILDINGS = {
-  brick_floor:{name:"Nền Gạch",icon:"🧱",costs:{w:0,s:0}, desc:"Đặt nền gạch (cần 🧱 Gạch trong Đồ)", isFloor:true, needsItem:"brick"},
-  wall_floor:  {name:"Tường Rào",icon:"🪵",costs:{w:0,s:0}, desc:"Chặn đường quái (cần 🪵 Tường trong Đồ)", isFloor:true, needsItem:"wall_item", tileId:17},
+  brick_floor:{name:"Nền Gạch",icon:"🧱",costs:{w:1,s:2}, desc:"Lát nền gạch trực tiếp (1🪵+2🪨)", isFloor:true},
+  wall_floor:  {name:"Tường Rào",icon:"🪵",costs:{w:3,s:1}, desc:"Xây tường chặn quái trực tiếp (3🪵+1🪨)", isFloor:true, tileId:17},
   defense_tower:{name:"Tháp Phòng Thủ",icon:"🗼",costs:{w:15,s:20}, desc:"Tự bắn quái trong bán kính 3 ô"},
   shelter:{name:"Nhà Tạm",icon:"🏠",costs:{w:5,s:0}, desc:"Hồi phục HP"},
   campfire:{name:"Lửa Trại",icon:"🔥",costs:{w:3,s:0}, desc:"Xua đuổi quái yếu"},
@@ -888,6 +896,15 @@ try {
 // SECTION 2b: LOAD SPRITES (CDN — fallback to procedural if fail)
 // ═══════════════════════════════════════════════════════════════════
 const IMG_BASE = "https://cdn.jsdelivr.net/gh/guest23199-create/Claw-quest-skill@main/images";
+// Map sprite name → actual filename, for use in HTML <img> tags (outside kaboom canvas, e.g. inventory grid)
+const SPRITE_FILES = {
+  item_shovel: "1000180124.png",
+  ui_spritesheet: "1000180197.png",
+  tile_grass_iso: "1000180089.png",
+  seed_bag_orange: "1000180134.png",
+  seed_bag_blue: "1000180135.png",
+  seed_bag_green: "1000180136.png",
+};
 // Helper: load sprite with error handling — gracefully logs and falls back
 // Global array to track sprite loading promises
 const spritePromises = [];
@@ -941,6 +958,11 @@ loadSpriteSafe("crop_sprout",   `${IMG_BASE}/1000180083.png`);   // cây con 16x
 loadSpriteSafe("crop_tree",     `${IMG_BASE}/1000180133.png`);   // cây+đất 16x16 (giai đoạn 3)
 loadSpriteSafe("crop_flower",   `${IMG_BASE}/1000180198.png`);   // hoa tím 32x32 (thu hoạch)
 loadSpriteSafe("crop_mature",   `${IMG_BASE}/1000180183.png`);   // cây trưởng thành 16x16
+
+// ── Đợt upload mới: khối đất isometric + xẻng + sprite sheet UI ──
+loadSpriteSafe("tile_grass_iso", `${IMG_BASE}/1000180089.png`);  // khối cỏ xếp so le 128x128
+loadSpriteSafe("item_shovel",    `${IMG_BASE}/1000180124.png`);  // icon xẻng 18x18
+loadSpriteSafe("ui_spritesheet", `${IMG_BASE}/1000180197.png`);  // bảng sprite UI 256x256 (icon vật phẩm)
 
 // ═══════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════
@@ -1724,7 +1746,10 @@ function renderInvGrid(){
     if(item&&item.count>0){
       const info=ITEMS[item.id];
       cell.classList.add("filled");
-      cell.innerHTML=`<span class="cell-icon">${info?info.icon:"❓"}</span><span class="cell-name">${info?info.name:item.id}</span>`;
+      const iconHTML = info&&info.sprite
+        ? `<img src="${IMG_BASE}/${SPRITE_FILES[info.sprite]||''}" class="cell-icon-img" alt="${info.name}"/>`
+        : `<span class="cell-icon">${info?info.icon:"❓"}</span>`;
+      cell.innerHTML=`${iconHTML}<span class="cell-name">${info?info.name:item.id}</span>`;
       if(item.count>1) cell.innerHTML+=`<span class="cell-count">${item.count}</span>`;
       cell.addEventListener("click",()=>invItemClick(item.id));
     }else{
@@ -2024,7 +2049,7 @@ window.toggleBuild = function(){
     card.className="build-card"+(ok?"":" cant");
     const costLabel=b.needsItem?`🧱 x1 (Đồ)`:`🪵${b.costs.w} 🪨${b.costs.s}`;
     card.innerHTML=`<div class="bc-icon">${b.icon}</div><div class="bc-name">${b.name}</div><div class="bc-cost">${costLabel}</div>`;
-    if(ok)card.addEventListener("click",()=>{GS.buildMode=k;window.closeModals();const hint=b.isFloor?`🧱 Click bất kỳ ô nào (kể cả nước!) để lát ${b.icon} ${b.name}`:`🏗️ Chọn ô đất (cỏ/cát/đá/cây) để xây ${b.icon} ${b.name}`;showToast(hint,2000);});
+    if(ok)card.addEventListener("click",()=>{GS.buildMode=k;window.closeModals();const hint=b.isFloor?`🧱 Click bất kỳ ô nào để lát ${b.icon} ${b.name}`:`🏗️ Click bất kỳ ô nào để xây ${b.icon} ${b.name}`;showToast(hint,2000);});
     grid.appendChild(card);
   }
   L.appendChild(grid);
@@ -2038,6 +2063,10 @@ function placeBuilding(tx,ty,type){
   if(bi.isFloor){
     if(bi.needsItem && !hasInvItem(bi.needsItem,1)){
       showToast(`❌ Cần ${ITEMS[bi.needsItem]?.icon||'?'} ${ITEMS[bi.needsItem]?.name||bi.needsItem} trong Đồ! Chế tạo ở mục ✨ Chế Tạo trước.`,2000);
+      return false;
+    }
+    if(!bi.needsItem && (bi.costs.w>GS.resources.wood||bi.costs.s>GS.resources.stone)){
+      showToast(`❌ Không đủ nguyên liệu! Cần 🪵${bi.costs.w} 🪨${bi.costs.s}`,2000);
       return false;
     }
     const floorTileId = bi.tileId !== undefined ? bi.tileId : 16;
@@ -2664,105 +2693,113 @@ console.log("🎮 Đang khởi tạo...");
   // Tiles are drawn in immediate mode using k.drawRect/k.drawCircle/k.drawLine
   // See k.onDraw() callback below for the full implementation  // ─── BUILDINGS (enhanced sprites) ────────────────────────────
 
+  // ─── Y-SORT DEPTH (cảm giác 2.5D kiểu Stardew Valley) ─────────────
+  // Vật ở càng thấp trên bản đồ (y càng lớn) thì vẽ càng "gần mắt" (z càng cao),
+  // giúp nhân vật có thể đi che khuất phía trước nhà và bị nhà che khuất khi đứng phía sau nó,
+  // thay vì nhà luôn đè lên nhân vật như trước.
+  function depthZ(y){ return 40 + y/8; }
+
   function renderBuildings(){
     for(const o of buildingObjs) try{k.destroy(o)}catch(e){}
     buildingObjs.length=0;
     for(const b of idata.buildings){
       const bi=BUILDINGS[b.type]; if(!bi) continue;
       const bx=b.tileX*TILE,by=b.tileY*TILE;
+      function bz(n){ return depthZ(by) + (n-43); } // chiều sâu tính theo hàng ô (by) của công trình này
       switch(b.type){
         case"shelter":{
           // House walls (warm brown wood)
-          buildingObjs.push(k.add([k.rect(TILE-2,TILE-10),k.pos(bx+1,by+TILE/2+4),k.color(160,100,45),k.opacity(0.9),k.z(4),k.area(),"building"]));
+          buildingObjs.push(k.add([k.rect(TILE-2,TILE-10),k.pos(bx+1,by+TILE/2+4),k.color(160,100,45),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
           // Bigger red roof (triangle)
-          buildingObjs.push(k.add([k.polygon([k.vec2(bx-3,by+TILE/2+2),k.vec2(bx+TILE/2,by),k.vec2(bx+TILE+3,by+TILE/2+2)]),k.color(200,40,20),k.opacity(0.95),k.z(4)]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx-3,by+TILE/2+2),k.vec2(bx+TILE/2,by),k.vec2(bx+TILE+3,by+TILE/2+2)]),k.color(200,40,20),k.opacity(0.95),k.z(bz(44))]));
           // Roof highlight
-          buildingObjs.push(k.add([k.polygon([k.vec2(bx+TILE/2,by+2),k.vec2(bx+4,by+TILE/2),k.vec2(bx+TILE/2,by+TILE/2-4)]),k.color(220,60,40),k.opacity(0.7),k.z(4)]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx+TILE/2,by+2),k.vec2(bx+4,by+TILE/2),k.vec2(bx+TILE/2,by+TILE/2-4)]),k.color(220,60,40),k.opacity(0.7),k.z(bz(44))]));
           // Door
-          buildingObjs.push(k.add([k.rect(8,12),k.pos(bx+TILE/2-4,by+TILE/2+4),k.color(80,40,15),k.opacity(0.9),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(8,12),k.pos(bx+TILE/2-4,by+TILE/2+4),k.color(80,40,15),k.opacity(0.9),k.z(bz(45))]));
           // Windows (lit yellow)
-          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2-12,by+TILE/2),k.color(255,220,150),k.opacity(0.7),k.z(5)]));
-          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2+6,by+TILE/2),k.color(255,220,150),k.opacity(0.7),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2-12,by+TILE/2),k.color(255,220,150),k.opacity(0.7),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2+6,by+TILE/2),k.color(255,220,150),k.opacity(0.7),k.z(bz(45))]));
           // Flag pole
-          buildingObjs.push(k.add([k.rect(1.5,14),k.pos(bx+TILE/2-0.75,by-4),k.color(100,70,30),k.opacity(0.9),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(1.5,14),k.pos(bx+TILE/2-0.75,by-4),k.color(100,70,30),k.opacity(0.9),k.z(bz(45))]));
           // Flag (red triangle waving)
-          const flag=k.add([k.polygon([k.vec2(0,-4),k.vec2(10,-8),k.vec2(0,-12)]),k.pos(bx+TILE/2,by),k.color(220,40,30),k.opacity(0.9),k.z(6)]);
+          const flag=k.add([k.polygon([k.vec2(0,-4),k.vec2(10,-8),k.vec2(0,-12)]),k.pos(bx+TILE/2,by),k.color(220,40,30),k.opacity(0.9),k.z(bz(46))]);
           flag._flag=true;flag._flagBaseX=bx+TILE/2;
           buildingObjs.push(flag);
           // Wooden chair next to house
-          buildingObjs.push(k.add([k.rect(6,8),k.pos(bx+TILE-8,by+TILE/2+4),k.color(140,90,40),k.opacity(0.8),k.z(3)]));
-          buildingObjs.push(k.add([k.rect(10,3),k.pos(bx+TILE-9,by+TILE/2+2),k.color(120,75,30),k.opacity(0.8),k.z(3)]));
+          buildingObjs.push(k.add([k.rect(6,8),k.pos(bx+TILE-8,by+TILE/2+4),k.color(140,90,40),k.opacity(0.8),k.z(bz(43))]));
+          buildingObjs.push(k.add([k.rect(10,3),k.pos(bx+TILE-9,by+TILE/2+2),k.color(120,75,30),k.opacity(0.8),k.z(bz(43))]));
           // Small table
-          buildingObjs.push(k.add([k.rect(8,6),k.pos(bx+2,by+TILE/2+4),k.color(140,90,40),k.opacity(0.8),k.z(3)]));
+          buildingObjs.push(k.add([k.rect(8,6),k.pos(bx+2,by+TILE/2+4),k.color(140,90,40),k.opacity(0.8),k.z(bz(43))]));
           break;
         }
         case"campfire":{
-          buildingObjs.push(k.add([k.rect(14,8),k.pos(bx+TILE/2-7,by+TILE/2+6),k.color(77,51,20),k.opacity(0.9),k.z(4),k.area(),"building"]));
-          const fire=k.add([k.circle(6),k.pos(bx+TILE/2,by+TILE/2+2),k.color(230,128,26),k.opacity(0.9),k.z(5)]);
+          buildingObjs.push(k.add([k.rect(14,8),k.pos(bx+TILE/2-7,by+TILE/2+6),k.color(77,51,20),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
+          const fire=k.add([k.circle(6),k.pos(bx+TILE/2,by+TILE/2+2),k.color(230,128,26),k.opacity(0.9),k.z(bz(45))]);
           fire._flicker=true;
           buildingObjs.push(fire);
-          buildingObjs.push(k.add([k.circle(4),k.pos(bx+TILE/2,by+TILE/2),k.color(242,179,51),k.opacity(0.85),k.z(6)]));
+          buildingObjs.push(k.add([k.circle(4),k.pos(bx+TILE/2,by+TILE/2),k.color(242,179,51),k.opacity(0.85),k.z(bz(46))]));
           break;
         }
         case"woodcutter":{
-          buildingObjs.push(k.add([k.rect(TILE-6,8),k.pos(bx+3,by+TILE/2+6),k.color(89,64,26),k.opacity(0.9),k.z(4),k.area(),"building"]));
-          buildingObjs.push(k.add([k.rect(6,14),k.pos(bx+TILE/2-3,by+TILE/2-2),k.color(102,71,31),k.opacity(0.9),k.z(4)]));
-          buildingObjs.push(k.add([k.polygon([k.vec2(bx+TILE/2-6,by+TILE/2-6),k.vec2(bx+TILE/2+3,by+TILE/2-10),k.vec2(bx+TILE/2+3,by+TILE/2-2)]),k.color(128,128,140),k.opacity(0.9),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(TILE-6,8),k.pos(bx+3,by+TILE/2+6),k.color(89,64,26),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
+          buildingObjs.push(k.add([k.rect(6,14),k.pos(bx+TILE/2-3,by+TILE/2-2),k.color(102,71,31),k.opacity(0.9),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx+TILE/2-6,by+TILE/2-6),k.vec2(bx+TILE/2+3,by+TILE/2-10),k.vec2(bx+TILE/2+3,by+TILE/2-2)]),k.color(128,128,140),k.opacity(0.9),k.z(bz(45))]));
           break;
         }
         case"mine":{
-          buildingObjs.push(k.add([k.rect(TILE-6,TILE-6),k.pos(bx+3,by+3),k.color(38,38,46),k.opacity(0.9),k.z(4),k.area(),"building"]));
-          buildingObjs.push(k.add([k.circle(8),k.pos(bx+TILE/2,by+TILE/2),k.color(13,13,20),k.opacity(0.9),k.z(5)]));
-          buildingObjs.push(k.add([k.rect(10,4),k.pos(bx+TILE/2-5,by+TILE/2+8),k.color(26,26,31),k.opacity(0.9),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(TILE-6,TILE-6),k.pos(bx+3,by+3),k.color(38,38,46),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
+          buildingObjs.push(k.add([k.circle(8),k.pos(bx+TILE/2,by+TILE/2),k.color(13,13,20),k.opacity(0.9),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(10,4),k.pos(bx+TILE/2-5,by+TILE/2+8),k.color(26,26,31),k.opacity(0.9),k.z(bz(45))]));
           break;
         }
         case"market":{
-          buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(128,102,51),k.opacity(0.9),k.z(4),k.area(),"building"]));
-          buildingObjs.push(k.add([k.rect(TILE-2,6),k.pos(bx+1,by+TILE/2-6),k.color(179,128,38),k.opacity(0.9),k.z(4)]));
-          buildingObjs.push(k.add([k.rect(8,4),k.pos(bx+4,by+TILE/2-8),k.color(204,153,51),k.opacity(0.9),k.z(4)]));
-          buildingObjs.push(k.add([k.rect(8,4),k.pos(bx+TILE-12,by+TILE/2-8),k.color(204,153,51),k.opacity(0.9),k.z(4)]));
-          buildingObjs.push(k.add([k.rect(TILE-12,6),k.pos(bx+6,by+TILE/2-2),k.color(89,64,26),k.opacity(0.9),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(128,102,51),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
+          buildingObjs.push(k.add([k.rect(TILE-2,6),k.pos(bx+1,by+TILE/2-6),k.color(179,128,38),k.opacity(0.9),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.rect(8,4),k.pos(bx+4,by+TILE/2-8),k.color(204,153,51),k.opacity(0.9),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.rect(8,4),k.pos(bx+TILE-12,by+TILE/2-8),k.color(204,153,51),k.opacity(0.9),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.rect(TILE-12,6),k.pos(bx+6,by+TILE/2-2),k.color(89,64,26),k.opacity(0.9),k.z(bz(45))]));
           break;
         }
         case"arena":{
-          buildingObjs.push(k.add([k.rect(TILE-4,TILE-4),k.pos(bx+2,by+TILE/2-2),k.color(180,60,60),k.opacity(0.9),k.z(4),k.area(),"building"]));
-          buildingObjs.push(k.add([k.polygon([k.vec2(bx-2,by+TILE/2-4),k.vec2(bx+TILE/2,by-4),k.vec2(bx+TILE+2,by+TILE/2-4)]),k.color(255,215,0),k.opacity(0.95),k.z(4)]));
-          buildingObjs.push(k.add([k.rect(TILE-6,2),k.pos(bx+3,by+TILE/2-8),k.color(200,160,40),k.opacity(0.9),k.z(5)]));
-          buildingObjs.push(k.add([k.rect(8,8),k.pos(bx+TILE/2-4,by+TILE/2-2),k.color(100,30,30),k.opacity(0.9),k.z(5)]));
-          buildingObjs.push(k.add([k.text("⚔️",{size:16}),k.pos(bx+TILE/2-8,by+4),k.z(6)]));
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-4),k.pos(bx+2,by+TILE/2-2),k.color(180,60,60),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx-2,by+TILE/2-4),k.vec2(bx+TILE/2,by-4),k.vec2(bx+TILE+2,by+TILE/2-4)]),k.color(255,215,0),k.opacity(0.95),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.rect(TILE-6,2),k.pos(bx+3,by+TILE/2-8),k.color(200,160,40),k.opacity(0.9),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(8,8),k.pos(bx+TILE/2-4,by+TILE/2-2),k.color(100,30,30),k.opacity(0.9),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.text("⚔️",{size:16}),k.pos(bx+TILE/2-8,by+4),k.z(bz(46))]));
           break;
         }
         case"defense_tower":{
           // Base: stone platform
-          buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(90,80,70),k.opacity(0.95),k.z(4),k.area(),"building"]));
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(90,80,70),k.opacity(0.95),k.z(bz(44)),k.area(),"building"]));
           // Tower body
-          buildingObjs.push(k.add([k.rect(TILE-16,TILE-16),k.pos(bx+8,by+8),k.color(110,95,80),k.opacity(0.95),k.z(5)]));
+          buildingObjs.push(k.add([k.rect(TILE-16,TILE-16),k.pos(bx+8,by+8),k.color(110,95,80),k.opacity(0.95),k.z(bz(45))]));
           // Battlements (top)
           for(let mb=0;mb<3;mb++){
-            buildingObjs.push(k.add([k.rect(10,8),k.pos(bx+8+mb*14,by+4),k.color(100,85,70),k.opacity(0.95),k.z(6)]));
+            buildingObjs.push(k.add([k.rect(10,8),k.pos(bx+8+mb*14,by+4),k.color(100,85,70),k.opacity(0.95),k.z(bz(46))]));
           }
           // Arrow slit windows
-          buildingObjs.push(k.add([k.rect(3,10),k.pos(bx+TILE/2-1,by+TILE/2-4),k.color(30,20,15),k.opacity(0.9),k.z(7)]));
+          buildingObjs.push(k.add([k.rect(3,10),k.pos(bx+TILE/2-1,by+TILE/2-4),k.color(30,20,15),k.opacity(0.9),k.z(bz(47))]));
           // Tower flag
-          buildingObjs.push(k.add([k.rect(1.5,12),k.pos(bx+TILE/2-0.75,by),k.color(80,60,40),k.z(7)]));
-          buildingObjs.push(k.add([k.polygon([k.vec2(0,0),k.vec2(9,-4),k.vec2(0,-8)]),k.pos(bx+TILE/2,by+2),k.color(200,50,50),k.opacity(0.95),k.z(8)]));
+          buildingObjs.push(k.add([k.rect(1.5,12),k.pos(bx+TILE/2-0.75,by),k.color(80,60,40),k.z(bz(47))]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(0,0),k.vec2(9,-4),k.vec2(0,-8)]),k.pos(bx+TILE/2,by+2),k.color(200,50,50),k.opacity(0.95),k.z(bz(48))]));
           // Range indicator (faint circle, only in build mode for debug)
-          const tw=k.add([k.text("🗼",{size:12}),k.pos(bx+4,by+4),k.z(9)]);
+          const tw=k.add([k.text("🗼",{size:12}),k.pos(bx+4,by+4),k.z(bz(49))]);
           tw._towerTileX=b.tileX; tw._towerTileY=b.tileY;
           buildingObjs.push(tw);
           break;
         }
-          buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(140,50,40),k.opacity(0.9),k.z(4),k.area(),"building"]));
-          buildingObjs.push(k.add([k.polygon([k.vec2(bx-4,by+TILE/2),k.vec2(bx+TILE/2,by-6),k.vec2(bx+TILE+4,by+TILE/2)]),k.color(210,170,50),k.opacity(0.95),k.z(4)]));
-          buildingObjs.push(k.add([k.rect(TILE-2,4),k.pos(bx+1,by+TILE/2-8),k.color(190,150,40),k.opacity(0.9),k.z(4)]));
-          buildingObjs.push(k.add([k.rect(10,12),k.pos(bx+TILE/2-5,by+TILE/2+4),k.color(60,30,15),k.opacity(0.9),k.z(5)]));
-          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2-14,by+TILE/2),k.color(255,200,100),k.opacity(0.7),k.z(5)]));
-          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2+8,by+TILE/2),k.color(255,200,100),k.opacity(0.7),k.z(5)]));
-          buildingObjs.push(k.add([k.rect(TILE-6,2),k.pos(bx+3,by+TILE/2-2),k.color(180,80,60),k.opacity(0.85),k.z(5)]));
+        case"merchant_house":{
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-8),k.pos(bx+2,by+TILE/2+2),k.color(140,50,40),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx-4,by+TILE/2),k.vec2(bx+TILE/2,by-6),k.vec2(bx+TILE+4,by+TILE/2)]),k.color(210,170,50),k.opacity(0.95),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.rect(TILE-2,4),k.pos(bx+1,by+TILE/2-8),k.color(190,150,40),k.opacity(0.9),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.rect(10,12),k.pos(bx+TILE/2-5,by+TILE/2+4),k.color(60,30,15),k.opacity(0.9),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2-14,by+TILE/2),k.color(255,200,100),k.opacity(0.7),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(6,6),k.pos(bx+TILE/2+8,by+TILE/2),k.color(255,200,100),k.opacity(0.7),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(TILE-6,2),k.pos(bx+3,by+TILE/2-2),k.color(180,80,60),k.opacity(0.85),k.z(bz(45))]));
           break;
         }
       }
-      const lb=k.add([k.text(bi.icon,{size:14}),k.pos(bx+8,by+4),k.z(6)]);
+      const lb=k.add([k.text(bi.icon,{size:14}),k.pos(bx+8,by+4),k.z(bz(46))]);
       buildingObjs.push(lb);
     }
   }
@@ -2808,10 +2845,15 @@ console.log("🎮 Đang khởi tạo...");
       if(playerObj){
         const distToPlayer=Math.sqrt((playerObj.pos.x-enemy.pos.x)**2+(playerObj.pos.y-enemy.pos.y)**2);
         if(distToPlayer<TILE*9){
-          // Chase the player
+          // Chase the player — kiểm tra va chạm tường (SOLID) theo từng trục để có thể
+          // trượt dọc theo hàng rào thay vì đi xuyên qua, giúp tường/nhà xây theo hàng
+          // thực sự chặn được quái vật.
           const dx=playerObj.pos.x-enemy.pos.x,dy=playerObj.pos.y-enemy.pos.y,d=Math.sqrt(dx*dx+dy*dy);
-          enemy.pos.x+=(dx/d)*enemy.spd*k.dt();
-          enemy.pos.y+=(dy/d)*enemy.spd*k.dt();
+          const stepX=(dx/d)*enemy.spd*k.dt();
+          const stepY=(dy/d)*enemy.spd*k.dt();
+          const newX=enemy.pos.x+stepX, newY=enemy.pos.y+stepY;
+          if(!isSolid(getTile(Math.floor(enemy.pos.y/TILE), Math.floor(newX/TILE), map))) enemy.pos.x=newX;
+          if(!isSolid(getTile(Math.floor(newY/TILE), Math.floor(enemy.pos.x/TILE), map))) enemy.pos.y=newY;
           // Deal contact damage to player
           if (distToPlayer < TILE * 1.2) {
             if (!enemy._attackTimer) enemy._attackTimer = 0;
@@ -3464,7 +3506,29 @@ console.log("🎮 Đang khởi tạo...");
   }
 
   // School area for surplus cows
-  const SCHOOL_POS = {x:6, y:7};
+  // Trước đây toạ độ này bị cố định cứng {x:6,y:7} nên trên một số bản đồ lại rơi ra ngoài biển,
+  // người chơi không thể đi tới. Giờ tự động dò tìm ô đất hợp lệ gần vị trí mong muốn nhất.
+  function findWalkableSchoolPos(cx, cy, maxRadius){
+    for(let r=0; r<=maxRadius; r++){
+      for(let ddx=-r; ddx<=r; ddx++){
+        for(let ddy=-r; ddy<=r; ddy++){
+          if(Math.max(Math.abs(ddx),Math.abs(ddy))!==r) continue; // chỉ quét viền vòng r, loang dần ra xa
+          const tx=cx+ddx, ty=cy+ddy;
+          let ok = true;
+          // Cả vùng 5x5 (khớp với vùng vẽ bên dưới) phải là đất đi được, không dính nước/vật cản
+          for(let sx=tx-1; sx<=tx+3 && ok; sx++){
+            for(let sy=ty-1; sy<=ty+3 && ok; sy++){
+              if(sx<0||sx>=COLS||sy<0||sy>=ROWS){ ok=false; break; }
+              if(isSolid(getTile(sy, sx, map))) ok=false;
+            }
+          }
+          if(ok) return {x:tx, y:ty};
+        }
+      }
+    }
+    return {x:cx, y:cy}; // hiếm khi xảy ra, dùng lại toạ độ gốc nếu không tìm được ô nào hợp lệ
+  }
+  const SCHOOL_POS = (GS.currentIsland === 'starter_isle') ? findWalkableSchoolPos(6, 7, 20) : {x:6, y:7};
   // Draw school area on starter island
   if (GS.currentIsland === 'starter_isle') {
     for (let sx = SCHOOL_POS.x-1; sx <= SCHOOL_POS.x+3; sx++) {
@@ -3606,7 +3670,7 @@ console.log("🎮 Đang khởi tạo...");
 
       // Wander within pen (or school area)
       if (Math.random() < 0.015) {
-        const bounds = cw.inSchool ? {x1:3,y1:3,x2:9,y2:9} : cowPenArea;
+        const bounds = cw.inSchool ? {x1:SCHOOL_POS.x-1,y1:SCHOOL_POS.y-1,x2:SCHOOL_POS.x+3,y2:SCHOOL_POS.y+3} : cowPenArea;
         let nx, ny, att = 0;
         do {
           nx = bounds.x1 + 1 + Math.floor(Math.random() * (bounds.x2 - bounds.x1 - 2));
@@ -3753,12 +3817,10 @@ console.log("🎮 Đang khởi tạo...");
       ghostObj=k.add([k.rect(TILE-2,TILE-2),k.z(20),k.opacity(0.4)]);
     }
     ghostObj.pos=k.vec2(tix*TILE+1,tiy*TILE+1);
-    const tt=getTile(tiy, tix, map);
-    if(tt===0||tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13||tt===15){
-      ghostObj.color=k.color(0,255,0);
-    }else{
-      ghostObj.color=k.color(255,0,0);
-    }
+    // Xây được tự do trên mọi loại ô (cỏ, cát, nước...) nên luôn hiển thị màu xanh hợp lệ,
+    // chỉ báo đỏ khi ô nằm ngoài bản đồ.
+    const inBounds = tix>=0 && tix<COLS && tiy>=0 && tiy<ROWS;
+    ghostObj.color = inBounds ? k.color(0,255,0) : k.color(255,0,0);
   }
 
   // ─── PLAYER PARTS UPDATE HELPER ────────────────────
@@ -3779,6 +3841,17 @@ console.log("🎮 Đang khởi tạo...");
     pHpBg.pos = k.vec2(px - 11, py + 26);
     pHpFill.pos = k.vec2(px - 11, py + 26);
     pHpFill.width = 22 * (GS.player.hp / GS.player.maxHp);
+    // Y-sort chiều sâu: dùng vị trí chân (py) làm mốc, giữ nguyên thứ tự các bộ phận cũ (9-14)
+    // để nhân vật đi được ra trước hoặc khuất sau nhà cửa/vật thể tuỳ vị trí trên bản đồ.
+    const baseZ = depthZ(py);
+    pPants.z = baseZ + 0;
+    playerObj.z = baseZ + 1;
+    pHpBg.z = baseZ + 1;
+    pHpFill.z = baseZ + 2;
+    pĐầu.z = baseZ + 2;
+    pEyeL.z = baseZ + 3; pEyeR.z = baseZ + 3; pNose.z = baseZ + 3; pMouth.z = baseZ + 3;
+    pHat.z = baseZ + 4; pPupilL.z = baseZ + 4; pPupilR.z = baseZ + 4;
+    pHatBrim.z = baseZ + 5; pHatBand.z = baseZ + 5;
   }
 
   // ─── CONTINUOUS MOVEMENT (Keyboard + D-pad) ────────
@@ -3881,6 +3954,23 @@ console.log("🎮 Đang khởi tạo...");
   k.onMousePress(()=>{
     const pos = k.mousePos();
     if(window._clickConsumed){window._clickConsumed=false;return;}
+    // ─── ƯU TIÊN CHIẾN ĐẤU ───────────────────────────────────────
+    // Nếu bấm trúng (hoặc rất gần) một con quái còn sống, LUÔN tấn công trước tiên,
+    // kể cả khi đang ở chế độ xây dựng/đào — tránh lỗi vừa định đánh quái vừa bị
+    // đặt nhầm công trình ngay trước mắt do 2 sự kiện click tranh nhau.
+    for(const en of enemyObjs){
+      if(en.dead || !en.exists || !en.exists()) continue;
+      if(Math.hypot(pos.x-en.pos.x,pos.y-en.pos.y) < TILE*0.6){
+        attackEnemy(en);
+        return;
+      }
+    }
+    if(activeBoss && activeBoss.exists && activeBoss.exists()){
+      if(Math.hypot(pos.x-activeBoss.pos.x,pos.y-activeBoss.pos.y) < TILE*0.6){
+        window._clickConsumed=false; // để logic tự đánh boss theo khoảng cách (onUpdate) vẫn xử lý bình thường
+        return;
+      }
+    }
     if(GS.buildMode){
       // Right-click or secondary click cancels build mode
       if (pos.right || pos.button === 2) {
@@ -3889,6 +3979,7 @@ console.log("🎮 Đang khởi tạo...");
         showToast("✅ Đã hủy xây dựng", 800);
         return;
       }
+      updateGhost(pos); // cập nhật preview ngay tại vị trí chạm, kể cả trên di động (không phụ thuộc sự kiện di chuột)
       const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
       if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS){
         showToast("❌ Hết phạm vi bản đồ! Click chuột phải để hủy",1200);
@@ -3896,20 +3987,13 @@ console.log("🎮 Đang khởi tạo...");
         if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
         return;
       }
-      const tt=getTile(tiy, tix, map);
       const bi=BUILDINGS[GS.buildMode];
-      const canPlaceHere = (bi && bi.isFloor)
-        ? true
-        : (tt===0||tt===1||tt===2||tt===4||tt===6||tt===7||tt===8||tt===10||tt===13||tt===15||tt===16||tt===17);
-      if(canPlaceHere){
-        const placed = placeBuilding(tix,tiy,GS.buildMode);
-        if(placed){
-          renderBuildings();
-          // Keep floor-placement mode active so the player can lay multiple brick tiles in a row
-          if(bi && bi.isFloor) GS.buildMode = GS.buildMode; // stays active until cancelled (right-click) or modal reopened
-        }
-      }else showToast("❌ Không thể xây ở đây! Chọn cỏ, cát, hoặc phá cây/đá!",1200);
-      if(ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
+      const placed = placeBuilding(tix,tiy,GS.buildMode);
+      if(placed){
+        renderBuildings();
+        // Nền/tường (isFloor) giữ nguyên buildMode để lát liên tiếp nhiều ô; công trình thường đã tự tắt buildMode trong placeBuilding()
+      }
+      if(!(bi && bi.isFloor) && ghostObj){try{k.destroy(ghostObj)}catch(e){}ghostObj=null;}
       return;
     }
     // Dig mode: click grass/sand to create farm plot
@@ -4035,7 +4119,16 @@ console.log("🎮 Đang khởi tạo...");
       showFloating(tx*TILE,ty*TILE-26,`+1 🌿`,[77,204,77]);
       spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,3,[77,204,77]);
     }
-    if(w||s||f||g){spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,4,[230,230,77]);if(Math.random()<0.1 && type!==2)setTile(ty, tx, 0, map);updateHUD();}
+    if(w||s||f||g){
+      spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,4,[230,230,77]);
+      if(type===2){
+        // Đá luôn biến mất ngay sau khi khai thác — không chiếm không gian nữa
+        setTile(ty, tx, 0, map);
+      } else if(Math.random()<0.1){
+        setTile(ty, tx, 0, map);
+      }
+      updateHUD();
+    }
   }
 
   // Cấp up — uses PLAYER
@@ -4879,12 +4972,10 @@ console.log("🎮 Đang khởi tạo...");
       }
     }
 
-    // Camera follows PLAYER every frame
+    // Camera follows PLAYER every frame — zoom gần để thấy rõ khu vực xây dựng quanh nhân vật
     if(playerObj && playerObj.pos){
       k.camPos(playerObj.pos.x,playerObj.pos.y);
-      const isLandscape = window.innerWidth > window.innerHeight;
-      const VISIBLE_TILES = isLandscape ? 8 : 14;
-      k.camScale(Math.min(window.innerWidth, window.innerHeight) / (VISIBLE_TILES * TILE));
+      k.camScale(Math.min(window.innerWidth, window.innerHeight) / (currentVisibleTiles() * TILE));
     }
 
     updateHUD();
@@ -4995,20 +5086,27 @@ console.log("🎮 Đang khởi tạo...");
         const s = TILE;
 
         switch (t) {
-          case 0: // Grass — layered base + noise blades + soft texture dots
+          case 0: // Grass — isometric block style with per-tile edge shading (ref: layered grass blocks)
             k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(46, 112, 26), z: 3 });
-            // Try grass tileset sprite (user uploaded)
-            try { k.drawSprite({ sprite:"tile_grass", pos:k.vec2(px,py), width:s, height:s, z:3, opacity:0.85 }); }
-            catch(e){
-              k.drawRect({ pos: k.vec2(px, py), width: s, height: s/2, color: k.rgb(54, 126, 30), opacity: 0.35 });
-              for (let gi = 0; gi < 3; gi++) {
-                const seed = (x * 31 + y * 17 + gi * 53);
-                const bx = px + 6 + (seed % (s - 12));
-                const by = py + 10 + ((seed * 7) % (s - 14));
-                const bh = 5 + (seed % 5);
-                k.drawLine({ p1: k.vec2(bx, by), p2: k.vec2(bx - 1 + (seed%3), by - bh), width: 1.5, color: k.rgb(34, 90, 18), opacity: 0.55 });
+            // Try new isometric-block grass texture (user uploaded, layered look)
+            try { k.drawSprite({ sprite:"tile_grass_iso", pos:k.vec2(px,py), width:s, height:s, z:3, opacity:0.9 }); }
+            catch(e1){
+              try { k.drawSprite({ sprite:"tile_grass", pos:k.vec2(px,py), width:s, height:s, z:3, opacity:0.85 }); }
+              catch(e2){
+                k.drawRect({ pos: k.vec2(px, py), width: s, height: s/2, color: k.rgb(54, 126, 30), opacity: 0.35 });
+                for (let gi = 0; gi < 3; gi++) {
+                  const seed = (x * 31 + y * 17 + gi * 53);
+                  const bx = px + 6 + (seed % (s - 12));
+                  const by = py + 10 + ((seed * 7) % (s - 14));
+                  const bh = 5 + (seed % 5);
+                  k.drawLine({ p1: k.vec2(bx, by), p2: k.vec2(bx - 1 + (seed%3), by - bh), width: 1.5, color: k.rgb(34, 90, 18), opacity: 0.55 });
+                }
               }
             }
+            // Per-tile block edge shading (bottom-right darker, top-left lighter) — mimics stacked/offset block look
+            k.drawRect({ pos: k.vec2(px, py + s - 3), width: s, height: 3, color: k.rgb(20, 60, 12), opacity: 0.35 });
+            k.drawRect({ pos: k.vec2(px + s - 3, py), width: 3, height: s, color: k.rgb(20, 60, 12), opacity: 0.25 });
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: 2, color: k.rgb(90, 170, 60), opacity: 0.25 });
             break;
 
           case 1: // Sand — base + speckled grains + subtle dune ripples
@@ -5241,16 +5339,14 @@ console.log("🎮 Đang khởi tạo...");
   // already looks at the player instead of default (0,0).
   if (playerObj && playerObj.pos) {
     k.camPos(playerObj.pos.x, playerObj.pos.y);
-    const isLandscapeInit = window.innerWidth > window.innerHeight;
-    k.camScale(Math.min(window.innerWidth, window.innerHeight) / ((isLandscapeInit ? 8 : 14) * TILE));
+    k.camScale(Math.min(window.innerWidth, window.innerHeight) / (currentVisibleTiles() * TILE));
   }
   console.log("✅ Khởi tạo game xong");
   // ─── Window resize handler for Telegram Mini App ───
   const onResize = () => {
     if (playerObj && playerObj.pos) {
       k.camPos(playerObj.pos.x, playerObj.pos.y);
-      const landscape = window.innerWidth > window.innerHeight;
-      k.camScale(Math.min(window.innerWidth, window.innerHeight) / ((landscape ? 8 : 14) * TILE));
+      k.camScale(Math.min(window.innerWidth, window.innerHeight) / (currentVisibleTiles() * TILE));
     }
   };
   window.addEventListener("resize", onResize);
@@ -5559,6 +5655,7 @@ k.scene("title", ()=>{
 
   k.add([k.text("Di Chuyển • Thu Thập • Chiến Đấu • Xây Dựng • Chế Tạo",{size:10}),k.pos(W/2,410),k.anchor("center"),k.color(128,128,153)]);
   k.add([k.text("v12.0 — Kaboom Engine   🧑 Hero + 🐱 Pebble Edition",{size:9}),k.pos(W/2,H-15),k.anchor("center"),k.color(77,77,102)]);
+  k.add([k.text("Build: 20260709-FIX",{size:8}),k.pos(W/2,H-4),k.anchor("center"),k.color(100,200,100)]);
 
   if(loadGame()){
     k.add([k.text("📂 Đã tải dữ liệu!",{size:11}),k.pos(W/2,432),k.anchor("center"),k.color(77,204,77)]);
