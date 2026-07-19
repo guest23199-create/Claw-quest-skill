@@ -227,7 +227,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
     <div class="ba-row">
       <button class="bot-btn" onclick="window.quickWeapon()" id="btn-weapon" title="Vũ Khí">⚔️ Vũ Khí</button>
-      <button class="bot-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️ Xây</button>
+      <button class="bot-btn" onclick="window.toggleBuild()" id="btn-build" title="Xây Dựng">🏗️ Xây</button>
       <button class="bot-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨ Chế Tạo</button>
       <button class="bot-btn" onclick="window.toggleInv()" title="Kho Đồ">📦 Đồ</button>
     </div>
@@ -343,7 +343,9 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <!-- ─── MAP MODAL ─── -->
 <div class="modal-overlay" id="modal-map"><div class="modal-box" style="max-width:460px">
   <span class="modal-close" onclick="window.closeModals()">&times;</span>
-  <h2>🗺️ World Map</h2>
+  <h2>🗺️ Bản Đồ Quần Đảo</h2>
+  <div class="modal-sub">Chạm vào 1 đảo để xem chi tiết / di chuyển tới</div>
+  <canvas id="archipelago-canvas" width="300" height="220" style="width:100%;max-width:300px;height:auto;aspect-ratio:300/220;display:block;margin:0 auto 8px;background:linear-gradient(180deg,#0d2a5c,#1a4a8a);border:2px solid #0a1424;border-radius:8px;image-rendering:pixelated;cursor:pointer;"></canvas>
   <div id="map-list"></div>
 </div></div>
 
@@ -685,6 +687,26 @@ const ISLAND_DEFS = {
   golden_plains: {name:"Đilden Plains",   diff:4, desc:"Endless savannahs of shimmering gold."},
 };
 const ISLAND_ORDER = ["starter_isle","ember_isle","crystal_atoll","stormpeak","fire_island","ice_island","cloud_island","sunken_temple","golden_plains"];
+// Màu đại diện cho từng loại tile (khớp thứ tự TYPES ở đầu file) — dùng chung cho minimap trong game
+// và bản đồ quần đảo tổng quan.
+const MINIMAP_COLORS = [
+  "#3a8f4a","#d9c98a","#8a8f96","#1e4a8a","#2f6b3a","#5a5f66","#4a7a3f",
+  "#e0d4a0","#a8895a","#0d2a5c","#4aa85a","#2a5c30","#7a7f86","#4a9a55",
+  "#3a6a2a","#8a5a3a","#a34a2a","#5a5560"
+];
+// Vị trí % (0-100) của từng đảo trên bản đồ quần đảo tổng quan — bố trí gần đúng theo ISLAND_CONNECTIONS
+// để các đảo có liên kết trông gần nhau trực quan.
+const ARCHIPELAGO_LAYOUT = {
+  starter_isle:  {x:16, y:50},
+  ember_isle:    {x:38, y:24},
+  crystal_atoll: {x:38, y:76},
+  stormpeak:     {x:60, y:12},
+  fire_island:   {x:64, y:40},
+  ice_island:    {x:64, y:62},
+  cloud_island:  {x:86, y:28},
+  sunken_temple: {x:86, y:56},
+  golden_plains: {x:56, y:88},
+};
 const ISLAND_CONNECTIONS = {
   starter_isle:["ember_isle","crystal_atoll"],
   ember_isle:["starter_isle","stormpeak","fire_island","sunken_temple"],
@@ -873,6 +895,7 @@ const BUILDINGS = {
   arena:{name:"Đấu Trường",icon:"⚔️",costs:{w:15,s:10}, desc:"Chiến sóng quái"},
   market:{name:"Chợ",icon:"🏪",costs:{w:20,s:10}, desc:"Trao đổi tài nguyên"},
   merchant_house:{name:"Nhà Buôn",icon:"🏛️",costs:{w:25,s:15}, desc:"Vòng quay may mắn!"},
+  bridge:{name:"Cầu",icon:"🌉",costs:{w:30,s:20}, desc:"Xây cầu nối sang đảo liền kề — mở khoá đường đi mới!"},
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2056,6 +2079,27 @@ function craftItem(r){
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 9: BUILDING
 // ═══════════════════════════════════════════════════════════════════
+// Chọn đảo đích cho công trình Cầu — chỉ liệt kê các đảo liền kề (theo ISLAND_CONNECTIONS) chưa mở khoá.
+function startBridgeBuild(){
+  const conn = ISLAND_CONNECTIONS[GS.currentIsland] || [];
+  const lockedNeighbors = conn.filter(id => !GS.unlockedIslands.includes(id));
+  if(lockedNeighbors.length===0){
+    showToast("🌉 Đảo này đã có đường tới tất cả đảo liền kề rồi!", 2200);
+    return;
+  }
+  const items = lockedNeighbors.map(id=>({
+    icon:"🏝️", label: ISLAND_DEFS[id].name, sublabel: "⭐".repeat(ISLAND_DEFS[id].diff)+" · Cần 🪵30 🪨20",
+    enabled:true,
+    action(){
+      window.closeQuickPopup();
+      GS.pendingBridgeTarget = id;
+      GS.buildMode = "bridge";
+      showToast(`🌉 Chạm vào bản đồ hoặc mini-map để đặt cầu nối sang ${ISLAND_DEFS[id].name}`, 2800);
+    }
+  }));
+  openQuickPopup("🌉 Xây cầu nối sang đảo nào?", items, "btn-build");
+}
+
 window.toggleBuild = function(){
   window.closeModals();
   document.getElementById("modal-build").classList.add("show");
@@ -2067,7 +2111,10 @@ window.toggleBuild = function(){
     card.className="build-card"+(ok?"":" cant");
     const costLabel=b.needsItem?`🧱 x1 (Đồ)`:`🪵${b.costs.w} 🪨${b.costs.s}`;
     card.innerHTML=`<div class="bc-icon">${b.icon}</div><div class="bc-name">${b.name}</div><div class="bc-cost">${costLabel}</div>`;
-    if(ok)card.addEventListener("click",()=>{GS.buildMode=k;window.closeModals();const hint=b.isFloor?`🧱 Click bất kỳ ô nào để lát ${b.icon} ${b.name}`:`🏗️ Click bất kỳ ô nào để xây ${b.icon} ${b.name}`;showToast(hint,2000);});
+    if(ok)card.addEventListener("click",()=>{
+      if(k==="bridge"){ window.closeModals(); startBridgeBuild(); return; }
+      GS.buildMode=k;window.closeModals();const hint=b.isFloor?`🧱 Click bất kỳ ô nào để lát ${b.icon} ${b.name}`:`🏗️ Click bất kỳ ô nào để xây ${b.icon} ${b.name}`;showToast(hint,2000);
+    });
     grid.appendChild(card);
   }
   L.appendChild(grid);
@@ -2076,6 +2123,22 @@ window.toggleBuild = function(){
 function placeBuilding(tx,ty,type){
   const bi=BUILDINGS[type]; if(!bi) return false;
   const idata=getIslandData(GS.currentIsland);
+  // Cầu (bridge): công trình đặc biệt — cần đã chọn đảo đích qua startBridgeBuild() trước đó.
+  // Đặt xong sẽ mở khoá luôn đường đi tới đảo đó (thay vì phải đủ level/boss/tài nguyên như cũ).
+  if(type==="bridge"){
+    const target = GS.pendingBridgeTarget;
+    if(!target){ showToast("❌ Hãy chọn đảo đích trước khi đặt cầu!",1800); return false; }
+    if(bi.costs.w>GS.resources.wood||bi.costs.s>GS.resources.stone){showToast(`❌ Không đủ nguyên liệu! Cần 🪵${bi.costs.w} 🪨${bi.costs.s}`,2000);return false;}
+    if(idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty)){showToast("❌ Đã có công trình ở đây!");return false;}
+    const tileType = getTile(ty, tx, idata.map);
+    if(tileType === 2 || tileType === 4 || tileType === 15){ idata.map[ty][tx] = 0; }
+    GS.resources.wood-=bi.costs.w; GS.resources.stone-=bi.costs.s;
+    idata.buildings.push({tileX:tx,tileY:ty,type:"bridge",target});
+    unlockIsland(target);
+    showToast(`🌉 Cầu đã xây xong! Mở khoá đường tới ${ISLAND_DEFS[target].name}!`,2500);
+    updateHUD(); GS.buildMode=null; GS.pendingBridgeTarget=null;
+    return true;
+  }
   // Floor tiles (e.g. brick) just change the tile under the player's feet — no building object created.
   // Can be placed ANYWHERE: grass, sand, stone, water, trees, etc. — instantly overwrites the tile.
   if(bi.isFloor){
@@ -2134,6 +2197,16 @@ function interactWithBuilding(building){
     showToast("⚔️ Vào đấu trường! Chuẩn bị chiến đấu!",1500);
     k.go("arena");break;
     }
+    case"bridge":{
+      const t=building.target;
+      if(t && GS.unlockedIslands.includes(t)){
+        showToast(`🌉 Cầu nối sang ${ISLAND_DEFS[t].name} — đang di chuyển...`,1200);
+        travelToIsland(t);
+      } else {
+        showToast("🌉 Cây cầu này chưa rõ điểm đến.",1500);
+      }
+      break;
+    }
   }
 }
 
@@ -2164,7 +2237,115 @@ window.showMap = function(){
       <span class="mc-info">${"⭐".repeat(d.diff)} ${here?"Current":(unlocked?"Unlocked":"Locked")}</span>`;
     L.appendChild(div);
   }
+  drawArchipelagoMap();
 };
+
+// Kiểm tra xem đã có cầu (bridge) nối 2 đảo a-b hay chưa (xây từ đảo nào cũng tính)
+function hasBridgeBetween(a,b){
+  for(const id of [a,b]){
+    const idata = getIslandData(id);
+    if(idata.buildings && idata.buildings.some(bd=>bd.type==="bridge" && bd.target===(id===a?b:a))) return true;
+  }
+  return false;
+}
+
+// Vẽ 1 đảo thu nhỏ (thumbnail địa hình) vào 1 canvas tạm, trả về canvas đó
+const _islandThumbCache = {};
+function getIslandThumb(id){
+  if(_islandThumbCache[id]) return _islandThumbCache[id];
+  const th = document.createElement("canvas");
+  th.width = 22; th.height = 16;
+  const tctx = th.getContext("2d");
+  const idata = getIslandData(id);
+  const m = idata.map;
+  for(let ty=0; ty<16; ty++){
+    for(let tx=0; tx<22; tx++){
+      const srcX = Math.floor(tx * COLS/22), srcY = Math.floor(ty * ROWS/16);
+      const t = getTile(srcY, srcX, m);
+      tctx.fillStyle = MINIMAP_COLORS[t] || "#22304a";
+      tctx.fillRect(tx, ty, 1, 1);
+    }
+  }
+  _islandThumbCache[id] = th;
+  return th;
+}
+
+function drawArchipelagoMap(){
+  const cv = document.getElementById("archipelago-canvas");
+  if(!cv) return;
+  const ctx = cv.getContext("2d");
+  const W2 = cv.width, H2 = cv.height;
+  ctx.clearRect(0,0,W2,H2);
+  const pt = id => ({x: ARCHIPELAGO_LAYOUT[id].x/100*W2, y: ARCHIPELAGO_LAYOUT[id].y/100*H2});
+  // Vẽ đường nối giữa các đảo liền kề — xanh lá nếu đã có cầu/đã mở khoá cả 2 đầu, vàng đứt nét nếu chưa
+  const drawn = new Set();
+  for(const id of ISLAND_ORDER){
+    for(const nb of (ISLAND_CONNECTIONS[id]||[])){
+      const key = [id,nb].sort().join("-");
+      if(drawn.has(key)) continue; drawn.add(key);
+      const p1=pt(id), p2=pt(nb);
+      const bothUnlocked = GS.unlockedIslands.includes(id) && GS.unlockedIslands.includes(nb);
+      const bridged = hasBridgeBetween(id,nb);
+      ctx.beginPath();
+      ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+      if(bridged){ ctx.strokeStyle="#f0c060"; ctx.lineWidth=2.5; ctx.setLineDash([]); }
+      else if(bothUnlocked){ ctx.strokeStyle="rgba(160,200,255,0.6)"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); }
+      else { ctx.strokeStyle="rgba(160,200,255,0.25)"; ctx.lineWidth=1; ctx.setLineDash([2,4]); }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  // Vẽ từng đảo: nền tròn + địa hình thu nhỏ + viền theo trạng thái
+  for(const id of ISLAND_ORDER){
+    const p = pt(id);
+    const unlocked = GS.unlockedIslands.includes(id);
+    const here = GS.currentIsland === id;
+    const r = 15;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.closePath(); ctx.clip();
+    const thumb = getIslandThumb(id);
+    ctx.globalAlpha = unlocked ? 1 : 0.35;
+    ctx.drawImage(thumb, p.x-r, p.y-r, r*2, r*2);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.lineWidth = here ? 3 : 2;
+    ctx.strokeStyle = here ? "#ffe066" : (unlocked ? "#5fe089" : "#5a6a86");
+    ctx.stroke();
+    if(!unlocked){
+      ctx.font = "10px sans-serif"; ctx.textAlign="center"; ctx.fillStyle="#fff";
+      ctx.fillText("🔒", p.x, p.y+3);
+    }
+    if(here){
+      ctx.font = "9px sans-serif"; ctx.textAlign="center"; ctx.fillStyle="#ffe066";
+      ctx.fillText("📍", p.x, p.y-r-4);
+    }
+  }
+}
+if(!window._archipelagoClickBound){
+  window._archipelagoClickBound = true;
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const cv = document.getElementById("archipelago-canvas");
+    if(!cv) return;
+    cv.addEventListener("click",(evt)=>{
+      const rect = cv.getBoundingClientRect();
+      const mx = (evt.clientX-rect.left) * (cv.width/rect.width);
+      const my = (evt.clientY-rect.top) * (cv.height/rect.height);
+      for(const id of ISLAND_ORDER){
+        const p = {x: ARCHIPELAGO_LAYOUT[id].x/100*cv.width, y: ARCHIPELAGO_LAYOUT[id].y/100*cv.height};
+        if(Math.hypot(mx-p.x,my-p.y) <= 15){
+          if(GS.unlockedIslands.includes(id)){
+            if(id!==GS.currentIsland){ window.closeModals(); travelToIsland(id); }
+          } else {
+            window.closeModals();
+            openTravelModal([id]);
+          }
+          return;
+        }
+      }
+    });
+  });
+}
 
 function openTravelModal(dests){
   window.closeModals();
@@ -2817,6 +2998,16 @@ console.log("🎮 Đang khởi tạo...");
           buildingObjs.push(k.add([k.rect(TILE-6,2),k.pos(bx+3,by+TILE/2-2),k.color(180,80,60),k.opacity(0.85),k.z(bz(45))]));
           break;
         }
+        case"bridge":{
+          // Ván cầu gỗ bắc ngang ô, 2 lan can 2 bên
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-18),k.pos(bx+2,by+9),k.color(150,105,60),k.opacity(0.95),k.z(bz(44)),k.area(),"building"]));
+          for(let px2=6;px2<TILE-4;px2+=8){
+            buildingObjs.push(k.add([k.rect(3,TILE-18),k.pos(bx+px2,by+9),k.color(110,75,40),k.opacity(0.6),k.z(bz(45))]));
+          }
+          buildingObjs.push(k.add([k.rect(TILE-4,3),k.pos(bx+2,by+7),k.color(90,60,30),k.opacity(0.9),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(TILE-4,3),k.pos(bx+2,by+TILE-11),k.color(90,60,30),k.opacity(0.9),k.z(bz(45))]));
+          break;
+        }
       }
       const lb=k.add([k.text(bi.icon,{size:14}),k.pos(bx+8,by+4),k.z(bz(46))]);
       buildingObjs.push(lb);
@@ -2825,12 +3016,6 @@ console.log("🎮 Đang khởi tạo...");
   renderBuildings();
 
   // ─── MINI-MAP ──────────────────────────────────────────────────
-  // Màu đại diện cho từng loại tile (khớp thứ tự TYPES ở đầu file)
-  const MINIMAP_COLORS = [
-    "#3a8f4a","#d9c98a","#8a8f96","#1e4a8a","#2f6b3a","#5a5f66","#4a7a3f",
-    "#e0d4a0","#a8895a","#0d2a5c","#4aa85a","#2a5c30","#7a7f86","#4a9a55",
-    "#3a6a2a","#8a5a3a","#a34a2a","#5a5560"
-  ];
   const mmCanvas = document.getElementById("minimap");
   const mmCtx = mmCanvas ? mmCanvas.getContext("2d") : null;
   const mmStatic = document.createElement("canvas");
