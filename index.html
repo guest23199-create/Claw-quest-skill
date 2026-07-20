@@ -6255,6 +6255,17 @@ k.scene("slot_machine", ()=>{
       uiObjs.push(k.add([k.text(resultMsg,{size:11}),k.pos(W/2,cy2+20),k.anchor("center"),k.color(col[0],col[1],col[2]),k.z(10)]));
     }
     const ex=H-32;
+    // ─── ĐỔI GỖ → ĐÁ ───────────────────────────────────────────
+    const trY=ex-44;
+    const canTrade=GS.resources.wood>=5;
+    const trB=k.add([k.rect(200,32),k.pos(W/2-100,trY),k.color(canTrade?[70,130,90]:[70,70,70]),k.opacity(0.9),k.outline(2,k.rgb(canTrade?120:90,canTrade?200:90,canTrade?140:90)),k.z(10),k.area(),"trade-btn"]);
+    uiObjs.push(trB);
+    uiObjs.push(k.add([k.text("🔄 Đổi 5🪵 → 3🪨",{size:12}),k.pos(W/2,trY+16),k.anchor("center"),k.color(255,255,255),k.z(11)]));
+    if(canTrade) trB.onClick(()=>{
+      GS.resources.wood-=5; GS.resources.stone+=3;
+      showToast("🔄 Đã đổi 5🪵 → 3🪨!",1500);
+      updateHUD(); updateDisplay();
+    });
     const eb=k.add([k.rect(120,30),k.pos(W/2-60,ex),k.color(60,60,80),k.opacity(0.85),k.outline(1,k.rgb(200,200,200,0.2)),k.z(10),k.area(),"exit-btn"]);
     uiObjs.push(eb);
     uiObjs.push(k.add([k.text("← Thoát",{size:14}),k.pos(W/2,ex+15),k.anchor("center"),k.color(200,200,220),k.z(11)]));
