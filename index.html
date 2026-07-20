@@ -6440,6 +6440,12 @@ k.scene("arena", ()=>{
   k.add([k.rect(AT*AW,3),k.pos(AX,AY+11*AT),k.color(200,180,100),k.z(2)]);
   const uW=k.add([k.text("Wave "+cw,{size:16}),k.pos(W/2,8),k.anchor("center"),k.color(255,215,0),k.z(10)]);
   const uK=k.add([k.text("🧑"+pk+" - "+ek+"👹",{size:12}),k.pos(W/2,24),k.anchor("center"),k.color(179,179,204),k.z(10)]);
+  // ─── BỘ ĐẾM THỜI GIAN LƯỢT ĐẤU: buộc trận đấu luôn tiến triển theo thời gian, ───
+  // kể cả khi người chơi không bấm gì — hết giờ sẽ tự động ra 1 đòn đánh.
+  const ROUND_TIME = 6;
+  let roundTimer = ROUND_TIME;
+  const uTimer=k.add([k.text("⏳ "+ROUND_TIME+"s",{size:12}),k.pos(W/2,40),k.anchor("center"),k.color(150,200,255),k.z(10)]);
+  function resetRoundTimer(){ roundTimer = ROUND_TIME; }
   const uHP=k.add([k.text("🧑 HP: "+php+"/"+pmhp,{size:11}),k.pos(10,2),k.color(46,204,113),k.z(10)]);
   const uPH=k.add([k.text("🐾 Trợ Thủ: --/--",{size:11}),k.pos(10,16),k.color(232,161,64),k.z(10)]);
   const st=k.add([k.text("⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1),{size:14}),k.pos(W/2,AY+AH*AT+12),k.anchor("center"),k.color(255,215,0),k.z(10)]);
@@ -6567,13 +6573,14 @@ k.scene("arena", ()=>{
     const r=3+cw*2;GS.resources.wood+=r;GS.resources.stone+=r;GS.resources.food+=r;GS.player.xp+=5+cw*3;
     if(cw%3===0){GS.silverCoins=(GS.silverCoins||0)+1;showToast("👑 +1 Silver Coin!",2000);}
     showToast("🎉 Wave "+cw+" cleared! +"+r+" resources! (🧑"+pk+"/2 kills)",2000);checkLevelUp();updateHUD();cw++;
-    setTimeout(()=>{avic=false;php=Math.min(pmhp,php+10);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+10);}GS.player.hp=php;GS.pebble.hp=squad[0].hp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
+    setTimeout(()=>{avic=false;resetRoundTimer();php=Math.min(pmhp,php+10);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+10);}GS.player.hp=php;GS.pebble.hp=squad[0].hp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
   }
-  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){stopAutoBattle();showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+15);}GS.player.hp=php;GS.pebble.hp=squad[0].hp;updUI();ago=false;}
-  fB.onClick(()=>{if(ago||avic)return;patk(-1);});
-  dB.onClick(()=>{if(ago||avic)return;showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
+  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){stopAutoBattle();showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+15);}GS.player.hp=php;GS.pebble.hp=squad[0].hp;updUI();resetRoundTimer();ago=false;}
+  fB.onClick(()=>{if(ago||avic)return;resetRoundTimer();patk(-1);});
+  dB.onClick(()=>{if(ago||avic)return;resetRoundTimer();showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
   hB.onClick(()=>{
     if(ago||avic)return;
+    resetRoundTimer();
     if(abf.hp>0){
       abf.hp--;
       const ha=15+Math.floor(Math.random()*10);
@@ -6611,6 +6618,20 @@ k.scene("arena", ()=>{
       else { icon.pos.y=baseY; if(h&&h.cancel)h.cancel(); }
     });
   }
+  k.onUpdate(()=>{
+    if(ago||avic||autoBattle){
+      uTimer.text = autoBattle ? "🔥 Auto" : "⏳ --";
+      uTimer.color = autoBattle ? k.rgb(230,160,40) : k.rgb(100,100,120);
+      return;
+    }
+    roundTimer -= k.dt();
+    if(roundTimer<=0){
+      resetRoundTimer();
+      patk(-1); // Hết giờ mà chưa thao tác — trận đấu vẫn tự tiến triển
+    }
+    uTimer.text = "⏳ "+Math.ceil(Math.max(0,roundTimer))+"s";
+    uTimer.color = roundTimer<2 ? k.rgb(230,80,80) : k.rgb(150,200,255);
+  });
   spw(cw);
   updUI();
   k.onKeyPress("space",()=>fB.click());
