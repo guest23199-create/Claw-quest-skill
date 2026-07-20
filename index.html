@@ -6439,7 +6439,24 @@ k.scene("arena", ()=>{
   k.add([k.text("❤️ Hồi",{size:13}),k.pos(W/2+120,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
   const eB=k.add([k.rect(60,22),k.pos(10,bY+3),k.color(150,40,40),k.z(10),k.area()]);
   k.add([k.text("✖ Thoát",{size:10}),k.pos(40,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
-  eB.onClick(()=>{GS.player.hp=php;k.go("game");});
+  // ─── AUTO ĐÁNH: tự động tấn công liên tục theo chu kỳ, không cần bấm tay từng lượt ───
+  let autoBattle=false, autoTimer=null;
+  const bY2=bY-32;
+  const aB=k.add([k.rect(150,24),k.pos(W/2-75,bY2),k.color(90,90,110),k.z(10),k.area()]);
+  const aBLabel=k.add([k.text("🔥 Auto Đánh: TẮT",{size:11}),k.pos(W/2,bY2+12),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  function stopAutoBattle(){
+    autoBattle=false;
+    if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+    aB.color=k.rgb(90,90,110); aBLabel.text="🔥 Auto Đánh: TẮT";
+  }
+  function startAutoBattle(){
+    autoBattle=true;
+    aB.color=k.rgb(230,160,40); aBLabel.text="🔥 Auto Đánh: BẬT";
+    if(autoTimer) clearInterval(autoTimer);
+    autoTimer=setInterval(()=>{ if(autoBattle) patk(-1); }, 850);
+  }
+  aB.onClick(()=>{ if(autoBattle) stopAutoBattle(); else startAutoBattle(); });
+  eB.onClick(()=>{stopAutoBattle();GS.player.hp=php;k.go("game");});
   function spw(w){
     for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}}
     am=[];
@@ -6467,8 +6484,9 @@ k.scene("arena", ()=>{
     const m=am[idx];if(!m||m.dead)return;
     const d=Math.max(1,GS.player.attack+getEquipStats().atk+abf.pa+Math.floor(Math.random()*4)-m.def);
     m.hp-=d;showFloating(m.o.pos.x,m.o.pos.y-15,'-'+d,[255,50,50]);spawnParticles(m.o.pos.x,m.o.pos.y,3,[255,77,26]);
+    lungeIcon(pIcon,pIconBaseY);
     m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
-    if(pehp>0){const pd=Math.max(1,GS.pebble.attack+abf.pea+Math.floor(Math.random()*3)-Math.floor(m.def*0.5));m.hp-=pd;showFloating(m.o.pos.x,m.o.pos.y+10,'-'+pd+'🐱',[232,161,64]);m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));}
+    if(pehp>0){const pd=Math.max(1,GS.pebble.attack+abf.pea+Math.floor(Math.random()*3)-Math.floor(m.def*0.5));m.hp-=pd;showFloating(m.o.pos.x,m.o.pos.y+10,'-'+pd+'🐱',[232,161,64]);lungeIcon(peIcon,peIconBaseY);m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));}
     if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);}catch(e){}}
     const rm=am.filter(m=>!m.dead);
     if(!rm.length){avic=true;onVic();return;}
@@ -6477,8 +6495,8 @@ k.scene("arena", ()=>{
   function enTurn(){
     const al=am.filter(m=>!m.dead);
     for(const m of al){
-      if(m.target==="p"&&php>0){const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));php=Math.max(0,php-ed);showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);}
-      else if(pehp>0){const ed=Math.max(1,m.atk-1+Math.floor(Math.random()*2));pehp=Math.max(0,pehp-ed);showFloating(AX+17*AT,AY+14*AT,'-'+ed,[232,100,50]);}
+      if(m.target==="p"&&php>0){const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));php=Math.max(0,php-ed);showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);lungeIcon(pIcon,pIconBaseY);}
+      else if(pehp>0){const ed=Math.max(1,m.atk-1+Math.floor(Math.random()*2));pehp=Math.max(0,pehp-ed);showFloating(AX+17*AT,AY+14*AT,'-'+ed,[232,100,50]);lungeIcon(peIcon,peIconBaseY);}
     }
     updUI();
     if(php<=0&&pehp<=0){ago=true;onDef();}
@@ -6488,6 +6506,7 @@ k.scene("arena", ()=>{
     pk++;uK.text="🧑"+pk+" - "+ek+"👹";
     if(pk>=2){
       // Player wins the arena match!
+      stopAutoBattle();
       showToast("🏆 CHIẾN THẮNG ĐẤU TRƯỜNG! Nhận thưởng lớn!",3000);
       const bigR=10+cw*5;GS.resources.wood+=bigR;GS.resources.stone+=bigR;GS.resources.food+=bigR;GS.player.xp+=20+cw*5;GS.silverCoins=(GS.silverCoins||0)+3;
       checkLevelUp();updateHUD();
@@ -6499,7 +6518,7 @@ k.scene("arena", ()=>{
     showToast("🎉 Wave "+cw+" cleared! +"+r+" resources! (🧑"+pk+"/2 kills)",2000);checkLevelUp();updateHUD();cw++;
     setTimeout(()=>{avic=false;php=Math.min(pmhp,php+10);pehp=Math.min(pemhp,pehp+10);GS.player.hp=php;GS.pebble.hp=pehp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
   }
-  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);pehp=Math.min(pemhp,pehp+15);GS.player.hp=php;GS.pebble.hp=pehp;updUI();ago=false;}
+  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){stopAutoBattle();showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);pehp=Math.min(pemhp,pehp+15);GS.player.hp=php;GS.pebble.hp=pehp;updUI();ago=false;}
   fB.onClick(()=>{if(ago||avic)return;patk(-1);});
   dB.onClick(()=>{if(ago||avic)return;showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
   hB.onClick(()=>{
@@ -6507,8 +6526,20 @@ k.scene("arena", ()=>{
     if(abf.hp>0){abf.hp--;const ha=15+Math.floor(Math.random()*10);if(php<pehp){php=Math.min(pmhp,php+ha);showFloating(AX+2*AT,AY+14*AT,'+'+ha,[46,204,113]);}else{pehp=Math.min(pemhp,pehp+ha);showFloating(AX+17*AT,AY+14*AT,'+'+ha,[232,161,64]);}updUI();const al=am.filter(m=>!m.dead);if(al.length>0)enTurn();}
     else showToast("❌ Hết bình máu! Vào Merchant House quay thưởng.",2000);
   });
-  k.add([k.text("🧑",{size:AT*0.6}),k.pos(AX+2*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
-  k.add([k.text("🐱",{size:AT*0.6}),k.pos(AX+17*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
+  const pIcon=k.add([k.text("🧑",{size:AT*0.6}),k.pos(AX+2*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
+  const peIcon=k.add([k.text("🐱",{size:AT*0.6}),k.pos(AX+17*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
+  const pIconBaseY=pIcon.pos.y, peIconBaseY=peIcon.pos.y;
+  // Hiệu ứng nhún nhẹ lên phía quái (hàng trên) khi tấn công — cho cảm giác 2 bên thực sự đang giao chiến
+  function lungeIcon(icon, baseY){
+    let t=0;
+    const h=icon.onUpdate(()=>{
+      t+=k.dt();
+      const dur=0.15;
+      if(t<dur) icon.pos.y=baseY-(t/dur)*16;
+      else if(t<dur*2) icon.pos.y=baseY-(1-(t-dur)/dur)*16;
+      else { icon.pos.y=baseY; if(h&&h.cancel)h.cancel(); }
+    });
+  }
   spw(cw);
   k.onKeyPress("space",()=>fB.click());
   k.onKeyPress("d",()=>dB.click());
