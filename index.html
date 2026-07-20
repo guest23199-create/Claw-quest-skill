@@ -6062,7 +6062,8 @@ k.scene("slot_machine", ()=>{
   k.add([k.rect(W,60),k.pos(0,H-60),k.color(100,65,30),k.opacity(0.9),k.z(2)]);
   k.add([k.rect(W,4),k.pos(0,H-60),k.color(140,90,40),k.opacity(0.8),k.z(3)]);
 
-  let grid=Array(3).fill(null).map(()=>Array(3).fill("🍬"));
+  const SLOT_N = 5; // Kích thước lưới quay — đổi từ 3x3 lên 5x5
+  let grid=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill("🍬"));
   let spinning=false,spinCount=0,firstFree=true,spinComplete=true;
   let resultMsg="",winType="";
   let uiObjs=[],slotCells=[];
@@ -6086,23 +6087,23 @@ k.scene("slot_machine", ()=>{
     spinning=true;spinComplete=false;deductCost();spinCount++;
     resultMsg="🎰 *whirrrr*";updateDisplay();
 
-    const finalGrid=Array(3).fill(null).map(()=>Array(3).fill(null));
-    for(let r=0;r<3;r++) for(let c=0;c<3;c++)
+    const finalGrid=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill(null));
+    for(let r=0;r<SLOT_N;r++) for(let c=0;c<SLOT_N;c++)
       finalGrid[r][c]=Math.random()<0.15?["🍜","🍺","☕","🍬"][Math.floor(Math.random()*4)]:SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
 
-    const settled=[false,false,false];
+    const settled=Array(SLOT_N).fill(false);
     let elapsed=0;
     const updater=k.onUpdate(()=>{
       elapsed+=k.dt();
-      for(let r=0;r<3;r++){
-        if(elapsed>=0.6+r*0.3&&!settled[r]){
-          for(let c=0;c<3;c++){grid[r][c]=finalGrid[r][c];if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=grid[r][c];}
+      for(let r=0;r<SLOT_N;r++){
+        if(elapsed>=0.6+r*0.22&&!settled[r]){
+          for(let c=0;c<SLOT_N;c++){grid[r][c]=finalGrid[r][c];if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=grid[r][c];}
           settled[r]=true;
         }else if(!settled[r]&&Math.floor(elapsed/0.05)!==Math.floor((elapsed-k.dt())/0.05)){
-          for(let c=0;c<3;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
+          for(let c=0;c<SLOT_N;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
         }
       }
-      if(settled[0]&&settled[1]&&settled[2]){
+      if(settled.every(s=>s)){
         updater.cancel();spinning=false;spinComplete=true;
         evaluatePrizes();updateDisplay();updateHUD();
         // Auto-spin: schedule next spin after delay
@@ -6153,8 +6154,8 @@ k.scene("slot_machine", ()=>{
       GS.arenaKillBuff=(GS.arenaKillBuff||0)+1;
       showToast("⚡ +1 Arena Kill Buff! (Dùng trong đấu trường)",2000);
     }
-    // Jackpot check
-    if(grid[0][0]===grid[0][1]&&grid[0][1]===grid[0][2]&&grid[0][2]===grid[1][0]&&grid[1][0]===grid[1][1]&&grid[1][1]===grid[1][2]&&grid[1][2]===grid[2][0]&&grid[2][0]===grid[2][1]&&grid[2][1]===grid[2][2]){
+    // Jackpot check — 4 góc + tâm lưới cùng 1 icon (lưới 5x5 nên "toàn bộ 25 ô giống nhau" gần như không thể xảy ra)
+    if(grid[0][0]===grid[0][SLOT_N-1]&&grid[0][SLOT_N-1]===grid[SLOT_N-1][0]&&grid[SLOT_N-1][0]===grid[SLOT_N-1][SLOT_N-1]&&grid[SLOT_N-1][SLOT_N-1]===grid[2][2]){
       GS.silverCoins=(GS.silverCoins||0)+5;
       // Also give +1 arena kill as rare prize
       GS.arenaKillBuff=(GS.arenaKillBuff||0)+1;
@@ -6162,21 +6163,20 @@ k.scene("slot_machine", ()=>{
       winType="jackpot";addInvItem("gold",3);addInvItem("food",5);
       triggerJackpot();return;
     }
-    // Horizontal
-    for(let r=0;r<3;r++) if(grid[r][0]===grid[r][1]&&grid[r][1]===grid[r][2]){
+    // Horizontal — cả hàng N ô cùng 1 icon
+    for(let r=0;r<SLOT_N;r++) if(grid[r].every(v=>v===grid[r][0])){
       const p=SLOT_PRIZES[grid[r][0]];if(p) totalPrizes.push({type:"horizontal",row:r,icon:grid[r][0],...p.h});
     }
-    // Vertical
-    for(let c=0;c<3;c++) if(grid[0][c]===grid[1][c]&&grid[1][c]===grid[2][c]){
-      const p=SLOT_PRIZES[grid[0][c]];if(p) totalPrizes.push({type:"vertical",col:c,icon:grid[0][c],...p.v});
+    // Vertical — cả cột N ô cùng 1 icon
+    for(let c=0;c<SLOT_N;c++){
+      let same=true; for(let r=1;r<SLOT_N;r++) if(grid[r][c]!==grid[0][c]) same=false;
+      if(same){ const p=SLOT_PRIZES[grid[0][c]];if(p) totalPrizes.push({type:"vertical",col:c,icon:grid[0][c],...p.v}); }
     }
-    // Diagonal
-    if(grid[0][0]===grid[1][1]&&grid[1][1]===grid[2][2]){
-      const p=SLOT_PRIZES[grid[0][0]];if(p) totalPrizes.push({type:"diagonal",pos:"TL-BR",icon:grid[0][0],...p.d});
-    }
-    if(grid[0][2]===grid[1][1]&&grid[1][1]===grid[2][0]){
-      const p=SLOT_PRIZES[grid[0][2]];if(p) totalPrizes.push({type:"diagonal",pos:"TR-BL",icon:grid[0][2],...p.d});
-    }
+    // Diagonal — cả đường chéo N ô cùng 1 icon
+    let diagTL=true; for(let i=1;i<SLOT_N;i++) if(grid[i][i]!==grid[0][0]) diagTL=false;
+    if(diagTL){ const p=SLOT_PRIZES[grid[0][0]];if(p) totalPrizes.push({type:"diagonal",pos:"TL-BR",icon:grid[0][0],...p.d}); }
+    let diagTR=true; for(let i=1;i<SLOT_N;i++) if(grid[i][SLOT_N-1-i]!==grid[0][SLOT_N-1]) diagTR=false;
+    if(diagTR){ const p=SLOT_PRIZES[grid[0][SLOT_N-1]];if(p) totalPrizes.push({type:"diagonal",pos:"TR-BL",icon:grid[0][SLOT_N-1],...p.d}); }
     if(totalPrizes.length===0){resultMsg="😢 No win. Try again!";winType="none";return;}
     let parts=["🎉 *ding ding ding!*"];
     for(const p of totalPrizes){
@@ -6195,11 +6195,11 @@ k.scene("slot_machine", ()=>{
       fc++;const on=fc%2===1;
       const gold=k.rgb(255,215,0),norm=k.rgb(255,255,255);
       for(const p of prizes){
-        if(p.type==="horizontal"){for(let c=0;c<3;c++) if(slotCells[p.row]&&slotCells[p.row][c]) slotCells[p.row][c].color=on?gold:norm;}
-        else if(p.type==="vertical"){for(let r=0;r<3;r++) if(slotCells[r]&&slotCells[r][p.col]) slotCells[r][p.col].color=on?gold:norm;}
-        else if(p.type==="diagonal"){for(let i=0;i<3;i++){const ri=p.pos==="TL-BR"?i:2-i;if(slotCells[ri]&&slotCells[ri][i]) slotCells[ri][i].color=on?gold:norm;}}
+        if(p.type==="horizontal"){for(let c=0;c<SLOT_N;c++) if(slotCells[p.row]&&slotCells[p.row][c]) slotCells[p.row][c].color=on?gold:norm;}
+        else if(p.type==="vertical"){for(let r=0;r<SLOT_N;r++) if(slotCells[r]&&slotCells[r][p.col]) slotCells[r][p.col].color=on?gold:norm;}
+        else if(p.type==="diagonal"){for(let i=0;i<SLOT_N;i++){const ri=i; const ci=p.pos==="TL-BR"?i:(SLOT_N-1-i); if(slotCells[ri]&&slotCells[ri][ci]) slotCells[ri][ci].color=on?gold:norm;}}
       }
-      if(fc>=6){clearInterval(iv);for(let r=0;r<3;r++) for(let c=0;c<3;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].color=k.rgb(255,255,255);}
+      if(fc>=6){clearInterval(iv);for(let r=0;r<SLOT_N;r++) for(let c=0;c<SLOT_N;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].color=k.rgb(255,255,255);}
     },300);
   }
 
@@ -6224,16 +6224,17 @@ k.scene("slot_machine", ()=>{
     destroyUI();
     uiObjs.push(k.add([k.text("🏪 NHÀ THƯƠNG GIA — VÒNG QUAY MAY MẮN",{size:18}),k.pos(W/2,22),k.anchor("center"),k.color(255,215,0),k.z(10)]));
     if(firstFree&&spinCount===0) uiObjs.push(k.add([k.text("✦ Lần quay đầu MIỄN PHÍ! ✦",{size:12}),k.pos(W/2,44),k.anchor("center"),k.color(77,255,77),k.z(10)]));
-    const gx=W/2-105,gy=68,cs=64,gap=6;
-    k.add([k.rect(220,216),k.pos(gx-5,gy-5),k.color(30,25,45),k.outline(2,k.rgb(210,170,50)),k.z(5)]);
-    slotCells=Array(3).fill(null).map(()=>Array(3).fill(null));
-    for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const cs=44,gap=4,gridW=SLOT_N*cs+(SLOT_N-1)*gap;
+    const gx=W/2-gridW/2,gy=68;
+    k.add([k.rect(gridW+10,gridW+10),k.pos(gx-5,gy-5),k.color(30,25,45),k.outline(2,k.rgb(210,170,50)),k.z(5)]);
+    slotCells=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill(null));
+    for(let r=0;r<SLOT_N;r++) for(let c=0;c<SLOT_N;c++){
       const cx=gx+c*(cs+gap),cy=gy+r*(cs+gap);
       k.add([k.rect(cs,cs),k.pos(cx,cy),k.color(20,15,35),k.outline(1,k.rgb(255,255,255,0.1)),k.z(6)]);
-      const ct=k.add([k.text(grid[r][c],{size:34}),k.pos(cx+cs/2,cy+cs/2),k.anchor("center"),k.color(255,255,255),k.z(7)]);
+      const ct=k.add([k.text(grid[r][c],{size:22}),k.pos(cx+cs/2,cy+cs/2),k.anchor("center"),k.color(255,255,255),k.z(7)]);
       slotCells[r][c]=ct;
     }
-    const ry=gy+225;
+    const ry=gy+gridW+25;
     uiObjs.push(k.add([k.text("🪵 "+GS.resources.wood+"  🪨 "+GS.resources.stone+"  🍎 "+GS.resources.food,{size:12}),k.pos(W/2,ry),k.anchor("center"),k.color(200,200,220),k.z(10)]));
     uiObjs.push(k.add([k.text("🥈 Silver: "+(GS.silverCoins||0),{size:13}),k.pos(W/2,ry+18),k.anchor("center"),k.color(192,192,220),k.z(10)]));
     const sby=ry+48;
@@ -6248,7 +6249,7 @@ k.scene("slot_machine", ()=>{
     uiObjs.push(asb);
     uiObjs.push(k.add([k.text(autoSpinning?"⏹️ DỪNG AUTO":"🔄 AUTO QUAY",{size:12}),k.pos(W/2,asbY+15),k.anchor("center"),k.color(255,255,255),k.z(11)]));
     asb.onClick(()=>toggleAutoSpin());
-    const cy2=sby+48;
+    const cy2=asbY+40;
     if(!(firstFree&&spinCount===0)) uiObjs.push(k.add([k.text("Phí: 3 🪵 + 2 🪨 + 1 🍎",{size:10}),k.pos(W/2,cy2),k.anchor("center"),k.color(180,180,200),k.z(10)]));
     if(resultMsg){
       const col=resultMsg.includes("JACKPOT")?[255,215,0]:resultMsg.includes("ding")?[77,255,77]:[200,200,200];
