@@ -193,6 +193,16 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
 
+  <!-- ─── Mini-map: xem vị trí hiện tại + chạm để đặt công trình từ xa ─── -->
+  <div id="minimap-wrap" style="position:fixed;top:80px;right:8px;z-index:16;pointer-events:auto;text-align:center;">
+    <canvas id="minimap" width="96" height="68" style="width:200px;height:141px;display:block;background:#0a1628;border:2px solid #0a1424;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.55);image-rendering:pixelated;cursor:pointer;"></canvas>
+    <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:2px;">
+      <div id="minimap-pos" style="font-size:8px;color:#f0c060;background:rgba(0,0,0,0.65);border-radius:4px;padding:1px 5px;">📍 --,--</div>
+      <button onclick="window.openMinimapZoom && window.openMinimapZoom()" title="Phóng to minimap để đặt công trình chính xác" style="font-size:11px;line-height:1;background:#1c2e4e;border:1px solid #3a5a8a;color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;">🔎</button>
+    </div>
+    <div id="minimap-hint" style="font-size:8px;color:#5fe089;background:rgba(0,0,0,0.65);border-radius:4px;padding:1px 5px;margin-top:2px;display:none;">👆 Chạm để đặt tại đây</div>
+  </div>
+
   <!-- ─── Island Label ─── -->
   <div id="island-label">🏝️ Starter Isle</div>
 
@@ -213,14 +223,13 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <!-- ─── Quick-Action Toolbar (smart popup per button) ─── -->
   <div id="bottom-actions">
     <div class="ba-row">
-      <button class="bot-btn" onclick="window.openPebbleChat()" title="Chat">💬 Chat</button>
       <button class="bot-btn" onclick="window.quickDig()" id="btn-dig" title="Đào Đất">🪓 Đào</button>
       <button class="bot-btn" onclick="window.quickPlant()" id="btn-plant" title="Trồng Cây">🌾 Trồng</button>
       <button class="bot-btn" onclick="window.quickHeal()" id="btn-heal" title="Hồi Máu">💊 Máu</button>
     </div>
     <div class="ba-row">
       <button class="bot-btn" onclick="window.quickWeapon()" id="btn-weapon" title="Vũ Khí">⚔️ Vũ Khí</button>
-      <button class="bot-btn" onclick="window.toggleBuild()" title="Xây Dựng">🏗️ Xây</button>
+      <button class="bot-btn" onclick="window.toggleBuild()" id="btn-build" title="Xây Dựng">🏗️ Xây</button>
       <button class="bot-btn" onclick="window.toggleCraft()" title="Chế Tạo">✨ Chế Tạo</button>
       <button class="bot-btn" onclick="window.toggleInv()" title="Kho Đồ">📦 Đồ</button>
     </div>
@@ -254,22 +263,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <div id="hud-level">Lv.1</div>
     <div id="hud-xp" style="display:none"><div id="hud-xp-fill-old" style="width:0%"></div></div>
     <div id="hud-xp-text">XP: 0/10</div>
-    <div id="hud-companion" style="display:none">
-      <span id="hud-companion-label">🐱 Pebble</span>
-      <span>❤️ <span id="hud-pebble-hp-text">15/15</span></span>
-      <div id="hud-pebble-hp-bar"><div id="hud-pebble-hp-fill" style="width:100%"></div></div>
-    </div>
-    <div id="hud-cow" style="display:none">
-      <span id="hud-cow-label">🐄 Đàn bò</span>
-      <span id="hud-cow-count">0/10</span>
-      <span>😊 <span id="hud-cow-mood">Happy</span></span>
-      <div style="display:flex;gap:8px;margin-top:2px;font-size:9px;color:#aaa">
-        <span>HP: <span id="hud-cow-hp-text">20/20</span></span>
-        <span>😊 <span id="hud-cow-happy-text">100%</span></span>
-        <span>🥛 <span id="hud-cow-milk-text">0/10</span></span>
-      </div>
-      <div id="hud-cow-hp-bar" style="display:none"><div id="hud-cow-hp-fill" style="width:100%;height:4px;background:#99cc4d;border-radius:2px"></div></div>
-    </div>
   </div>
 </div>
 
@@ -288,7 +281,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <div class="tab-bar">
     <div class="tab-btn active" data-tab="inv-items">Đồ</div>
     <div class="tab-btn" data-tab="inv-equip">Trang Bị</div>
-    <div class="tab-btn" data-tab="inv-pebble">🐱 Pebble</div>
     <div class="tab-btn" data-tab="inv-stats">Stats</div>
   </div>
   <div id="tab-inv-items" class="tab-content active">
@@ -304,10 +296,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <div id="tab-inv-equip" class="tab-content">
     <div style="font-size:10px;color:#bdc3c7;margin-bottom:4px">Click slot để tháo. Click vật phẩm để trang bị.</div>
     <div id="equip-panel"></div>
-  </div>
-  <div id="tab-inv-pebble" class="tab-content">
-    <div id="pebble-equip-panel" style="margin-bottom:8px"></div>
-    <div id="pebble-skills-panel"></div>
   </div>
   <div id="tab-inv-stats" class="tab-content">
     <div id="stats-display"></div>
@@ -336,199 +324,28 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <!-- ─── MAP MODAL ─── -->
 <div class="modal-overlay" id="modal-map"><div class="modal-box" style="max-width:460px">
   <span class="modal-close" onclick="window.closeModals()">&times;</span>
-  <h2>🗺️ World Map</h2>
+  <h2>🗺️ Bản Đồ Quần Đảo</h2>
+  <div class="modal-sub">Chạm vào 1 đảo để xem chi tiết / di chuyển tới</div>
+  <canvas id="archipelago-canvas" width="300" height="220" style="width:100%;max-width:300px;height:auto;aspect-ratio:300/220;display:block;margin:0 auto 8px;background:linear-gradient(180deg,#0d2a5c,#1a4a8a);border:2px solid #0a1424;border-radius:8px;image-rendering:pixelated;cursor:pointer;"></canvas>
   <div id="map-list"></div>
+</div></div>
+
+<!-- ─── MINIMAP ZOOM MODAL: xem gần, đặt công trình chính xác ─── -->
+<div class="modal-overlay" id="modal-minimap-zoom"><div class="modal-box" style="max-width:420px">
+  <span class="modal-close" onclick="window.closeModals()">&times;</span>
+  <h2>🔎 Xem Gần — Đặt Công Trình</h2>
+  <div class="modal-sub">Vùng quanh vị trí hiện tại — chạm để đặt chính xác từng ô</div>
+  <canvas id="minimap-zoom-canvas" width="288" height="204" style="width:100%;max-width:380px;height:auto;aspect-ratio:288/204;display:block;margin:0 auto 6px;background:#0a1628;border:2px solid #0a1424;border-radius:8px;image-rendering:pixelated;cursor:pointer;"></canvas>
+  <div style="text-align:center;font-size:9px;color:#9fb8d8;">🔄 Tự căn giữa theo vị trí nhân vật mỗi khi mở</div>
 </div></div>
 
 <div class="toast" id="toast"></div>
 <div id="error-banner" style="position:fixed;top:90px;left:50%;transform:translateX(-50%);background:rgba(200,40,40,0.92);border:1px solid #ff6b6b;border-radius:8px;padding:5px 12px;z-index:300;display:none;color:#fff;font-size:11px;text-align:center;max-width:400px;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,0.5);"></div>
 
-<!-- ─── PEBBLE CHAT MODAL ─── -->
-<div class="modal-overlay" id="modal-pebble-chat">
-  <div class="modal-box" style="max-width:380px;text-align:center;">
-    <h2>💬 Chat với Pebble</h2>
-    <div id="chat-messages" style="max-height:240px;overflow-y:auto;text-align:left;padding:6px;margin:6px 0;background:rgba(0,0,0,0.3);border-radius:8px;font-size:12px;color:#fff;line-height:1.5;min-height:80px;"></div>
-    <div style="display:flex;gap:4px;">
-      <input id="chat-input" type="text" placeholder="Nhập tin nhắn..." style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:12px;outline:none;">
-      <button id="chat-send" style="background:rgba(232,161,64,0.2);border:1px solid #e8a140;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;cursor:pointer;">Gửi</button>
-    </div>
-    <div style="margin-top:6px;font-size:9px;color:#8899bb;">Gõ "help" để xem danh sách lệnh</div>
-    <button class="modal-close" style="margin-top:6px;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:4px 16px;border-radius:8px;font-size:11px;cursor:pointer;">Đóng</button>
-  </div>
-</div>
 
-<!-- ─── PEBBLE DIALOGUE BUBBLE ─── -->
-<div id="pebble-dialogue" style="position:fixed;bottom:46px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:2px solid #e8a140;border-radius:14px;padding:12px 18px;z-index:150;display:none;max-width:380px;width:92%;color:#fff;font-size:14px;text-align:center;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
-  <div id="dialogue-speaker" style="font-weight:bold;color:#f0c060;margin-bottom:4px;font-size:13px;"></div>
-  <div id="dialogue-text" style="color:#fff;line-height:1.4;"></div>
-  <div id="dialogue-continue" style="font-size:10px;color:#8899bb;margin-top:6px;opacity:0.7;">✦</div>
-</div>
-
-<!-- ─── Pebble Task Modal ─── -->
-<div class="modal-overlay" id="modal-pebble-task">
-  <div class="modal-box" style="max-width:320px;text-align:center;">
-    <h2>🐱 Giao Việc Cho Pebble</h2>
-    <p style="font-size:11px;color:#8899bb;margin:6px 0 10px 0;">Chọn nhiệm vụ cho Pebble:</p>
-    <div id="pebble-task-buttons" style="display:flex;flex-direction:column;gap:6px;">
-      <button class="task-btn" data-task="none" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🔄 Tự Do (Mặc Định)</button>
-      <button class="task-btn" data-task="follow" style="background:rgba(46,160,67,0.2);border:1px solid #2ea043;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">👣 Đi Theo Nhân Vật</button>
-      <button class="task-btn" data-task="defend" style="background:rgba(230,51,51,0.2);border:1px solid #e63333;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🛡️ Bảo Vệ Chủ Nhân</button>
-      <button class="task-btn" data-task="gather" style="background:rgba(232,161,64,0.2);border:1px solid #e8a140;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🌲 Thu Thập Tài Nguyên</button>
-      <button class="task-btn" data-task="stay" style="background:rgba(100,130,200,0.2);border:1px solid #6482c8;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">📍 Đứng Yên Tại Chỗ</button>
-    </div>
-    <div style="margin-top:10px;font-size:10px;color:#8899bb;" id="pebble-current-task">Hiện tại: Tự do</div>
-    <button class="modal-close" style="margin-top:10px;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:6px 20px;border-radius:8px;font-size:12px;cursor:pointer;">Đóng</button>
-  </div>
 </div>
 
 <script>
-// ─── Pebble Chat System ───
-const PEBBLE_CHAT_RESPONSES = {
-  "hello":["Meo meo! Chào bạn! 🐱","Chào! Bạn khỏe không? 🐾","Meo! Rất vui được gặp bạn! 🌟"],
-  "hi":["Meo meo! 👋","Chào bạn hiền! 🐱"],
-  "help":["Mình có thể: đi theo (follow), bảo vệ (defend), thu thập (gather), đứng yên (stay) 🐾","Hỏi mình về đảo, quái, hoặc đồ ăn! 🍎"],
-  "follow":["Mình sẽ đi theo bạn! 👣","Dẫn đường đi! Mình theo sau 🐾"],
-  "defend":["Mình sẽ bảo vệ bạn! 🛡️","Có quái cứ để mình lo! ⚔️"],
-  "gather":["Mình đi nhặt đồ đây! 🌲","Nhặt táo với gỗ thôi! 🍎🪵"],
-  "stay":["OK, mình đứng yên đây 📍","Vâng, mình chờ bạn!"],
-  "arena":["Đấu trường vui lắm! Mình cùng chiến đấu! ⚔️","Vào arena đi! Mình đánh cùng! 🐱⚔️"],
-  "fight":["Chiến đấu thôi! ⚔️","Mình khỏe lắm! Để mình lo! 💪"],
-  "food":["Đói quá! Cho mình xin ít đồ ăn! 🍎","Có táo không? Mình thích táo! 🍎"],
-  "apple":["Táo ngon tuyệt! 🍎","Cho mình xin một quả táo nhé! 🐱🍎"],
-  "fish":["Cá! Cá! Mình thích cá! 🐟","Đi câu cá đi! 🎣"],
-  "island":["Mình thích khám phá đảo mới! 🏝️","Đi đảo khác chơi đi! ⛵"],
-  "boss":["Boss khó lắm! Chuẩn bị kỹ vào! 👑","Cùng nhau đánh boss nhé! ⚔️"],
-  "home":["Nhà mình ở gần bờ biển! 🏠","Về nhà thôi! 🏠"],
-  "love":["Mình cũng yêu bạn! ❤️🐱","Meo meo! Thương bạn! 💕"],
-  "good":["Tốt quá! 🎉","Mình vui! 😊"],
-  "bad":["Đừng buồn! Mình ở đây mà! 🐱","Có chuyện gì vậy? Mình lắng nghe 💛"],
-  "bye":["Tạm biệt! Hẹn gặp lại! 👋🐱","Bye bye! Nhớ gọi mình nhé! 🐾"],
-  "skill":["Mình có 3 skill: Slash, Pounce, Screech! ⚡","Học skill trong tab Pebble nhé! 📚"],
-  "task":["Giao việc cho mình qua nút Pebble! 🐱","Follow/Defend/Gather/Stay tùy bạn! 👣"],
-  "map":["Bản đồ đẹp lắm! Có nhiều đảo để khám phá! 🗺️","Đi đến bến tàu để du lịch! ⛵"],
-};
-const PEBBLE_FALLBACK = [
-  "Meo? 🐱","Mình không hiểu lắm! Giải thích đi! 🤔","Hỏi mình về: help, follow, defend, arena... 📚",
-  "Meo meo? 😊","Chơi gì vui không? 🎮","Mình đang dạo chơi! 🌿","Nói gì đó hay đi! 💬",
-];
-
-window.openPebbleChat = function(){
-  document.getElementById("modal-pebble-chat").classList.add("show");
-  const msgDiv = document.getElementById("chat-messages");
-  if(msgDiv.children.length === 0){
-    var sum = (typeof getPebbleMemorySummary === "function") ? getPebbleMemorySummary() : "Minh moi den!";
-    addChatMsg("🐱 Pebble", "Meo meo! Chao ban! Minh co tri nho moi roi! 🐱🧠", msgDiv);
-    addChatMsg("🐱 Pebble", "🧠 Minh nho: " + sum, msgDiv);
-    addChatMsg("🐱 Pebble", "Go 'help', hoi ve 'hom nay', 'nha', 'dao' hoac 'nho'! 📚", msgDiv);
-  } else {
-    if (typeof getPebbleMemorySummary === "function") {
-      addChatMsg("🐱 Pebble", "🧠 Nho moi: " + getPebbleMemorySummary(), msgDiv);
-    }
-  }
-  setTimeout(()=>{
-    const inp = document.getElementById("chat-input");
-    if(inp) inp.focus();
-  }, 300);
-};
-
-function addChatMsg(sender, text, container){
-  if(!container) container = document.getElementById("chat-messages");
-  const div = document.createElement("div");
-  div.style.marginBottom = "4px";
-  div.style.padding = "4px 6px";
-  div.style.borderRadius = "6px";
-  if(sender === "🧑 Bạn"){
-    div.style.background = "rgba(46,204,113,0.1)";
-    div.style.textAlign = "right";
-    div.innerHTML = `<span style="color:#8899bb;font-size:10px;">${sender}</span><br><span style="color:#fff;">${text}</span>`;
-  } else {
-    div.style.background = "rgba(232,161,64,0.1)";
-    div.style.textAlign = "left";
-    div.innerHTML = `<span style="color:#e8a140;font-size:10px;font-weight:bold;">${sender}</span><br><span style="color:#fff;">${text}</span>`;
-  }
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
-
-function getPebbleResponse(input){
-  const lower = input.toLowerCase().trim();
-  const islandId = GS ? GS.currentIsland : "unknown";
-  
-  // Check memory-aware responses first
-  if (typeof pebbleGetTimeAwareResponse === "function") {
-    const memoryResponse = pebbleGetTimeAwareResponse(input, islandId);
-    if (memoryResponse !== null) {
-      pebbleMemory.conversationHistory.push({input, time: Date.now()});
-      if (pebbleMemory.conversationHistory.length > 10) pebbleMemory.conversationHistory.shift();
-      return memoryResponse;
-    }
-  }
-  
-  // Check for keywords
-  for(const [key, responses] of Object.entries(PEBBLE_CHAT_RESPONSES)){
-    if(lower.includes(key)){
-      if (["gather","follow","defend","stay","task"].includes(key) && typeof pebbleRememberEvent === "function") {
-        pebbleRememberEvent("Player asked about "+key, islandId, Math.floor(playerObj?playerObj.pos.x/TILE:0), Math.floor(playerObj?playerObj.pos.y/TILE:0));
-      }
-      return responses[Math.floor(Math.random() * responses.length)];
-    }
-  }
-  
-  // If the input mentions pebble's name
-  if(lower.includes("pebble") || lower.includes("mèo") || lower.includes("cat")){
-    return "Mình nghe! Có gì không bạn? 🐱👂";
-  }
-  
-  // Numbers or questions - use memory
-  if(lower.includes("?") || lower.includes("ai") || lower.includes("gì") || lower.includes("sao")){
-    if (typeof getPebbleMemorySummary === "function") {
-      return "Hmm, để mình nghĩ... 🤔 " + getPebbleMemorySummary() + " 📚";
-    }
-    return "Hmm, để mình nghĩ... 🤔 Mình không rõ lắm! Hỏi 'help' đi! 📚";
-  }
-  
-  // Default random response
-  return PEBBLE_FALLBACK[Math.floor(Math.random() * PEBBLE_FALLBACK.length)];
-}
-
-// Chat send handler
-function setupChat(){
-  const sendBtn = document.getElementById("chat-send");
-  const input = document.getElementById("chat-input");
-  const msgDiv = document.getElementById("chat-messages");
-  if(!sendBtn || !input) return;
-  
-  function sendMessage(){
-    const text = input.value.trim();
-    if(!text) return;
-    input.value = "";
-    addChatMsg("🧑 Bạn", text, msgDiv);
-    setTimeout(() => {
-      const response = getPebbleResponse(text);
-      addChatMsg("🐱 Pebble", response, msgDiv);
-    }, 400 + Math.random() * 400);
-  }
-  
-  sendBtn.addEventListener("click", sendMessage);
-  input.addEventListener("keypress", (e) => {
-    if(e.key === "Enter") sendMessage();
-  });
-}
-
-document.addEventListener("DOMContentLoaded", setupChat);
-
-// ─── Pebble Task UI event handlers ───
-document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll(".task-btn").forEach(btn => {
-    btn.addEventListener("click", function() {
-      try {
-        const task = btn.dataset.task;
-        if(window.setPebbleTask && task) window.setPebbleTask(task);
-      } catch(e) {}
-    });
-  });
-});
-
 // ─── Window error handler: show errors on screen ───
 window.onerror = function(msg, url, line, col, err) {
   console.error("GLOBAL ERROR:", msg, err);
@@ -678,6 +495,40 @@ const ISLAND_DEFS = {
   golden_plains: {name:"Đilden Plains",   diff:4, desc:"Endless savannahs of shimmering gold."},
 };
 const ISLAND_ORDER = ["starter_isle","ember_isle","crystal_atoll","stormpeak","fire_island","ice_island","cloud_island","sunken_temple","golden_plains"];
+// Màu đại diện cho từng loại tile (khớp thứ tự TYPES ở đầu file) — dùng chung cho minimap trong game
+// và bản đồ quần đảo tổng quan.
+const MINIMAP_COLORS = [
+  "#3a8f4a","#d9c98a","#8a8f96","#1e4a8a","#2f6b3a","#5a5f66","#4a7a3f",
+  "#e0d4a0","#a8895a","#0d2a5c","#4aa85a","#2a5c30","#7a7f86","#4a9a55",
+  "#3a6a2a","#8a5a3a","#a34a2a","#5a5560"
+];
+// Vị trí % (0-100) của từng đảo trên bản đồ quần đảo tổng quan — bố trí gần đúng theo ISLAND_CONNECTIONS
+// để các đảo có liên kết trông gần nhau trực quan.
+const ARCHIPELAGO_LAYOUT = {
+  starter_isle:  {x:16, y:50},
+  ember_isle:    {x:38, y:24},
+  crystal_atoll: {x:38, y:76},
+  stormpeak:     {x:60, y:12},
+  fire_island:   {x:64, y:40},
+  ice_island:    {x:64, y:62},
+  cloud_island:  {x:86, y:28},
+  sunken_temple: {x:86, y:56},
+  golden_plains: {x:56, y:88},
+};
+// 10 vai trò Pebble theo đúng bộ luật gốc (SKILL.md) — dùng làm trợ thủ có thể gọi ra tham chiến ở Đấu Trường.
+// Vai trò thiên chiến đấu (Defender/Scout/Miner/Lumberjack) có chỉ số cao hơn vai trò hậu cần (Farmer/Cook/Gatherer...).
+const PEBBLE_ROLES = [
+  {id:"explorer",   name:"Explorer (Trinh Sát)", icon:"🔍", atk:2, hp:14},
+  {id:"miner",      name:"Miner (Thợ Mỏ)",       icon:"⛏️", atk:4, hp:18},
+  {id:"lumberjack", name:"Lumberjack (Tiều Phu)", icon:"🪓", atk:4, hp:17},
+  {id:"builder",    name:"Builder (Thợ Xây)",     icon:"🔨", atk:2, hp:20},
+  {id:"crafter",    name:"Crafter (Thợ Rèn)",     icon:"⚒️", atk:3, hp:15},
+  {id:"farmer",     name:"Farmer (Nông Dân)",     icon:"🌾", atk:1, hp:16},
+  {id:"cook",       name:"Cook (Đầu Bếp)",        icon:"🍳", atk:1, hp:16},
+  {id:"defender",   name:"Defender (Vệ Sĩ)",      icon:"🛡️", atk:6, hp:26},
+  {id:"scout",      name:"Scout (Trinh Sát Nhanh)", icon:"🏃", atk:3, hp:16},
+  {id:"gatherer",   name:"Gatherer (Thu Lượm)",   icon:"🧺", atk:1, hp:15},
+];
 const ISLAND_CONNECTIONS = {
   starter_isle:["ember_isle","crystal_atoll"],
   ember_isle:["starter_isle","stormpeak","fire_island","sunken_temple"],
@@ -866,6 +717,7 @@ const BUILDINGS = {
   arena:{name:"Đấu Trường",icon:"⚔️",costs:{w:15,s:10}, desc:"Chiến sóng quái"},
   market:{name:"Chợ",icon:"🏪",costs:{w:20,s:10}, desc:"Trao đổi tài nguyên"},
   merchant_house:{name:"Nhà Buôn",icon:"🏛️",costs:{w:25,s:15}, desc:"Vòng quay may mắn!"},
+  bridge:{name:"Cầu",icon:"🌉",costs:{w:30,s:20}, desc:"Xây cầu nối sang đảo liền kề — mở khoá đường đi mới!"},
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -941,7 +793,6 @@ loadSpriteSafe("stone_sprite", `${IMG_BASE}/stone.png`, { width: TILE, height: T
 // Load palm tree and mine tile sprites
 loadSpriteSafe("palm_tree_sprite", `${IMG_BASE}/palm_tree.png`, { width: TILE, height: TILE });
 loadSpriteSafe("mine_tile_sprite", `${IMG_BASE}/mine_tile.png`, { width: TILE, height: TILE });
-loadSpriteSafe("warrior_cow",  `${IMG_BASE}/warrior_cow.png`, { width: TILE, height: TILE });
 
 // ── Tileset textures (user uploaded pixel art) ──
 loadSpriteSafe("tile_grass",   `${IMG_BASE}/1000180088.png`);   // cỏ+đất tileset 128x128
@@ -993,13 +844,7 @@ const GS = {
   pebble:{name:"Pebble",hp:15,maxHp:15,attack:3,defense:1,trainingBoost:{atk:0,def:0,hp:0},equipment:{head:null,chest:null,weapon:null,accessory:null},kills:0,skills:{slash:false,pounce:false,screech:false}},
 	  pebbleMode:"roam",
   pebbleTask:"none", // none | follow | defend | gather | stay
-	  // COWS — multiple farm animals on starter island
-	  cows:[
-	    {id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},
-	    {id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"},
-	  ],
-	  cowPen:{x1:12,y1:8,x2:22,y2:16},
-	  maxCows:10,
+	  cows:[], cowPen:{x1:0,y1:0,x2:0,y2:0}, maxCows:0,
   resources:{wood:5,stone:3,food:3,gold:0},
   silverCoins:0,
   currentIsland:"starter_isle",
@@ -1465,7 +1310,8 @@ function loadGame(){
       // Migration: ensure new fields exist in loaded saves
       if(!GS.pebble.trainingBoost) GS.pebble.trainingBoost={atk:0,def:0,hp:0};
       if(!GS.pebble.defense) GS.pebble.defense=1;if(!GS.pebble.equipment) GS.pebble.equipment={head:null,chest:null,weapon:null,accessory:null};if(!GS.pebble.kills) GS.pebble.kills=0;if(!GS.pebble.skills) GS.pebble.skills={slash:false,pounce:false,screech:false};if(GS.arenaKillBuff===undefined) GS.arenaKillBuff=0;
-	      if(!GS.cows) GS.cows=[{id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},{id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"}];if(!GS.cowPen)GS.cowPen={x1:12,y1:8,x2:22,y2:16};if(!GS.maxCows)GS.maxCows=10;
+	      if(!GS.cows) GS.cows=[];if(!GS.cowPen)GS.cowPen={x1:0,y1:0,x2:0,y2:0};if(!GS.maxCows)GS.maxCows=0;
+	      GS.cows=[]; // Hệ thống bò đã bị gỡ bỏ khỏi game — dọn sạch dữ liệu bò còn sót trong save cũ
       for(const id of ISLAND_ORDER) getIslandData(id);
       // Validate all island maps: clear corrupt ones so they regenerate fresh on scene entry
       for(const id of ISLAND_ORDER) {
@@ -1555,6 +1401,17 @@ window.closeModals = function(){
   document.querySelectorAll(".modal-overlay").forEach(m=>m.classList.remove("show"));
 }
 
+// Ẩn/hiện các HUD của màn chơi chính (joystick di chuyển, thanh hub, tài nguyên, minimap...)
+// khi vào các mini-game riêng biệt (Đấu Trường, Vòng Quay May Mắn...) — tránh hiện joystick
+// vô dụng đè lên màn hình chiến đấu theo lượt khiến người chơi tưởng bấm không được.
+function setGameHUDVisible(visible){
+  const ids = ["top-bar","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad"];
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = visible ? "" : "none";
+  });
+}
+
 window.cancelBuildMode = function() {
   GS.buildMode = null;
   if (ghostObj) { try { if (ghostObj && ghostObj.exists) k.destroy(ghostObj); } catch(e) {} ghostObj = null; }
@@ -1586,14 +1443,6 @@ function updateHUD(){
   document.getElementById("hud-level").textContent=`Lv.${p.level}`;
   document.getElementById("hud-xp-fill").style.width=(p.xp/(p.level*10)*100)+"%";
   document.getElementById("hud-xp-text").textContent=`XP: ${p.xp}/${p.level*10}`;
-  // Companion HUD
-  const cp = getPebbleStats();
-  document.getElementById("hud-pebble-hp-text").textContent=`${cp.hp}/${cp.maxHp}`;
-  document.getElementById("hud-pebble-hp-fill").style.width=(cp.hp/cp.maxHp*100)+"%";
-  // Cow count (simplified - HP shown above each cow)
-  const aliveCows = GS.cows.filter(c=>!c.dead).length;
-  const elCowCount = document.getElementById("hud-cow-count");
-  if (elCowCount) elCowCount.textContent = aliveCows + "/" + GS.maxCows;
   document.getElementById("r-wood").textContent=GS.resources.wood||0;
   document.getElementById("r-stone").textContent=GS.resources.stone;
   document.getElementById("r-food").textContent=GS.resources.food;
@@ -2038,6 +1887,27 @@ function craftItem(r){
 // ═══════════════════════════════════════════════════════════════════
 // SECTION 9: BUILDING
 // ═══════════════════════════════════════════════════════════════════
+// Chọn đảo đích cho công trình Cầu — chỉ liệt kê các đảo liền kề (theo ISLAND_CONNECTIONS) chưa mở khoá.
+function startBridgeBuild(){
+  const conn = ISLAND_CONNECTIONS[GS.currentIsland] || [];
+  const lockedNeighbors = conn.filter(id => !GS.unlockedIslands.includes(id));
+  if(lockedNeighbors.length===0){
+    showToast("🌉 Đảo này đã có đường tới tất cả đảo liền kề rồi!", 2200);
+    return;
+  }
+  const items = lockedNeighbors.map(id=>({
+    icon:"🏝️", label: ISLAND_DEFS[id].name, sublabel: "⭐".repeat(ISLAND_DEFS[id].diff)+" · Cần 🪵30 🪨20",
+    enabled:true,
+    action(){
+      window.closeQuickPopup();
+      GS.pendingBridgeTarget = id;
+      GS.buildMode = "bridge";
+      showToast(`🌉 Chạm vào bản đồ hoặc mini-map để đặt cầu nối sang ${ISLAND_DEFS[id].name}`, 2800);
+    }
+  }));
+  openQuickPopup("🌉 Xây cầu nối sang đảo nào?", items, "btn-build");
+}
+
 window.toggleBuild = function(){
   window.closeModals();
   document.getElementById("modal-build").classList.add("show");
@@ -2049,7 +1919,10 @@ window.toggleBuild = function(){
     card.className="build-card"+(ok?"":" cant");
     const costLabel=b.needsItem?`🧱 x1 (Đồ)`:`🪵${b.costs.w} 🪨${b.costs.s}`;
     card.innerHTML=`<div class="bc-icon">${b.icon}</div><div class="bc-name">${b.name}</div><div class="bc-cost">${costLabel}</div>`;
-    if(ok)card.addEventListener("click",()=>{GS.buildMode=k;window.closeModals();const hint=b.isFloor?`🧱 Click bất kỳ ô nào để lát ${b.icon} ${b.name}`:`🏗️ Click bất kỳ ô nào để xây ${b.icon} ${b.name}`;showToast(hint,2000);});
+    if(ok)card.addEventListener("click",()=>{
+      if(k==="bridge"){ window.closeModals(); startBridgeBuild(); return; }
+      GS.buildMode=k;window.closeModals();const hint=b.isFloor?`🧱 Click bất kỳ ô nào để lát ${b.icon} ${b.name}`:`🏗️ Click bất kỳ ô nào để xây ${b.icon} ${b.name}`;showToast(hint,2000);
+    });
     grid.appendChild(card);
   }
   L.appendChild(grid);
@@ -2058,6 +1931,22 @@ window.toggleBuild = function(){
 function placeBuilding(tx,ty,type){
   const bi=BUILDINGS[type]; if(!bi) return false;
   const idata=getIslandData(GS.currentIsland);
+  // Cầu (bridge): công trình đặc biệt — cần đã chọn đảo đích qua startBridgeBuild() trước đó.
+  // Đặt xong sẽ mở khoá luôn đường đi tới đảo đó (thay vì phải đủ level/boss/tài nguyên như cũ).
+  if(type==="bridge"){
+    const target = GS.pendingBridgeTarget;
+    if(!target){ showToast("❌ Hãy chọn đảo đích trước khi đặt cầu!",1800); return false; }
+    if(bi.costs.w>GS.resources.wood||bi.costs.s>GS.resources.stone){showToast(`❌ Không đủ nguyên liệu! Cần 🪵${bi.costs.w} 🪨${bi.costs.s}`,2000);return false;}
+    if(idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty)){showToast("❌ Đã có công trình ở đây!");return false;}
+    const tileType = getTile(ty, tx, idata.map);
+    if(tileType === 2 || tileType === 4 || tileType === 15){ idata.map[ty][tx] = 0; }
+    GS.resources.wood-=bi.costs.w; GS.resources.stone-=bi.costs.s;
+    idata.buildings.push({tileX:tx,tileY:ty,type:"bridge",target});
+    unlockIsland(target);
+    showToast(`🌉 Cầu đã xây xong! Mở khoá đường tới ${ISLAND_DEFS[target].name}!`,2500);
+    updateHUD(); GS.buildMode=null; GS.pendingBridgeTarget=null;
+    return true;
+  }
   // Floor tiles (e.g. brick) just change the tile under the player's feet — no building object created.
   // Can be placed ANYWHERE: grass, sand, stone, water, trees, etc. — instantly overwrites the tile.
   if(bi.isFloor){
@@ -2116,6 +2005,16 @@ function interactWithBuilding(building){
     showToast("⚔️ Vào đấu trường! Chuẩn bị chiến đấu!",1500);
     k.go("arena");break;
     }
+    case"bridge":{
+      const t=building.target;
+      if(t && GS.unlockedIslands.includes(t)){
+        showToast(`🌉 Cầu nối sang ${ISLAND_DEFS[t].name} — đang di chuyển...`,1200);
+        travelToIsland(t);
+      } else {
+        showToast("🌉 Cây cầu này chưa rõ điểm đến.",1500);
+      }
+      break;
+    }
   }
 }
 
@@ -2146,7 +2045,115 @@ window.showMap = function(){
       <span class="mc-info">${"⭐".repeat(d.diff)} ${here?"Current":(unlocked?"Unlocked":"Locked")}</span>`;
     L.appendChild(div);
   }
+  drawArchipelagoMap();
 };
+
+// Kiểm tra xem đã có cầu (bridge) nối 2 đảo a-b hay chưa (xây từ đảo nào cũng tính)
+function hasBridgeBetween(a,b){
+  for(const id of [a,b]){
+    const idata = getIslandData(id);
+    if(idata.buildings && idata.buildings.some(bd=>bd.type==="bridge" && bd.target===(id===a?b:a))) return true;
+  }
+  return false;
+}
+
+// Vẽ 1 đảo thu nhỏ (thumbnail địa hình) vào 1 canvas tạm, trả về canvas đó
+const _islandThumbCache = {};
+function getIslandThumb(id){
+  if(_islandThumbCache[id]) return _islandThumbCache[id];
+  const th = document.createElement("canvas");
+  th.width = 22; th.height = 16;
+  const tctx = th.getContext("2d");
+  const idata = getIslandData(id);
+  const m = idata.map;
+  for(let ty=0; ty<16; ty++){
+    for(let tx=0; tx<22; tx++){
+      const srcX = Math.floor(tx * COLS/22), srcY = Math.floor(ty * ROWS/16);
+      const t = getTile(srcY, srcX, m);
+      tctx.fillStyle = MINIMAP_COLORS[t] || "#22304a";
+      tctx.fillRect(tx, ty, 1, 1);
+    }
+  }
+  _islandThumbCache[id] = th;
+  return th;
+}
+
+function drawArchipelagoMap(){
+  const cv = document.getElementById("archipelago-canvas");
+  if(!cv) return;
+  const ctx = cv.getContext("2d");
+  const W2 = cv.width, H2 = cv.height;
+  ctx.clearRect(0,0,W2,H2);
+  const pt = id => ({x: ARCHIPELAGO_LAYOUT[id].x/100*W2, y: ARCHIPELAGO_LAYOUT[id].y/100*H2});
+  // Vẽ đường nối giữa các đảo liền kề — xanh lá nếu đã có cầu/đã mở khoá cả 2 đầu, vàng đứt nét nếu chưa
+  const drawn = new Set();
+  for(const id of ISLAND_ORDER){
+    for(const nb of (ISLAND_CONNECTIONS[id]||[])){
+      const key = [id,nb].sort().join("-");
+      if(drawn.has(key)) continue; drawn.add(key);
+      const p1=pt(id), p2=pt(nb);
+      const bothUnlocked = GS.unlockedIslands.includes(id) && GS.unlockedIslands.includes(nb);
+      const bridged = hasBridgeBetween(id,nb);
+      ctx.beginPath();
+      ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+      if(bridged){ ctx.strokeStyle="#f0c060"; ctx.lineWidth=2.5; ctx.setLineDash([]); }
+      else if(bothUnlocked){ ctx.strokeStyle="rgba(160,200,255,0.6)"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); }
+      else { ctx.strokeStyle="rgba(160,200,255,0.25)"; ctx.lineWidth=1; ctx.setLineDash([2,4]); }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  // Vẽ từng đảo: nền tròn + địa hình thu nhỏ + viền theo trạng thái
+  for(const id of ISLAND_ORDER){
+    const p = pt(id);
+    const unlocked = GS.unlockedIslands.includes(id);
+    const here = GS.currentIsland === id;
+    const r = 15;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.closePath(); ctx.clip();
+    const thumb = getIslandThumb(id);
+    ctx.globalAlpha = unlocked ? 1 : 0.35;
+    ctx.drawImage(thumb, p.x-r, p.y-r, r*2, r*2);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.lineWidth = here ? 3 : 2;
+    ctx.strokeStyle = here ? "#ffe066" : (unlocked ? "#5fe089" : "#5a6a86");
+    ctx.stroke();
+    if(!unlocked){
+      ctx.font = "10px sans-serif"; ctx.textAlign="center"; ctx.fillStyle="#fff";
+      ctx.fillText("🔒", p.x, p.y+3);
+    }
+    if(here){
+      ctx.font = "9px sans-serif"; ctx.textAlign="center"; ctx.fillStyle="#ffe066";
+      ctx.fillText("📍", p.x, p.y-r-4);
+    }
+  }
+}
+if(!window._archipelagoClickBound){
+  window._archipelagoClickBound = true;
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const cv = document.getElementById("archipelago-canvas");
+    if(!cv) return;
+    cv.addEventListener("click",(evt)=>{
+      const rect = cv.getBoundingClientRect();
+      const mx = (evt.clientX-rect.left) * (cv.width/rect.width);
+      const my = (evt.clientY-rect.top) * (cv.height/rect.height);
+      for(const id of ISLAND_ORDER){
+        const p = {x: ARCHIPELAGO_LAYOUT[id].x/100*cv.width, y: ARCHIPELAGO_LAYOUT[id].y/100*cv.height};
+        if(Math.hypot(mx-p.x,my-p.y) <= 15){
+          if(GS.unlockedIslands.includes(id)){
+            if(id!==GS.currentIsland){ window.closeModals(); travelToIsland(id); }
+          } else {
+            window.closeModals();
+            openTravelModal([id]);
+          }
+          return;
+        }
+      }
+    });
+  });
+}
 
 function openTravelModal(dests){
   window.closeModals();
@@ -2281,7 +2288,6 @@ function pebbleGetTimeAwareResponse(input, islandId) {
   if(l.indexOf('tai nguyen')>=0||l.indexOf('cay')>=0||l.indexOf('da')>=0){return 'Thay '+(pebbleMemory.observedResources||'vai')+' tai nguyen o '+islandId;}
   if(l.indexOf('dao')>=0||l.indexOf('island')>=0||l.indexOf('noi')>=0){var v=[];for(var i=0;i<pebbleMemory.visitedPlaces.length;i++){if(v.indexOf(pebbleMemory.visitedPlaces[i].island)<0)v.push(pebbleMemory.visitedPlaces[i].island);}return v.length>0?'Da kham pha: '+v.join(', '):'Chi o day thoi!';}
   if(l.indexOf('quai')>=0||l.indexOf('enemy')>=0||l.indexOf('monster')>=0){return 'Co quai vat! Can than!';}
-  if(l.indexOf('bo')>=0||l.indexOf('cow')>=0){return 'Bo dang o chuong!';}
   if(l.indexOf('nho')>=0||l.indexOf('remember')>=0){if(pebbleMemory.visitedPlaces.length>0){return 'Minh nho: '+pebbleMemory.visitedPlaces[0].description+' luc '+pebbleMemory.visitedPlaces[0].time;}return 'Chua nho gi!';}
   return null;
 }
@@ -2406,7 +2412,6 @@ function findNearestResource() {
 // ════════════════════════════════════════════════════════════════════════════
 // Stubs prevent "is not a function" errors when buttons are clicked before scene loads
 window.farmAction = window.farmAction || function() { showToast("⚠️ Game not ready yet", 1000); };
-window.cowAction = window.cowAction || function() { showToast("⚠️ Game not ready yet", 1000); };
 window.togglePebble = window.togglePebble || function() { showToast("⚠️ Game not ready yet", 1000); };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2619,6 +2624,7 @@ window._originalHealItem = window.useHealItem;
 window.useHealItem = window.quickHeal;
 
 k.scene("game", ()=>{
+  setGameHUDVisible(true);
 
 function digToFarm(tx,ty){
   const idata=getIslandData(GS.currentIsland);
@@ -2798,12 +2804,151 @@ console.log("🎮 Đang khởi tạo...");
           buildingObjs.push(k.add([k.rect(TILE-6,2),k.pos(bx+3,by+TILE/2-2),k.color(180,80,60),k.opacity(0.85),k.z(bz(45))]));
           break;
         }
+        case"bridge":{
+          // Ván cầu gỗ bắc ngang ô, 2 lan can 2 bên
+          buildingObjs.push(k.add([k.rect(TILE-4,TILE-18),k.pos(bx+2,by+9),k.color(150,105,60),k.opacity(0.95),k.z(bz(44)),k.area(),"building"]));
+          for(let px2=6;px2<TILE-4;px2+=8){
+            buildingObjs.push(k.add([k.rect(3,TILE-18),k.pos(bx+px2,by+9),k.color(110,75,40),k.opacity(0.6),k.z(bz(45))]));
+          }
+          buildingObjs.push(k.add([k.rect(TILE-4,3),k.pos(bx+2,by+7),k.color(90,60,30),k.opacity(0.9),k.z(bz(45))]));
+          buildingObjs.push(k.add([k.rect(TILE-4,3),k.pos(bx+2,by+TILE-11),k.color(90,60,30),k.opacity(0.9),k.z(bz(45))]));
+          break;
+        }
       }
       const lb=k.add([k.text(bi.icon,{size:14}),k.pos(bx+8,by+4),k.z(bz(46))]);
       buildingObjs.push(lb);
     }
   }
   renderBuildings();
+
+  // ─── MINI-MAP ──────────────────────────────────────────────────
+  const mmCanvas = document.getElementById("minimap");
+  const mmCtx = mmCanvas ? mmCanvas.getContext("2d") : null;
+  const mmStatic = document.createElement("canvas");
+  mmStatic.width = COLS; mmStatic.height = ROWS;
+  const mmStaticCtx = mmStatic.getContext("2d");
+  function drawMinimapStatic(){
+    if(!mmStaticCtx) return;
+    for(let ty=0; ty<ROWS; ty++){
+      for(let tx=0; tx<COLS; tx++){
+        const t = getTile(ty, tx, map);
+        mmStaticCtx.fillStyle = MINIMAP_COLORS[t] || "#22304a";
+        mmStaticCtx.fillRect(tx, ty, 1, 1);
+      }
+    }
+  }
+  drawMinimapStatic();
+  let mmLastRebuild = Date.now();
+  function refreshMinimap(){
+    if(!mmCtx) return;
+    // Vẽ lại nền tĩnh mỗi ~2 giây (đủ để phản ánh khai thác/xây dựng làm đổi tile, không tốn hiệu năng mỗi khung hình)
+    if(Date.now() - mmLastRebuild > 2000){ drawMinimapStatic(); mmLastRebuild = Date.now(); }
+    mmCtx.clearRect(0,0,COLS,ROWS);
+    mmCtx.drawImage(mmStatic, 0, 0);
+    // Chấm công trình đã xây (tháp phòng thủ/súng nổi bật màu đỏ, còn lại màu vàng nhạt)
+    for(const b of idata.buildings){
+      mmCtx.fillStyle = (b.type === "defense_tower") ? "#ff4444" : "#ffe066";
+      mmCtx.fillRect(b.tileX, b.tileY, 1, 1);
+    }
+    // Chấm vị trí hiện tại của người chơi
+    if(playerObj && playerObj.pos){
+      const ptx = Math.floor(playerObj.pos.x/TILE), pty = Math.floor(playerObj.pos.y/TILE);
+      mmCtx.fillStyle = "#ffffff";
+      mmCtx.fillRect(ptx-1, pty-1, 3, 3);
+      const posEl = document.getElementById("minimap-pos");
+      if(posEl) posEl.textContent = "📍 " + ptx + "," + pty;
+    }
+    const hintEl = document.getElementById("minimap-hint");
+    if(hintEl) hintEl.style.display = GS.buildMode ? "inline-block" : "none";
+  }
+  if(mmCanvas){
+    mmCanvas.onclick = (evt)=>{
+      const rect = mmCanvas.getBoundingClientRect();
+      const tix = Math.floor((evt.clientX-rect.left) * (COLS/rect.width));
+      const tiy = Math.floor((evt.clientY-rect.top) * (ROWS/rect.height));
+      if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS) return;
+      if(GS.buildMode){
+        // Đặt công trình (VD Tháp Phòng Thủ/súng) ngay tại vị trí chạm trên mini-map,
+        // không cần di chuyển nhân vật thật sự tới đó.
+        const bi = BUILDINGS[GS.buildMode];
+        const placed = placeBuilding(tix, tiy, GS.buildMode);
+        if(placed){
+          renderBuildings();
+          drawMinimapStatic();
+          showToast((bi ? bi.icon+" "+bi.name : "Công trình") + " đã đặt tại ("+tix+","+tiy+")", 1400);
+          if(!(bi && bi.isFloor)) GS.buildMode = null;
+        } else {
+          showToast("❌ Không đủ tài nguyên để đặt tại đây", 1200);
+        }
+      } else {
+        showToast("📍 Ô bản đồ ("+tix+","+tiy+") — mở menu Xây rồi chạm minimap để đặt công trình từ xa", 1800);
+      }
+    };
+  }
+
+  // ─── MINIMAP PHÓNG TO (🔎) ────────────────────────────────────
+  // Vùng nhỏ quanh nhân vật, mỗi ô vẽ to hơn nhiều so với minimap tổng quan,
+  // giúp chạm chính xác đúng ô muốn đặt công trình thay vì bấm nhầm ô kế bên.
+  const ZOOM_TILES_W = 24, ZOOM_TILES_H = 17, ZOOM_PX = 12; // 24×12=288, 17×12=204 khớp kích thước canvas
+  function drawZoomMinimap(){
+    const cv = document.getElementById("minimap-zoom-canvas");
+    if(!cv || !playerObj) return;
+    const ctx = cv.getContext("2d");
+    const centerTx = Math.floor(playerObj.pos.x/TILE), centerTy = Math.floor(playerObj.pos.y/TILE);
+    const startTx = centerTx - Math.floor(ZOOM_TILES_W/2), startTy = centerTy - Math.floor(ZOOM_TILES_H/2);
+    cv._zoomStart = {x:startTx, y:startTy};
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for(let ty=0; ty<ZOOM_TILES_H; ty++){
+      for(let tx=0; tx<ZOOM_TILES_W; tx++){
+        const wtx=startTx+tx, wty=startTy+ty;
+        const outOfBounds = wtx<0||wtx>=COLS||wty<0||wty>=ROWS;
+        const t = outOfBounds ? -1 : getTile(wty, wtx, map);
+        ctx.fillStyle = outOfBounds ? "#0a1424" : (MINIMAP_COLORS[t] || "#22304a");
+        ctx.fillRect(tx*ZOOM_PX, ty*ZOOM_PX, ZOOM_PX-1, ZOOM_PX-1); // để hở 1px tạo lưới ô rõ ràng
+      }
+    }
+    for(const b of idata.buildings){
+      const lx = b.tileX-startTx, ly = b.tileY-startTy;
+      if(lx>=0 && lx<ZOOM_TILES_W && ly>=0 && ly<ZOOM_TILES_H){
+        ctx.fillStyle = (b.type === "defense_tower") ? "#ff4444" : "#ffe066";
+        ctx.fillRect(lx*ZOOM_PX+2, ly*ZOOM_PX+2, ZOOM_PX-4, ZOOM_PX-4);
+      }
+    }
+    const plx = centerTx-startTx, ply = centerTy-startTy;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(plx*ZOOM_PX+ZOOM_PX/2, ply*ZOOM_PX+ZOOM_PX/2, ZOOM_PX/2-1, 0, Math.PI*2); ctx.fill();
+  }
+  window.openMinimapZoom = function(){
+    window.closeModals();
+    document.getElementById("modal-minimap-zoom").classList.add("show");
+    drawZoomMinimap();
+  };
+  const zoomCv = document.getElementById("minimap-zoom-canvas");
+  if(zoomCv){
+    zoomCv.onclick = (evt)=>{
+      const rect = zoomCv.getBoundingClientRect();
+      const px = (evt.clientX-rect.left) * (zoomCv.width/rect.width);
+      const py = (evt.clientY-rect.top) * (zoomCv.height/rect.height);
+      const start = zoomCv._zoomStart || {x:0,y:0};
+      const tix = start.x + Math.floor(px/ZOOM_PX), tiy = start.y + Math.floor(py/ZOOM_PX);
+      if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS) return;
+      if(GS.buildMode){
+        const bi = BUILDINGS[GS.buildMode];
+        const placed = placeBuilding(tix, tiy, GS.buildMode);
+        if(placed){
+          renderBuildings();
+          drawMinimapStatic();
+          drawZoomMinimap();
+          showToast((bi ? bi.icon+" "+bi.name : "Công trình") + " đã đặt tại ("+tix+","+tiy+")", 1400);
+          if(!(bi && bi.isFloor)) GS.buildMode = null;
+        } else {
+          showToast("❌ Không đủ tài nguyên để đặt tại đây", 1200);
+        }
+      } else {
+        showToast("📍 Ô bản đồ ("+tix+","+tiy+")", 1500);
+      }
+    };
+  }
 
   // ─── ENEMIES ─────────────────────────────────────────────────
   const enemyObjs=[];
@@ -3072,674 +3217,6 @@ console.log("🎮 Đang khởi tạo...");
 
   // (Removed follow-position history — Pebble now uses free-roam AI)
 
-  // ─── Pebble call / dialogue state ───
-  let pebbleCallPhase = "idle"; // "idle" | "walking" | "dialoguing"
-  let pebbleWalkTarget = null;  // {x, y} player's position when call started
-  let currentDialogue = null;   // selected dialogue array
-  let dialogueIndex = 0;        // current line in dialogue
-  let dialogueTimer = 0;        // auto-advance timer
-  let dialogueActive = false;   // whether dialogue bubble is shown
-  let lastDialogueUsed = -1;    // index of last used dialogue, to avoid repeats
-
-  // Spawn pebble near the player initially
-  const pebSx=sx+25,pebSy=sy+10;
-
-  // Pebble body (cat) - redesigned to look like 🐱 emoji
-  pebbleObj=k.add([
-    k.circle(TILE/2-3),k.pos(pebSx,pebSy+3),CAT_COLOR,
-    k.outline(2,k.color(0,0,0)),k.z(10),k.area(),"pebble",
-    {moving:false},
-  ]);
-  // Bigger round head (emoji style)
-  const pebDau=k.add([k.circle(TILE/2-5),k.pos(pebSx,pebSy-5),CAT_COLOR,k.outline(2,k.color(0,0,0)),k.z(11)]);
-  // Pointy cat ears
-  const pebEarL=k.add([k.polygon([k.vec2(pebSx-14,pebSy-6),k.vec2(pebSx-6,pebSy-26),k.vec2(pebSx,pebSy-6)]),CAT_DARK,k.z(11)]);
-  const pebEarR=k.add([k.polygon([k.vec2(pebSx+14,pebSy-6),k.vec2(pebSx+6,pebSy-26),k.vec2(pebSx,pebSy-6)]),CAT_DARK,k.z(11)]);
-  // Pink inner ears
-  const pebEarInnerL=k.add([k.polygon([k.vec2(pebSx-11,pebSy-7),k.vec2(pebSx-6,pebSy-21),k.vec2(pebSx-2,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
-  const pebEarInnerR=k.add([k.polygon([k.vec2(pebSx+11,pebSy-7),k.vec2(pebSx+6,pebSy-21),k.vec2(pebSx+2,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
-  // Forehead tabby stripes (3 small dark orange lines)
-  const pebStripeM=k.add([k.rect(3,7),k.pos(pebSx-1.5,pebSy-18),CAT_DARK,k.opacity(0.7),k.z(12)]);
-  const pebStripeL=k.add([k.rect(2.5,5),k.pos(pebSx-7,pebSy-17),CAT_DARK,k.opacity(0.5),k.z(12)]);
-  const pebStripeR=k.add([k.rect(2.5,5),k.pos(pebSx+5,pebSy-17),CAT_DARK,k.opacity(0.5),k.z(12)]);
-  // Big round eyes with catchlights (kawaii style)
-  const pebEyeL=k.add([k.circle(5.5),k.pos(pebSx-8,pebSy-6),k.color(255,255,255),k.outline(1.5,k.color(80,80,80)),k.z(12)]);
-  const pebEyeR=k.add([k.circle(5.5),k.pos(pebSx+8,pebSy-6),k.color(255,255,255),k.outline(1.5,k.color(80,80,80)),k.z(12)]);
-  const pebPupilL=k.add([k.circle(3.5),k.pos(pebSx-7,pebSy-5),k.color(30,30,30),k.z(13)]);
-  const pebPupilR=k.add([k.circle(3.5),k.pos(pebSx+9,pebSy-5),k.color(30,30,30),k.z(13)]);
-  // Catchlights (white dots in eyes)
-  const pebCatchL=k.add([k.circle(1.8),k.pos(pebSx-6,pebSy-8),k.color(255,255,255),k.z(14)]);
-  const pebCatchR=k.add([k.circle(1.8),k.pos(pebSx+10,pebSy-8),k.color(255,255,255),k.z(14)]);
-  // Pink nose (inverted triangle)
-  const pebNose=k.add([k.polygon([k.vec2(pebSx,pebSy+1),k.vec2(pebSx-3,pebSy+4),k.vec2(pebSx+3,pebSy+4)]),k.color(255,128,153),k.z(12)]);
-  // Cute "w" shaped mouth
-  const pebMouth=k.add([k.polygon([k.vec2(pebSx-5,pebSy+5),k.vec2(pebSx-2,pebSy+8),k.vec2(pebSx,pebSy+6),k.vec2(pebSx+2,pebSy+8),k.vec2(pebSx+5,pebSy+5)]),k.color(80,40,30),k.z(13)]);
-  // Rosy pink cheeks
-  const pebCheekL=k.add([k.circle(4),k.pos(pebSx-14,pebSy+3),k.color(255,150,150),k.opacity(0.4),k.z(12)]);
-  const pebCheekR=k.add([k.circle(4),k.pos(pebSx+14,pebSy+3),k.color(255,150,150),k.opacity(0.4),k.z(12)]);
-
-  // Whiskers (3 on each side)
-  const pebWhiskers=[];
-  const pebWhiskerData=[
-    [pebSx-10,pebSy+1,pebSx-20,pebSy-1],[pebSx-10,pebSy+3,pebSx-22,pebSy+3],[pebSx-10,pebSy+5,pebSx-20,pebSy+7],
-    [pebSx+10,pebSy+1,pebSx+20,pebSy-1],[pebSx+10,pebSy+3,pebSx+22,pebSy+3],[pebSx+10,pebSy+5,pebSx+20,pebSy+7],
-  ];
-  for(const wd of pebWhiskerData){
-    const midX=(wd[0]+wd[2])/2,midY=(wd[1]+wd[3])/2;
-    const w=k.add([k.rect(12,1),k.pos(midX-6,midY),k.color(200,200,200),k.opacity(0.8),k.z(11)]);
-    w._ax=wd[0];w._ay=wd[1];w._bx=wd[2];w._by=wd[3];w._mx=midX;w._my=midY;
-    pebWhiskers.push(w);
-  }
-
-  // Small paws at the bottom
-  const pebPawL=k.add([k.rect(5,4),k.pos(pebSx-9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
-  const pebPawR=k.add([k.rect(5,4),k.pos(pebSx+9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
-
-  // Tail (curved, made of small circles going up and to the left)
-  const pebTail=[];
-  const tailPositions=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
-  for(const tp of tailPositions){
-    const seg=k.add([k.circle(4),k.pos(pebSx+tp[0],pebSy+tp[1]),CAT_DARK,k.outline(1,k.color(0,0,0)),k.z(9)]);
-    pebTail.push(seg);
-  }
-
-  const pebCatParts=[pebDau,pebEarL,pebEarR,pebEarInnerL,pebEarInnerR,pebStripeM,pebStripeL,pebStripeR,pebEyeL,pebEyeR,pebPupilL,pebPupilR,pebCatchL,pebCatchR,pebNose,pebMouth,pebCheekL,pebCheekR,pebPawL,pebPawR,...pebWhiskers];
-
-  // ─── PEBBLE FREE-ROAM AI STATE MACHINE ──────────
-  let roamState = 'roaming';     // roaming | investigating | sniffing | going_home | resting
-  let roamTarget = null;         // {x: number, y: number} target position in pixels
-  let roamStateTimer = 0;        // how long in current state
-  let roamHomeTimer = 5 + Math.random() * 5; // countdown until return home
-  let roamHomeReturning = false; // true when once we've decided to go home this cycle
-  let investigateTarget = null;  // {tx: number, ty: number, type: number} tile being investigated
-  let sniffBounceTimer = 0;      // tiny bounce counter for sniff anim
-  let roamDialogueCooldown = 0;  // seconds between proximity dialogues
-  let roamSpeed = 55;            // pixels per second walk speed
-  let roamLastHomeCheck = 0;     // last time we checked if at home
-
-  // ─── PEBBLE HOME POSITION (pixel coords) ─────────
-  const PEBBLE_HOME_POS = {
-    x: PEBBLE_HOME_TILE.x * TILE + TILE/2,
-    y: PEBBLE_HOME_TILE.y * TILE + TILE/2,
-  };
-
-  // ─── Free-roam helper: pick a random walkable tile near Pebble ───
-  function pickRoamTarget() {
-    if (!pebbleObj) return null;
-    const px = Math.floor(pebbleObj.pos.x / TILE);
-    const py = Math.floor(pebbleObj.pos.y / TILE);
-    const RADIUS = 6; // max tiles away from current position
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const tx = px + Math.floor(Math.random() * RADIUS * 2 - RADIUS);
-      const ty = py + Math.floor(Math.random() * RADIUS * 2 - RADIUS);
-      if (tx < 1 || tx >= COLS - 1 || ty < 1 || ty >= ROWS - 1) continue;
-      const tile = getTile(ty, tx, map);
-      // Must be walkable: grass(0), sand(1), path(8), beach(7), grass_flower(10), tall_grass(13), stone(2)
-      if (!isSolid(tile) && tile !== 3 && tile !== 14) {
-        return { x: tx * TILE + TILE/2, y: ty * TILE + TILE/2 };
-      }
-    }
-    // Fallback: try moving toward center
-    return { x: Math.floor(COLS/2) * TILE + TILE/2, y: Math.floor(ROWS/2) * TILE + TILE/2 };
-  }
-
-  // ─── Free-roam helper: find interesting object within range ───
-  const INTERESTING_TILES = [4, 2, 6, 10, 13, 8]; // tree, stone, bush, flower, tall_grass, path
-  function findInterestingObject() {
-    if (!pebbleObj) return null;
-    const px = Math.floor(pebbleObj.pos.x / TILE);
-    const py = Math.floor(pebbleObj.pos.y / TILE);
-    const RANGE = 5; // tiles to scan (120px / 64 ≈ 2, but let's use 3)
-    let best = null;
-    let bestDist = Infinity;
-    for (let dy = -RANGE; dy <= RANGE; dy++) {
-      for (let dx = -RANGE; dx <= RANGE; dx++) {
-        const tx = px + dx, ty = py + dy;
-        if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) continue;
-        const tile = getTile(ty, tx, map);
-        if (INTERESTING_TILES.includes(tile)) {
-          const dist = Math.abs(dx) + Math.abs(dy);
-          if (dist < bestDist && dist >= 1) {
-            bestDist = dist;
-            best = { tx, ty, type: tile };
-          }
-        }
-      }
-    }
-    return best;
-  }
-
-  // ─── Free-roam helper: sniff animation (tiny bounce + overhead exclamation) ───
-  let sniffMark = null;
-  function doSniffAnimation() {
-    if (!sniffMark || !sniffMark.exists()) {
-      sniffMark = k.add([k.text("!", {size: 14}), k.pos(0, 0), k.z(15), k.opacity(0)]);
-    }
-    if (pebbleObj) {
-      sniffMark.pos = k.vec2(pebbleObj.pos.x, pebbleObj.pos.y - 30);
-      sniffMark.opacity = 1;
-    }
-  }
-  function hideSniffMarker() {
-    if (sniffMark && sniffMark.exists()) {
-      sniffMark.opacity = 0;
-    }
-  }
-
-  // ─── Free-roam helper: update pebble visual parts ───
-  function updatePebbleParts(pebMoved, pebObj) {
-    if (!pebObj) return;
-    const ppx = pebObj.pos.x, ppy = pebObj.pos.y;
-    const pBobY = ppy - 4;
-    const sniffBounce = (roamState === 'sniffing' || roamState === 'resting') ? Math.sin(Date.now() * 0.004) * 1.5 : 0;
-    const bobY = pBobY + sniffBounce;
-
-    // Head center
-    pebDau.pos = k.vec2(ppx, bobY);
-    // Ears (anchored to head center)
-    pebEarL.pos = k.vec2(ppx, bobY); pebEarR.pos = k.vec2(ppx, bobY);
-    pebEarInnerL.pos = k.vec2(ppx, bobY); pebEarInnerR.pos = k.vec2(ppx, bobY);
-    // Forehead stripes
-    pebStripeM.pos = k.vec2(ppx - 1.5, bobY - 13);
-    pebStripeL.pos = k.vec2(ppx - 7, bobY - 12);
-    pebStripeR.pos = k.vec2(ppx + 5, bobY - 12);
-    // Eyes with catchlights
-    pebEyeL.pos = k.vec2(ppx - 8, bobY - 1); pebEyeR.pos = k.vec2(ppx + 8, bobY - 1);
-    pebPupilL.pos = k.vec2(ppx - 7, bobY); pebPupilR.pos = k.vec2(ppx + 9, bobY);
-    pebCatchL.pos = k.vec2(ppx - 6, bobY - 3); pebCatchR.pos = k.vec2(ppx + 10, bobY - 3);
-    // Nose (inverted triangle)
-    pebNose.pos = k.vec2(ppx, bobY + 5);
-    // Mouth (w shape)
-    pebMouth.pos = k.vec2(ppx, bobY + 8);
-    // Rosy cheeks
-    pebCheekL.pos = k.vec2(ppx - 14, bobY + 4); pebCheekR.pos = k.vec2(ppx + 14, bobY + 4);
-    // Paws at bottom
-    pebPawL.pos = k.vec2(ppx - 9, bobY + 28); pebPawR.pos = k.vec2(ppx + 9, bobY + 28);
-    // Tail segments (curved line behind body)
-    const tailPos=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
-    for(let i=0; i<pebTail.length && i<tailPos.length; i++){
-      pebTail[i].pos = k.vec2(ppx + tailPos[i][0], bobY + tailPos[i][1]);
-    }
-
-    // Whisker bounce during sniff
-    const wBounce = (roamState === 'sniffing') ? Math.sin(Date.now() * 0.006) * 0.8 : 0;
-    const wData = [[-10,1,-20,-1],[-10,3,-22,3],[-10,5,-20,7],[10,1,20,-1],[10,3,22,3],[10,5,20,7]];
-    for (let i = 0; i < 6 && i < pebWhiskers.length; i++) {
-      const w = pebWhiskers[i];
-      const wd = wData[i];
-      const mx = ppx + wd[0], my = bobY + wd[1] + wBounce;
-      w.pos = k.vec2(mx - 6, my);
-    }
-  }
-
-  // ─── Free-roam helper: step toward target ───
-  function roamStepToward(target, speed) {
-    if (!pebbleObj || !target) return false;
-    const dx = target.x - pebbleObj.pos.x;
-    const dy = target.y - pebbleObj.pos.y;
-    const d = Math.sqrt(dx * dx + dy * dy);
-    if (d < 4) return true; // arrived
-    const step = speed * k.dt();
-    if (step >= d) {
-      pebbleObj.pos.x = target.x;
-      pebbleObj.pos.y = target.y;
-      return true;
-    }
-    const nx = pebbleObj.pos.x + (dx / d) * step;
-    const ny = pebbleObj.pos.y + (dy / d) * step;
-    // Check if new position is walkable
-    const ntx = Math.floor(nx / TILE);
-    const nty = Math.floor(ny / TILE);
-    if (ntx >= 0 && ntx < COLS && nty >= 0 && nty < ROWS) {
-      const tile = getTile(nty, ntx, map);
-      if (!isSolid(tile) && tile !== 3) {
-        pebbleObj.pos.x = nx;
-        pebbleObj.pos.y = ny;
-      } else {
-        // Hit solid — pick new target
-        return true; // treat as arrived to trigger re-roll
-      }
-    }
-    return false;
-  }
-
-  // ─── Free-roam proximity dialogue check ───
-  function checkProximityDialogue() {
-    if (roamDialogueCooldown > 0) return;
-    if (!playerObj || !pebbleObj) return;
-    if (pebbleCallPhase !== "idle") return;
-    const dx = playerObj.pos.x - pebbleObj.pos.x;
-    const dy = playerObj.pos.y - pebbleObj.pos.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < TILE * 2.5) {
-      // Player is near — show quick dialogue
-      const phrases = [
-        '🐱 "Meo meo!"',
-        '🐱 "Chào bạn!"',
-        '🐱 *vẫy đuôi*',
-        '🐱 "Đang dạo chơi à?"',
-        '🐱 "Có gì ngon không?"',
-      ];
-      const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-      showToast(phrase, 2000);
-      roamDialogueCooldown = 12; // seconds before next proximity dialogue
-    }
-  }
-
-  // ─── Free-roam AI update ───
-  function updateRoamAI(dt) {
-    if (!pebbleObj || !playerObj) return;
-    if (pebbleCallPhase === "walking" || pebbleCallPhase === "dialoguing") return;
-    if (GS.pebbleMode !== "roam") return;
-    if (pebbleObj._hidden) { pebbleObj.visible = true; pebbleObj._hidden = false; }
-
-    roamStateTimer += dt;
-    roamHomeTimer -= dt;
-    if (roamDialogueCooldown > 0) roamDialogueCooldown -= dt;
-
-    // Check proximity dialogue
-    checkProximityDialogue();
-
-    // Determine a near-player spawn if Pebble is far away (teleport back if > 30 tiles away)
-    const distToPlayer = Math.sqrt(
-      (pebbleObj.pos.x - playerObj.pos.x) ** 2 +
-      (pebbleObj.pos.y - playerObj.pos.y) ** 2
-    );
-    if (distToPlayer > TILE * 30) {
-      // Teleport Pebble closer to player
-      const angle = Math.random() * Math.PI * 2;
-      pebbleObj.pos.x = playerObj.pos.x + Math.cos(angle) * TILE * 3;
-      pebbleObj.pos.y = playerObj.pos.y + Math.sin(angle) * TILE * 3;
-    }
-
-    let arrived = false;
-
-    switch (roamState) {
-      case 'roaming': {
-        // If no target or arrived, pick a new one
-        if (!roamTarget || ((arrived = roamStepToward(roamTarget, roamSpeed)) === true)) {
-          // Check for interesting object nearby
-          const obj = findInterestingObject();
-          if (obj && Math.random() < 0.35) {
-            // Investigate!
-            investigateTarget = obj;
-            roamState = 'investigating';
-            roamStateTimer = 0;
-            roamTarget = {
-              x: obj.tx * TILE + TILE/2,
-              y: obj.ty * TILE + TILE/2,
-            };
-            break;
-          }
-          roamTarget = pickRoamTarget();
-          roamStateTimer = 0;
-        }
-        // Check if it's time to go home
-        if (roamHomeTimer <= 0) {
-          roamState = 'going_home';
-          roamStateTimer = 0;
-          roamTarget = { x: PEBBLE_HOME_POS.x, y: PEBBLE_HOME_POS.y };
-          hideSniffMarker();
-        }
-        break;
-      }
-
-      case 'investigating': {
-        if (!roamTarget || !investigateTarget) {
-          roamState = 'roaming';
-          roamTarget = pickRoamTarget();
-          break;
-        }
-        arrived = roamStepToward(roamTarget, roamSpeed * 0.8);
-        if (arrived || roamStateTimer > 5) {
-          // Remember this place in Pebble's memory
-          if (investigateTarget && typeof pebbleRememberPlace === "function") {
-            var objType = investigateTarget.type;
-            var desc = "";
-            if (objType === 4) desc = "mot cay xanh";
-            else if (objType === 2) desc = "mot mo da";
-            else if (objType === 6 || objType === 8 || objType === 13) desc = "bui cay hoac co";
-            else desc = "mot noi thu vi";
-            pebbleRememberPlace(GS.currentIsland,
-              Math.floor(pebbleObj.pos.x / TILE),
-              Math.floor(pebbleObj.pos.y / TILE),
-              desc);
-            pebbleRememberResource(objType);
-          }
-          // Arrived at object — sniff!
-          roamState = 'sniffing';
-          roamStateTimer = 0;
-          doSniffAnimation();
-        }
-        break;
-      }
-
-      case 'sniffing': {
-        if (roamStateTimer > 2.5) {
-          hideSniffMarker();
-          roamState = 'roaming';
-          roamTarget = pickRoamTarget();
-          roamStateTimer = 0;
-        }
-        break;
-      }
-
-      case 'going_home': {
-        if (!roamTarget) {
-          roamTarget = { x: PEBBLE_HOME_POS.x, y: PEBBLE_HOME_POS.y };
-        }
-        arrived = roamStepToward(roamTarget, roamSpeed * 1.1);
-        if (arrived || roamStateTimer > 10) {
-          roamState = 'resting';
-          roamStateTimer = 0;
-          roamHomeTimer = 5 + Math.random() * 3; // rest period
-        }
-        break;
-      }
-
-      case 'resting': {
-        // Stay at home, gentle bounce
-        if (roamStateTimer > roamHomeTimer) {
-          roamState = 'roaming';
-          roamTarget = pickRoamTarget();
-          roamStateTimer = 0;
-          roamHomeTimer = 15 + Math.random() * 8; // 15-23s before going home again
-        }
-        // Snap to home position
-        if (pebbleObj) {
-          const dx = PEBBLE_HOME_POS.x - pebbleObj.pos.x;
-          const dy = PEBBLE_HOME_POS.y - pebbleObj.pos.y;
-          if (Math.sqrt(dx*dx + dy*dy) > 8) {
-            pebbleObj.pos.x = PEBBLE_HOME_POS.x;
-            pebbleObj.pos.y = PEBBLE_HOME_POS.y;
-          }
-        }
-        break;
-      }
-    }
-
-    // Scan for nearby buildings and remember them
-    if (Math.random() < 0.02 && typeof pebbleRememberBuilding === "function") {
-      var ptx = Math.floor(pebbleObj.pos.x / TILE);
-      var pty = Math.floor(pebbleObj.pos.y / TILE);
-      var scanData = getIslandData(GS.currentIsland);
-      if (scanData && scanData.buildings) {
-        for (var bi = 0; bi < scanData.buildings.length; bi++) {
-          var b = scanData.buildings[bi];
-          if (Math.abs(b.tileX - ptx) <= 3 && Math.abs(b.tileY - pty) <= 3) {
-            pebbleRememberBuilding(b.name || b.type || "building");
-          }
-        }
-      }
-    }
-    // Update pebble visual parts
-    const moving = roamState === 'roaming' || roamState === 'investigating' || roamState === 'going_home';
-    updatePebbleParts(moving, pebbleObj);
-  }
-
-  // ─═══ NEW COW SYSTEM — Individual cows with pen, breeding, AI ═══──
-  const cowPenArea = GS.cowPen;
-  let cowObjects = [];
-  let cowBreedTimer = 0;
-
-  // Draw cow pen fence (only on starter isle)
-  if (GS.currentIsland === 'starter_isle') {
-    const p = cowPenArea;
-    // Fence posts
-    for (let x = p.x1; x <= p.x2; x++) {
-      k.add([k.rect(5,12),k.pos(x*TILE+TILE/2-2.5,p.y1*TILE+TILE-12),k.rgb(120,80,30),k.z(3)]);
-      k.add([k.rect(5,12),k.pos(x*TILE+TILE/2-2.5,p.y2*TILE-2),k.rgb(120,80,30),k.z(3)]);
-    }
-    for (let y = p.y1; y <= p.y2; y++) {
-      k.add([k.rect(5,12),k.pos(p.x1*TILE+TILE-4,y*TILE+TILE/2-6),k.rgb(120,80,30),k.z(3)]);
-      k.add([k.rect(5,12),k.pos(p.x2*TILE-2,y*TILE+TILE/2-6),k.rgb(120,80,30),k.z(3)]);
-    }
-    // Rails (horizontal)
-    for (let x = p.x1; x < p.x2; x += 1) {
-      for (let y of [p.y1, p.y2]) {
-        k.add([k.rect(64,3),k.pos(x*TILE,y*TILE+TILE-4),k.rgb(100,65,25),k.z(3)]);
-        k.add([k.rect(64,3),k.pos(x*TILE,y*TILE+TILE-9),k.rgb(100,65,25),k.z(3)]);
-      }
-    }
-    // Gate
-    k.add([k.text("🐄 CHU\u1ed2NG B\u00d2",{size:10}),k.pos(p.x1*TILE+10,p.y1*TILE-16),k.rgb(153,204,77),k.z(4)]);
-  }
-
-  // School area for surplus cows
-  // Trước đây toạ độ này bị cố định cứng {x:6,y:7} nên trên một số bản đồ lại rơi ra ngoài biển,
-  // người chơi không thể đi tới. Giờ tự động dò tìm ô đất hợp lệ gần vị trí mong muốn nhất.
-  function findWalkableSchoolPos(cx, cy, maxRadius){
-    for(let r=0; r<=maxRadius; r++){
-      for(let ddx=-r; ddx<=r; ddx++){
-        for(let ddy=-r; ddy<=r; ddy++){
-          if(Math.max(Math.abs(ddx),Math.abs(ddy))!==r) continue; // chỉ quét viền vòng r, loang dần ra xa
-          const tx=cx+ddx, ty=cy+ddy;
-          let ok = true;
-          // Cả vùng 5x5 (khớp với vùng vẽ bên dưới) phải là đất đi được, không dính nước/vật cản
-          for(let sx=tx-1; sx<=tx+3 && ok; sx++){
-            for(let sy=ty-1; sy<=ty+3 && ok; sy++){
-              if(sx<0||sx>=COLS||sy<0||sy>=ROWS){ ok=false; break; }
-              if(isSolid(getTile(sy, sx, map))) ok=false;
-            }
-          }
-          if(ok) return {x:tx, y:ty};
-        }
-      }
-    }
-    return {x:cx, y:cy}; // hiếm khi xảy ra, dùng lại toạ độ gốc nếu không tìm được ô nào hợp lệ
-  }
-  const SCHOOL_POS = (GS.currentIsland === 'starter_isle') ? findWalkableSchoolPos(6, 7, 20) : {x:6, y:7};
-  // Draw school area on starter island
-  if (GS.currentIsland === 'starter_isle') {
-    for (let sx = SCHOOL_POS.x-1; sx <= SCHOOL_POS.x+3; sx++) {
-      for (let sy = SCHOOL_POS.y-1; sy <= SCHOOL_POS.y+3; sy++) {
-        k.add([k.rect(4,4),k.pos(sx*TILE+2,sy*TILE+2),k.rgb(200,180,120),k.opacity(0.15),k.z(2)]);
-      }
-    }
-    k.add([k.text('Khu truong hoc',{size:9}),k.pos(SCHOOL_POS.x*TILE,SCHOOL_POS.y*TILE-12),k.rgb(200,200,150),k.z(4)]);
-  }
-
-  // Cow rendering colors
-  const CWHITE = k.rgb(250,248,240), CBLACK = k.rgb(35,35,35), CPINK = k.rgb(255,182,193);
-
-  // Create a cow entity
-  function createCow(cw) {
-    if (!cw || cw.dead) return null;
-    const px = cw.tileX * TILE + TILE/2, py = cw.tileY * TILE + TILE/2;
-    const parts = {};
-    // Use warrior_cow sprite if loaded, fallback to circles
-    try { parts.sprite = k.add([k.sprite("warrior_cow"),k.pos(px,py),k.anchor("center"),k.z(5)]); }
-    catch(e) {
-      parts.body = k.add([k.circle(10),k.pos(px,py),CWHITE,k.outline(1.5,CBLACK),k.z(5)]);
-      parts.head = k.add([k.circle(6),k.pos(px+12,py-4),CWHITE,k.outline(1.5,CBLACK),k.z(6)]);
-    }
-    parts.hpBg = k.add([k.rect(22,3),k.pos(px-11,py-18),k.rgb(51,51,51),k.z(9)]);
-    parts.hpFill = k.add([k.rect(22,3),k.pos(px-11,py-18),k.rgb(46,204,113),k.z(10)]);
-    parts.label = k.add([k.text(cw.name||"B\u00f2",{size:5}),k.pos(px-10,py-22),k.rgb(153,204,77),k.z(8)]);
-    parts.area = k.add([k.rect(TILE,TILE),k.pos(cw.tileX*TILE,cw.tileY*TILE),k.opacity(0),k.area(),k.z(6)]);
-    parts.area.onClick(()=>{window._clickConsumed=true; window.interactCow(cw);});
-    parts.data = cw;
-    cowObjects.push(parts);
-    return parts;
-  }
-
-  window.interactCow = function(cw) {
-    if (!cw || cw.dead) return;
-    const now = Date.now();
-    if (cw.hunger < 60 && GS.resources.food >= 2) {
-      GS.resources.food -= 2;
-      cw.hunger = Math.min(100, cw.hunger + 35);
-      cw.mood = "😊";
-      cw.hp = Math.min(cw.maxHp, cw.hp + 5);
-      showToast(`🌿 ${cw.name} \u0111\u01b0\u1ee3c cho \u0103n!`,1500);
-    } else {
-      cw.happiness = Math.min(100, (cw.happiness||50) + 3);
-      cw.mood = "😊";
-      showToast(`🐄 ${cw.name} \u0111\u01b0\u1ee3c vu\u1ed1t ve!`,1500);
-    }
-    syncCows();
-  };
-
-  // Initialize cow entities
-  for (const cw of GS.cows) createCow(cw);
-
-  // Sync cow visuals with data
-  function syncCows() {
-    // Remove destroyed entities
-    cowObjects = cowObjects.filter(co => {
-      if (!co.data || co.data.dead) {
-        for (const kk of Object.values(co)) try{k.destroy(kk)}catch(e){}
-        return false;
-      }
-      return true;
-    });
-    for (const co of cowObjects) {
-      const d = co.data;
-      const px = d.tileX * TILE + TILE/2, py = d.tileY * TILE + TILE/2;
-      const off = d.inSchool ? -10 : 0;
-      if (co.body) co.body.pos = k.vec2(px, py+off); if (co.head) co.head.pos = k.vec2(px+12, py-4+off);
-      if (co.earL) co.earL.pos = k.vec2(px+10, py-8+off); if (co.earR) co.earR.pos = k.vec2(px+16, py-8+off);
-      if (co.snout) co.snout.pos = k.vec2(px+16, py+off); if (co.eye) co.eye.pos = k.vec2(px+13, py-5+off);
-      co.hpBg.pos = k.vec2(px-11, py-18+off); co.hpFill.pos = k.vec2(px-11, py-18+off);
-      co.hpFill.width = 22 * (d.hp/d.maxHp);
-      co.label.pos = k.vec2(px-10, py-22+off);
-      co.area.pos = k.vec2(d.tileX*TILE, d.tileY*TILE);
-    }
-  }
-
-  // Cow AI: update in game loop
-  function updateCows(dt) {
-    if (GS.currentIsland !== 'starter_isle') return;
-    const cows = GS.cows;
-    cowBreedTimer += dt;
-
-    for (const cw of cows) {
-      if (cw.dead) continue;
-      // Đói decreases
-      cw.hunger = Math.max(0, cw.hunger - dt * 0.4);
-      // Starvation damage: lose HP when hunger hits 0
-      if (cw.hunger <= 0) {
-        cw.hp -= dt * 1.5;
-        if (cw.hp <= 0) { cw.dead = true; cw.hp = 0; }
-      }
-      // Age increases
-      if (!cw.growing) cw.age += dt * 0.01;
-      else { cw.age += dt * 0.02; if (cw.age >= 1) cw.growing = false; } // calf matures in ~50s
-
-      // Defend against nearby monsters
-      let nearMonster = null;
-      let nearMonDist = 999;
-      for (const co of cowObjects) {
-        if (!co.data || co.data.dead || co.data === cw) continue;
-      }
-      // Find nearest enemy within range
-      const allEnemies = k.get("enemy");
-      for (const e of allEnemies) {
-        if (e.dead) continue;
-        const ed = Math.abs(e.pos.x/64 - cw.tileX) + Math.abs(e.pos.y/64 - cw.tileY);
-        if (ed < 7 && ed < nearMonDist) { nearMonster = e; nearMonDist = ed; }
-      }
-      if (nearMonster && cw.hp > 5) {
-        // Move toward monster to defend
-        const mtx = Math.floor(nearMonster.pos.x / TILE);
-        const mty = Math.floor(nearMonster.pos.y / TILE);
-        const dx = mtx - cw.tileX, dy = mty - cw.tileY;
-        const dist = Math.abs(dx) + Math.abs(dy);
-        if (dist > 1) {
-          // Move toward monster
-          let nx = cw.tileX + (dx > 0 ? 1 : dx < 0 ? -1 : 0);
-          let ny = cw.tileY + (dy > 0 ? 1 : dy < 0 ? -1 : 0);
-          // Check not solid
-          if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-            const t = getTile(ny, nx, map);
-            if (!isSolid(t) && t !== 14 && t !== 9 && t !== 3) { cw.tileX = nx; cw.tileY = ny; }
-          }
-        } else {
-          // Attack monster - deal damage
-          if (Math.random() < 0.02) {
-            const dmg = 2 + (cw.defense||0);
-            nearMonster.hp = (nearMonster.hp || 10) - dmg;
-            showFloating(nearMonster.pos.x, nearMonster.pos.y-16, '-'+dmg+'HP', [153,204,77]);
-            // Counter-attack: monster hits cow
-            cw.hp -= 3;
-            if (cw.hp <= 0) { cw.dead = true; cw.hp = 0; showToast('💀 '+cw.name+' bị quái đánh bại!',2000); }
-          }
-        }
-        continue; // Skip wandering, cow is defending
-      }
-
-      // Wander within pen (or school area)
-      if (Math.random() < 0.015) {
-        const bounds = cw.inSchool ? {x1:SCHOOL_POS.x-1,y1:SCHOOL_POS.y-1,x2:SCHOOL_POS.x+3,y2:SCHOOL_POS.y+3} : cowPenArea;
-        let nx, ny, att = 0;
-        do {
-          nx = bounds.x1 + 1 + Math.floor(Math.random() * (bounds.x2 - bounds.x1 - 2));
-          ny = bounds.y1 + 1 + Math.floor(Math.random() * (bounds.y2 - bounds.y1 - 2));
-          att++;
-        } while (att < 15 && isSolid(getTile(ny, nx, map)));
-        if (att < 15) { cw.tileX = nx; cw.tileY = ny; }
-      }
-
-      // Graze on grass when hungry
-      if (cw.hunger < 45) {
-        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-          const gx = cw.tileX + dx, gy = cw.tileY + dy;
-          if (gx>=0&&gy>=0&&gx<COLS&&gy<ROWS) {
-            const t = getTile(gy, gx, map);
-            if (t === 0 || t === 13) {
-              cw.tileX = gx; cw.tileY = gy;
-              cw.hunger = Math.min(100, cw.hunger + 20);
-              cw.mood = "😊";
-              if (t === 13) setTile(gy, gx, 0, map);
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    // Breeding
-    if (cowBreedTimer > 25 && cows.filter(c=>!c.dead).length < GS.maxCows) {
-      const fed = cows.filter(c=>!c.dead&&!c.growing&&c.hunger>60);
-      if (fed.length >= 2) {
-        const p = cowPenArea;
-        const px = p.x1+2+Math.floor(Math.random()*(p.x2-p.x1-4));
-        const py = p.y1+2+Math.floor(Math.random()*(p.y2-p.y1-4));
-                // Genetics: pass on improved stats from parents
-        let bonusHp = 0, bonusDef = 0;
-        const parent1 = fed[0], parent2 = fed[1];
-        if (parent1.genetics) { bonusHp += parent1.genetics.hpBonus || 0; bonusDef += parent1.genetics.defBonus || 0; }
-        if (parent2.genetics) { bonusHp += parent2.genetics.hpBonus || 0; bonusDef += parent2.genetics.defBonus || 0; }
-        // Random mutation (5% chance for +2 HP, 3% chance for +1 def)
-        const mutHp = Math.random() < 0.05 ? 2 : 0;
-        const mutDef = Math.random() < 0.03 ? 1 : 0;
-        const calfHp = 15 + Math.floor(bonusHp/2) + mutHp;
-        const calfDef = Math.floor(bonusDef/2) + mutDef;
-        const calfGen = { hpBonus: Math.floor(bonusHp/2) + mutHp, defBonus: calfDef };
-        cows.push({id:cows.length,name:"B\u00ea #"+(cows.length+1),hp:calfHp,maxHp:calfHp,hunger:80,age:0,growing:true,tileX:px,tileY:py,homeX:px,homeY:py,lastFeed:0,mood:"🐮",happiness:60,maxHappiness:100,dead:false,genetics:calfGen,defense:calfDef});
-        cowBreedTimer = 0;
-        showToast(`🐮 B\u00ea m\u1edbi! (${cows.filter(c=>!c.dead).length}/${GS.maxCows})`,2500);
-        // Rebuild cow entities
-        for (const co of cowObjects) for (const kk of Object.values(co)) try{k.destroy(kk)}catch(e){}
-        cowObjects = [];
-        for (const cw of cows) if (!cw.dead) createCow(cw);
-      }
-    }
-
-    // Overflow > maxCows → move oldest to school
-    if (cows.filter(c=>!c.dead).length > GS.maxCows) {
-      const toMove = cows.filter(c=>!c.dead&&!c.inSchool).sort((a,b)=>a.age-b.age).slice(0, cows.filter(c=>!c.dead).length - GS.maxCows);
-      for (const sc of toMove) {
-        sc.tileX = SCHOOL_POS.x + Math.floor(Math.random()*3);
-        sc.tileY = SCHOOL_POS.y + Math.floor(Math.random()*3);
-        sc.inSchool = true;
-        showToast(`📚 ${sc.name} \u0111\u1ebfn tr\u01b0\u1eddng!`,2000);
-      }
-    }
-
-    syncCows();
-  }
-
   // ─── Initial enemies ─────────────────────────────────────────
   // Spawn enemy packs (3 waves, groups of 2-4)
   const packCount = 2 + Math.floor(def.diff * 0.8);
@@ -3762,34 +3239,6 @@ console.log("🎮 Đang khởi tạo...");
     const conn=ISLAND_CONNECTIONS[islandId]||[];
     openTravelModal(conn);
   });
-
-  // ─── PEBBLE'S HOME 🏠 — small hut near center-left of starter island ─────
-  const phx = PEBBLE_HOME_TILE.x * TILE;
-  const phy = PEBBLE_HOME_TILE.y * TILE;
-
-  // Only render home on starter island
-  if (islandId === 'starter_isle') {
-    // House walls (warm brown)
-    k.add([k.rect(TILE-2, TILE-10), k.pos(phx+1, phy+TILE/2+4), k.color(160,100,45), k.opacity(0.9), k.z(4)]);
-    // Roof (orange-brown triangle)
-    k.add([k.polygon([k.vec2(phx-3, phy+TILE/2+2), k.vec2(phx+TILE/2, phy-4), k.vec2(phx+TILE+3, phy+TILE/2+2)]), k.color(210,130,30), k.opacity(0.95), k.z(4)]);
-    // Roof highlight
-    k.add([k.polygon([k.vec2(phx+TILE/2, phy), k.vec2(phx+6, phy+TILE/2), k.vec2(phx+TILE/2, phy+TILE/2-4)]), k.color(230,150,50), k.opacity(0.7), k.z(4)]);
-    // Door
-    k.add([k.rect(10,14), k.pos(phx+TILE/2-5, phy+TILE/2+4), k.color(80,40,15), k.opacity(0.9), k.z(5)]);
-    // Door knob
-    k.add([k.circle(1.5), k.pos(phx+TILE/2+3, phy+TILE/2+12), k.color(200,180,100), k.z(6)]);
-    // Window (lit yellow)
-    k.add([k.rect(8,8), k.pos(phx+TILE/2-12, phy+TILE/2), k.color(255,220,150), k.opacity(0.7), k.z(5)]);
-    // Window cross
-    k.add([k.rect(1,8), k.pos(phx+TILE/2-8, phy+TILE/2), k.color(120,80,30), k.opacity(0.5), k.z(6)]);
-    k.add([k.rect(8,1), k.pos(phx+TILE/2-12, phy+TILE/2+4), k.color(120,80,30), k.opacity(0.5), k.z(6)]);
-    // Small mushroom decoration next to house
-    k.add([k.rect(3,6), k.pos(phx+TILE-6, phy+TILE/2+8), k.color(200,200,210), k.z(3)]);
-    k.add([k.polygon([k.vec2(phx+TILE-10, phy+TILE/2+6), k.vec2(phx+TILE-3, phy+TILE/2+6), k.vec2(phx+TILE-6.5, phy+TILE/2+1)]), k.color(230,80,80), k.opacity(0.9), k.z(4)]);
-    // Small sign: "🏠 Pebble"
-    const sign = k.add([k.text("🏠 Pebble", {size: 9}), k.pos(phx+2, phy-10), k.z(6)]);
-  }
 
   // ─── MOVEMENT (controls PLAYER) ──────────────────────────────
   function movePlayerTo(tx,ty){
@@ -4977,11 +4426,10 @@ console.log("🎮 Đang khởi tạo...");
       k.camPos(playerObj.pos.x,playerObj.pos.y);
       k.camScale(Math.min(window.innerWidth, window.innerHeight) / (currentVisibleTiles() * TILE));
     }
+    refreshMinimap();
 
     updateHUD();
 
-    // Cow AI update (only on starter isle)
-    if (typeof updateCows === "function") updateCows(k.dt());
 
     // Farm button update & growth check
     updateFarmButton();
@@ -5495,28 +4943,6 @@ console.log("🎮 Đang khởi tạo...");
     }
   };
 
-  // ─── Cow interaction ──────────────────────────────────────────────
-  window.cowAction = function() {
-    showCowHerdInfo();
-  };
-
-  function showCowHerdInfo() {
-    const alive = GS.cows.filter(c=>!c.dead);
-    if (!alive.length) { showToast("🐄 Không có b\u00f2 trong chu\u1ed3ng",1500); return; }
-    let msg = `🐄 \u0110\u00e0n b\u00f2: ${alive.length}/${GS.maxCows}\n`;
-    for (const cw of alive) {
-      const loc = cw.inSchool ? "\u1edf tr\u01b0\u1eddng" : "trong chu\u1ed3ng";
-      msg += `\n${cw.mood||"🐄"} ${cw.name}: \u2764\ufe0f${Math.floor(cw.hp)}/${cw.maxHp} \ud83c\udf7d\ufe0f${Math.floor(cw.hunger)}% ${loc}`;
-    }
-    showToast(msg, 3000);
-  }
-
-  // Show cow button on starter island
-  const cowBtn = document.getElementById("cow-btn");
-  if (cowBtn) {
-    cowBtn.style.display = GS.currentIsland === 'starter_isle' ? 'inline-block' : 'none';
-  }
-
   // Initialize pebble button text & visibility based on current mode
   const pebbleBtn = document.getElementById("pebble-btn");
   if (pebbleBtn) {
@@ -5554,6 +4980,7 @@ console.log("🎮 Đang khởi tạo...");
 // SECTION 13: TITLE SCENE (3-Button Menu)
 // ═══════════════════════════════════════════════════════════════════
 k.scene("title", ()=>{
+  setGameHUDVisible(false);
   // Hide loading screen
   const loader = document.getElementById("sprite-loader");
   if (loader) { loader.style.display = "none"; clearTimeout(window._moduleLoadTimeout); }
@@ -5566,36 +4993,6 @@ k.scene("title", ()=>{
   k.add([k.text("Claw Quest V12",{size:38}),k.pos(W/2,85),k.anchor("center"),k.color(230,191,97)]);
   k.add([k.text("Sinh Tồn Trên Đảo",{size:22}),k.pos(W/2,125),k.anchor("center"),k.color(242,199,15)]);
   k.add([k.text("🧑 Hành Trình Khám Phá 7 Hòn Đảo",{size:13}),k.pos(W/2,152),k.anchor("center"),k.color(179,179,204)]);
-  k.add([k.text("🐱 Pebble tự do dạo chơi — has its own home!",{size:11}),k.pos(W/2,167),k.anchor("center"),k.color(232,161,64)]);
-
-  // Warrior Cow on title
-  const wcx=W/2-80,wcy=225;
-  // Cape
-  k.add([k.rect(10,24),k.pos(wcx-5,wcy+8),k.color(200,40,40),k.z(2)]);
-  // Cow body (white)
-  k.add([k.rect(16,14),k.pos(wcx-8,wcy+6),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
-  // Spots
-  k.add([k.circle(4),k.pos(wcx-4,wcy+6),k.color(35,35,35),k.z(3)]);
-  k.add([k.circle(3),k.pos(wcx+4,wcy+10),k.color(35,35,35),k.z(3)]);
-  // Armor
-  k.add([k.rect(12,10),k.pos(wcx-6,wcy+6),k.color(160,100,45),k.opacity(0.8),k.z(3)]);
-  k.add([k.rect(14,3),k.pos(wcx-7,wcy+3),k.color(200,170,50),k.opacity(0.9),k.z(3)]);
-  // Head
-  k.add([k.rect(10,9),k.pos(wcx+10,wcy),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
-  k.add([k.circle(2),k.pos(wcx+12,wcy-1),k.color(0,0,0),k.z(4)]); // Eye
-  // Helmet
-  k.add([k.rect(10,4),k.pos(wcx+10,wcy-4),k.color(180,130,50),k.opacity(0.9),k.z(4)]);
-  k.add([k.rect(2,8),k.pos(wcx+9,wcy-12),k.color(220,50,50),k.z(4)]); // Plume
-  // Horns
-  k.add([k.polygon([k.vec2(wcx+4,wcy-4),k.vec2(wcx+1,wcy-10),k.vec2(wcx+6,wcy-4)]),k.color(200,180,140),k.z(3)]);
-  // Sword
-  k.add([k.rect(2,16),k.pos(wcx+18,wcy+2),k.color(200,200,210),k.outline(0.5,k.color(100,100,100)),k.z(4)]);
-  k.add([k.rect(4,3),k.pos(wcx+17,wcy),k.color(180,160,80),k.z(4)]); // Handle
-  k.add([k.circle(2),k.pos(wcx+19,wcy-2),k.color(255,50,50),k.z(4)]); // Gem
-  // Legs
-  for(let wi=0;wi<4;wi++){k.add([k.rect(3,8),k.pos(wcx-10+wi*6,wcy+18),k.color(250,248,240),k.outline(0.5,k.color(35,35,35)),k.z(2)]);}
-  // Label
-  k.add([k.text("🐮 Bò Chiến Binh",{size:8}),k.pos(wcx+6,wcy+32),k.anchor("center"),k.color(153,204,77)]);
 
   // Player character on title (farmer with cowboy hat) — smaller
   const tcx=W/2-20,tcy=225;
@@ -5684,6 +5081,7 @@ const SLOT_PRIZES = {
 };
 
 k.scene("slot_machine", ()=>{
+  setGameHUDVisible(false);
   k.add([k.rect(W,H),k.pos(0,0),k.color(20,15,30)]);
   // Tent stripes
   for(let i=0;i<20;i++){
@@ -5694,7 +5092,8 @@ k.scene("slot_machine", ()=>{
   k.add([k.rect(W,60),k.pos(0,H-60),k.color(100,65,30),k.opacity(0.9),k.z(2)]);
   k.add([k.rect(W,4),k.pos(0,H-60),k.color(140,90,40),k.opacity(0.8),k.z(3)]);
 
-  let grid=Array(3).fill(null).map(()=>Array(3).fill("🍬"));
+  const SLOT_N = 5; // Kích thước lưới quay — đổi từ 3x3 lên 5x5
+  let grid=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill("🍬"));
   let spinning=false,spinCount=0,firstFree=true,spinComplete=true;
   let resultMsg="",winType="";
   let uiObjs=[],slotCells=[];
@@ -5718,23 +5117,23 @@ k.scene("slot_machine", ()=>{
     spinning=true;spinComplete=false;deductCost();spinCount++;
     resultMsg="🎰 *whirrrr*";updateDisplay();
 
-    const finalGrid=Array(3).fill(null).map(()=>Array(3).fill(null));
-    for(let r=0;r<3;r++) for(let c=0;c<3;c++)
+    const finalGrid=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill(null));
+    for(let r=0;r<SLOT_N;r++) for(let c=0;c<SLOT_N;c++)
       finalGrid[r][c]=Math.random()<0.15?["🍜","🍺","☕","🍬"][Math.floor(Math.random()*4)]:SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
 
-    const settled=[false,false,false];
+    const settled=Array(SLOT_N).fill(false);
     let elapsed=0;
     const updater=k.onUpdate(()=>{
       elapsed+=k.dt();
-      for(let r=0;r<3;r++){
-        if(elapsed>=0.6+r*0.3&&!settled[r]){
-          for(let c=0;c<3;c++){grid[r][c]=finalGrid[r][c];if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=grid[r][c];}
+      for(let r=0;r<SLOT_N;r++){
+        if(elapsed>=0.6+r*0.22&&!settled[r]){
+          for(let c=0;c<SLOT_N;c++){grid[r][c]=finalGrid[r][c];if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=grid[r][c];}
           settled[r]=true;
         }else if(!settled[r]&&Math.floor(elapsed/0.05)!==Math.floor((elapsed-k.dt())/0.05)){
-          for(let c=0;c<3;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
+          for(let c=0;c<SLOT_N;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
         }
       }
-      if(settled[0]&&settled[1]&&settled[2]){
+      if(settled.every(s=>s)){
         updater.cancel();spinning=false;spinComplete=true;
         evaluatePrizes();updateDisplay();updateHUD();
         // Auto-spin: schedule next spin after delay
@@ -5785,8 +5184,8 @@ k.scene("slot_machine", ()=>{
       GS.arenaKillBuff=(GS.arenaKillBuff||0)+1;
       showToast("⚡ +1 Arena Kill Buff! (Dùng trong đấu trường)",2000);
     }
-    // Jackpot check
-    if(grid[0][0]===grid[0][1]&&grid[0][1]===grid[0][2]&&grid[0][2]===grid[1][0]&&grid[1][0]===grid[1][1]&&grid[1][1]===grid[1][2]&&grid[1][2]===grid[2][0]&&grid[2][0]===grid[2][1]&&grid[2][1]===grid[2][2]){
+    // Jackpot check — 4 góc + tâm lưới cùng 1 icon (lưới 5x5 nên "toàn bộ 25 ô giống nhau" gần như không thể xảy ra)
+    if(grid[0][0]===grid[0][SLOT_N-1]&&grid[0][SLOT_N-1]===grid[SLOT_N-1][0]&&grid[SLOT_N-1][0]===grid[SLOT_N-1][SLOT_N-1]&&grid[SLOT_N-1][SLOT_N-1]===grid[2][2]){
       GS.silverCoins=(GS.silverCoins||0)+5;
       // Also give +1 arena kill as rare prize
       GS.arenaKillBuff=(GS.arenaKillBuff||0)+1;
@@ -5794,21 +5193,20 @@ k.scene("slot_machine", ()=>{
       winType="jackpot";addInvItem("gold",3);addInvItem("food",5);
       triggerJackpot();return;
     }
-    // Horizontal
-    for(let r=0;r<3;r++) if(grid[r][0]===grid[r][1]&&grid[r][1]===grid[r][2]){
+    // Horizontal — cả hàng N ô cùng 1 icon
+    for(let r=0;r<SLOT_N;r++) if(grid[r].every(v=>v===grid[r][0])){
       const p=SLOT_PRIZES[grid[r][0]];if(p) totalPrizes.push({type:"horizontal",row:r,icon:grid[r][0],...p.h});
     }
-    // Vertical
-    for(let c=0;c<3;c++) if(grid[0][c]===grid[1][c]&&grid[1][c]===grid[2][c]){
-      const p=SLOT_PRIZES[grid[0][c]];if(p) totalPrizes.push({type:"vertical",col:c,icon:grid[0][c],...p.v});
+    // Vertical — cả cột N ô cùng 1 icon
+    for(let c=0;c<SLOT_N;c++){
+      let same=true; for(let r=1;r<SLOT_N;r++) if(grid[r][c]!==grid[0][c]) same=false;
+      if(same){ const p=SLOT_PRIZES[grid[0][c]];if(p) totalPrizes.push({type:"vertical",col:c,icon:grid[0][c],...p.v}); }
     }
-    // Diagonal
-    if(grid[0][0]===grid[1][1]&&grid[1][1]===grid[2][2]){
-      const p=SLOT_PRIZES[grid[0][0]];if(p) totalPrizes.push({type:"diagonal",pos:"TL-BR",icon:grid[0][0],...p.d});
-    }
-    if(grid[0][2]===grid[1][1]&&grid[1][1]===grid[2][0]){
-      const p=SLOT_PRIZES[grid[0][2]];if(p) totalPrizes.push({type:"diagonal",pos:"TR-BL",icon:grid[0][2],...p.d});
-    }
+    // Diagonal — cả đường chéo N ô cùng 1 icon
+    let diagTL=true; for(let i=1;i<SLOT_N;i++) if(grid[i][i]!==grid[0][0]) diagTL=false;
+    if(diagTL){ const p=SLOT_PRIZES[grid[0][0]];if(p) totalPrizes.push({type:"diagonal",pos:"TL-BR",icon:grid[0][0],...p.d}); }
+    let diagTR=true; for(let i=1;i<SLOT_N;i++) if(grid[i][SLOT_N-1-i]!==grid[0][SLOT_N-1]) diagTR=false;
+    if(diagTR){ const p=SLOT_PRIZES[grid[0][SLOT_N-1]];if(p) totalPrizes.push({type:"diagonal",pos:"TR-BL",icon:grid[0][SLOT_N-1],...p.d}); }
     if(totalPrizes.length===0){resultMsg="😢 No win. Try again!";winType="none";return;}
     let parts=["🎉 *ding ding ding!*"];
     for(const p of totalPrizes){
@@ -5827,11 +5225,11 @@ k.scene("slot_machine", ()=>{
       fc++;const on=fc%2===1;
       const gold=k.rgb(255,215,0),norm=k.rgb(255,255,255);
       for(const p of prizes){
-        if(p.type==="horizontal"){for(let c=0;c<3;c++) if(slotCells[p.row]&&slotCells[p.row][c]) slotCells[p.row][c].color=on?gold:norm;}
-        else if(p.type==="vertical"){for(let r=0;r<3;r++) if(slotCells[r]&&slotCells[r][p.col]) slotCells[r][p.col].color=on?gold:norm;}
-        else if(p.type==="diagonal"){for(let i=0;i<3;i++){const ri=p.pos==="TL-BR"?i:2-i;if(slotCells[ri]&&slotCells[ri][i]) slotCells[ri][i].color=on?gold:norm;}}
+        if(p.type==="horizontal"){for(let c=0;c<SLOT_N;c++) if(slotCells[p.row]&&slotCells[p.row][c]) slotCells[p.row][c].color=on?gold:norm;}
+        else if(p.type==="vertical"){for(let r=0;r<SLOT_N;r++) if(slotCells[r]&&slotCells[r][p.col]) slotCells[r][p.col].color=on?gold:norm;}
+        else if(p.type==="diagonal"){for(let i=0;i<SLOT_N;i++){const ri=i; const ci=p.pos==="TL-BR"?i:(SLOT_N-1-i); if(slotCells[ri]&&slotCells[ri][ci]) slotCells[ri][ci].color=on?gold:norm;}}
       }
-      if(fc>=6){clearInterval(iv);for(let r=0;r<3;r++) for(let c=0;c<3;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].color=k.rgb(255,255,255);}
+      if(fc>=6){clearInterval(iv);for(let r=0;r<SLOT_N;r++) for(let c=0;c<SLOT_N;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].color=k.rgb(255,255,255);}
     },300);
   }
 
@@ -5856,16 +5254,17 @@ k.scene("slot_machine", ()=>{
     destroyUI();
     uiObjs.push(k.add([k.text("🏪 NHÀ THƯƠNG GIA — VÒNG QUAY MAY MẮN",{size:18}),k.pos(W/2,22),k.anchor("center"),k.color(255,215,0),k.z(10)]));
     if(firstFree&&spinCount===0) uiObjs.push(k.add([k.text("✦ Lần quay đầu MIỄN PHÍ! ✦",{size:12}),k.pos(W/2,44),k.anchor("center"),k.color(77,255,77),k.z(10)]));
-    const gx=W/2-105,gy=68,cs=64,gap=6;
-    k.add([k.rect(220,216),k.pos(gx-5,gy-5),k.color(30,25,45),k.outline(2,k.rgb(210,170,50)),k.z(5)]);
-    slotCells=Array(3).fill(null).map(()=>Array(3).fill(null));
-    for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const cs=44,gap=4,gridW=SLOT_N*cs+(SLOT_N-1)*gap;
+    const gx=W/2-gridW/2,gy=68;
+    k.add([k.rect(gridW+10,gridW+10),k.pos(gx-5,gy-5),k.color(30,25,45),k.outline(2,k.rgb(210,170,50)),k.z(5)]);
+    slotCells=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill(null));
+    for(let r=0;r<SLOT_N;r++) for(let c=0;c<SLOT_N;c++){
       const cx=gx+c*(cs+gap),cy=gy+r*(cs+gap);
       k.add([k.rect(cs,cs),k.pos(cx,cy),k.color(20,15,35),k.outline(1,k.rgb(255,255,255,0.1)),k.z(6)]);
-      const ct=k.add([k.text(grid[r][c],{size:34}),k.pos(cx+cs/2,cy+cs/2),k.anchor("center"),k.color(255,255,255),k.z(7)]);
+      const ct=k.add([k.text(grid[r][c],{size:22}),k.pos(cx+cs/2,cy+cs/2),k.anchor("center"),k.color(255,255,255),k.z(7)]);
       slotCells[r][c]=ct;
     }
-    const ry=gy+225;
+    const ry=gy+gridW+25;
     uiObjs.push(k.add([k.text("🪵 "+GS.resources.wood+"  🪨 "+GS.resources.stone+"  🍎 "+GS.resources.food,{size:12}),k.pos(W/2,ry),k.anchor("center"),k.color(200,200,220),k.z(10)]));
     uiObjs.push(k.add([k.text("🥈 Silver: "+(GS.silverCoins||0),{size:13}),k.pos(W/2,ry+18),k.anchor("center"),k.color(192,192,220),k.z(10)]));
     const sby=ry+48;
@@ -5880,13 +5279,24 @@ k.scene("slot_machine", ()=>{
     uiObjs.push(asb);
     uiObjs.push(k.add([k.text(autoSpinning?"⏹️ DỪNG AUTO":"🔄 AUTO QUAY",{size:12}),k.pos(W/2,asbY+15),k.anchor("center"),k.color(255,255,255),k.z(11)]));
     asb.onClick(()=>toggleAutoSpin());
-    const cy2=sby+48;
+    const cy2=asbY+40;
     if(!(firstFree&&spinCount===0)) uiObjs.push(k.add([k.text("Phí: 3 🪵 + 2 🪨 + 1 🍎",{size:10}),k.pos(W/2,cy2),k.anchor("center"),k.color(180,180,200),k.z(10)]));
     if(resultMsg){
       const col=resultMsg.includes("JACKPOT")?[255,215,0]:resultMsg.includes("ding")?[77,255,77]:[200,200,200];
       uiObjs.push(k.add([k.text(resultMsg,{size:11}),k.pos(W/2,cy2+20),k.anchor("center"),k.color(col[0],col[1],col[2]),k.z(10)]));
     }
     const ex=H-32;
+    // ─── ĐỔI GỖ → ĐÁ ───────────────────────────────────────────
+    const trY=ex-44;
+    const canTrade=GS.resources.wood>=5;
+    const trB=k.add([k.rect(200,32),k.pos(W/2-100,trY),k.color(canTrade?[70,130,90]:[70,70,70]),k.opacity(0.9),k.outline(2,k.rgb(canTrade?120:90,canTrade?200:90,canTrade?140:90)),k.z(10),k.area(),"trade-btn"]);
+    uiObjs.push(trB);
+    uiObjs.push(k.add([k.text("🔄 Đổi 5🪵 → 3🪨",{size:12}),k.pos(W/2,trY+16),k.anchor("center"),k.color(255,255,255),k.z(11)]));
+    if(canTrade) trB.onClick(()=>{
+      GS.resources.wood-=5; GS.resources.stone+=3;
+      showToast("🔄 Đã đổi 5🪵 → 3🪨!",1500);
+      updateHUD(); updateDisplay();
+    });
     const eb=k.add([k.rect(120,30),k.pos(W/2-60,ex),k.color(60,60,80),k.opacity(0.85),k.outline(1,k.rgb(200,200,200,0.2)),k.z(10),k.area(),"exit-btn"]);
     uiObjs.push(eb);
     uiObjs.push(k.add([k.text("← Thoát",{size:14}),k.pos(W/2,ex+15),k.anchor("center"),k.color(200,200,220),k.z(11)]));
@@ -5898,6 +5308,7 @@ k.scene("slot_machine", ()=>{
 // SECTION 15: INSTRUCTIONS SCENE
 // ═══════════════════════════════════════════════════════════════════
 k.scene("instructions", ()=>{
+  setGameHUDVisible(false);
   k.add([k.rect(W,H),k.pos(0,0),k.color(20,26,46)]);
 
   // Stars
@@ -6038,11 +5449,14 @@ k.scene("instructions", ()=>{
 // SECTION 15: ARENA — Wave combat (20x20)
 // ═══════════════════════════════════════════════════════════════════
 k.scene("arena", ()=>{
+  setGameHUDVisible(false);
   const AW=20, AH=20;
   const AT = Math.min(H, W) / AH;
   const AX = (W - AT * AW) / 2, AY = (H - AT * AH) / 2 + 30;
   let cw=1, am=[], ago=false, avic=false, pk=0, ek=0;
-  let php=GS.player.hp, pmhp=GS.player.maxHp, pehp=GS.pebble.hp, pemhp=GS.pebble.maxHp;
+  let php=GS.player.hp, pmhp=GS.player.maxHp;
+  const MAX_SQUAD=3; // 1 Pebble mặc định + tối đa 2 trợ thủ gọi thêm
+  let squad=[]; // {role,name,icon,hp,maxHp,atk,obj,baseX,baseY}
   function showFloating(x,y,text,color){
     const ft=k.add([k.text(text,{size:13}),k.pos(x-15,y),k.color(color[0],color[1],color[2]),k.z(20)]);
     let life=0; ft.onUpdate(()=>{life+=k.dt();ft.pos.y-=30*k.dt();ft.opacity=Math.max(0,1-life/0.8);if(life>0.8)k.destroy(ft);});
@@ -6068,12 +5482,28 @@ k.scene("arena", ()=>{
   k.add([k.rect(AT*AW,3),k.pos(AX,AY+11*AT),k.color(200,180,100),k.z(2)]);
   const uW=k.add([k.text("Wave "+cw,{size:16}),k.pos(W/2,8),k.anchor("center"),k.color(255,215,0),k.z(10)]);
   const uK=k.add([k.text("🧑"+pk+" - "+ek+"👹",{size:12}),k.pos(W/2,24),k.anchor("center"),k.color(179,179,204),k.z(10)]);
+  // ─── BỘ ĐẾM THỜI GIAN LƯỢT ĐẤU: buộc trận đấu luôn tiến triển theo thời gian, ───
+  // kể cả khi người chơi không bấm gì — hết giờ sẽ tự động ra 1 đòn đánh.
+  const ROUND_TIME = 6;
+  let roundTimer = ROUND_TIME;
+  const uTimer=k.add([k.text("⏳ "+ROUND_TIME+"s",{size:12}),k.pos(W/2,40),k.anchor("center"),k.color(150,200,255),k.z(10)]);
+  function resetRoundTimer(){ roundTimer = ROUND_TIME; }
   const uHP=k.add([k.text("🧑 HP: "+php+"/"+pmhp,{size:11}),k.pos(10,2),k.color(46,204,113),k.z(10)]);
-  const uPH=k.add([k.text("🐱 HP: "+pehp+"/"+pemhp,{size:11}),k.pos(10,16),k.color(232,161,64),k.z(10)]);
+  const uPH=k.add([k.text("🐾 Trợ Thủ: --/--",{size:11}),k.pos(10,16),k.color(232,161,64),k.z(10)]);
   const st=k.add([k.text("⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1),{size:14}),k.pos(W/2,AY+AH*AT+12),k.anchor("center"),k.color(255,215,0),k.z(10)]);
   const iB=k.add([k.rect(70,22),k.pos(W-80,4),k.color(100,130,200),k.z(10),k.area()]);
   k.add([k.text("🎒 Items",{size:10}),k.pos(W-45,15),k.anchor("center"),k.color(255,255,255),k.z(11)]);
   iB.onClick(()=>{let m="🎒 Đấu Trường\n🪙 Silver: "+(GS.silverCoins||0)+"\n⚔️ +ATK: "+abf.pa+"\n🐱 +ATK: "+abf.pea+"\n❤️ Heal: "+abf.hp+" lần"+"\n⚡ Kill Buff: "+(GS.arenaKillBuff||0);showToast(m,4000);});
+  const callB=k.add([k.rect(90,22),k.pos(W-176,4),k.color(150,100,200),k.z(10),k.area()]);
+  k.add([k.text("📣 Trợ Thủ",{size:10}),k.pos(W-131,15),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  callB.onClick(()=>{
+    if(squad.length>=MAX_SQUAD){ showToast("❌ Đội đã đủ "+MAX_SQUAD+" thành viên rồi!",1800); return; }
+    const already=squad.map(s=>s.role);
+    const avail=PEBBLE_ROLES.filter(r=>!already.includes(r.id));
+    const items=avail.map(r=>({icon:r.icon,label:r.name,sublabel:"⚔️Công "+r.atk+"  ❤️Máu "+r.hp,enabled:true,
+      action(){window.closeQuickPopup();addSquadMember(r);}}));
+    openQuickPopup("📣 Gọi Pebble nào ra tham chiến?",items,null);
+  });
   const bY=H-35;
   const fB=k.add([k.rect(80,28),k.pos(W/2-90,bY),k.color(46,160,67),k.z(10),k.area()]);
   k.add([k.text("⚔️ Đánh",{size:13}),k.pos(W/2-50,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
@@ -6083,7 +5513,24 @@ k.scene("arena", ()=>{
   k.add([k.text("❤️ Hồi",{size:13}),k.pos(W/2+120,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
   const eB=k.add([k.rect(60,22),k.pos(10,bY+3),k.color(150,40,40),k.z(10),k.area()]);
   k.add([k.text("✖ Thoát",{size:10}),k.pos(40,bY+14),k.anchor("center"),k.color(255,255,255),k.z(11)]);
-  eB.onClick(()=>{GS.player.hp=php;k.go("game");});
+  // ─── AUTO ĐÁNH: tự động tấn công liên tục theo chu kỳ, không cần bấm tay từng lượt ───
+  let autoBattle=false, autoTimer=null;
+  const bY2=bY-32;
+  const aB=k.add([k.rect(150,24),k.pos(W/2-75,bY2),k.color(90,90,110),k.z(10),k.area()]);
+  const aBLabel=k.add([k.text("🔥 Auto Đánh: TẮT",{size:11}),k.pos(W/2,bY2+12),k.anchor("center"),k.color(255,255,255),k.z(11)]);
+  function stopAutoBattle(){
+    autoBattle=false;
+    if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+    aB.color=k.rgb(90,90,110); aBLabel.text="🔥 Auto Đánh: TẮT";
+  }
+  function startAutoBattle(){
+    autoBattle=true;
+    aB.color=k.rgb(230,160,40); aBLabel.text="🔥 Auto Đánh: BẬT";
+    if(autoTimer) clearInterval(autoTimer);
+    autoTimer=setInterval(()=>{ if(autoBattle) patk(-1); }, 850);
+  }
+  aB.onClick(()=>{ if(autoBattle) stopAutoBattle(); else startAutoBattle(); });
+  eB.onClick(()=>{stopAutoBattle();GS.player.hp=php;k.go("game");});
   function spw(w){
     for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}}
     am=[];
@@ -6101,7 +5548,8 @@ k.scene("arena", ()=>{
       const hf=k.add([k.rect(AT-4,4),k.pos(AX+pos[i].x*AT+2,py-AT/2+2),k.color(230,51,51),k.z(7)]);
       k.add([k.text(""+(i+1),{size:11}),k.pos(px,py),k.anchor("center"),k.color(255,255,255),k.z(8)]);
       k.add([k.text("⭐"+sr,{size:8}),k.pos(AX+pos[i].x*AT+AT/2,py-AT/2-6),k.anchor("center"),k.color(255,215,0),k.z(7)]);
-      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,target:(php>pehp||pehp<=0)?"p":"pe",dead:false});
+      const squadHp=squad.reduce((a,s)=>a+s.hp,0);
+      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,target:(php>squadHp||squadHp<=0)?"p":"pe",dead:false});
     }
   }
   function patk(idx){
@@ -6111,8 +5559,16 @@ k.scene("arena", ()=>{
     const m=am[idx];if(!m||m.dead)return;
     const d=Math.max(1,GS.player.attack+getEquipStats().atk+abf.pa+Math.floor(Math.random()*4)-m.def);
     m.hp-=d;showFloating(m.o.pos.x,m.o.pos.y-15,'-'+d,[255,50,50]);spawnParticles(m.o.pos.x,m.o.pos.y,3,[255,77,26]);
+    lungeIcon(pIcon,pIconBaseY);
     m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
-    if(pehp>0){const pd=Math.max(1,GS.pebble.attack+abf.pea+Math.floor(Math.random()*3)-Math.floor(m.def*0.5));m.hp-=pd;showFloating(m.o.pos.x,m.o.pos.y+10,'-'+pd+'🐱',[232,161,64]);m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));}
+    // Toàn bộ trợ thủ còn sống trong đội đều ra đòn cùng lượt
+    for(const s of squad){
+      if(s.hp<=0||m.hp<=0) continue;
+      const sd=Math.max(1,s.atk+Math.floor(Math.random()*3)-Math.floor(m.def*0.5));
+      m.hp-=sd;showFloating(m.o.pos.x,m.o.pos.y+10,'-'+sd+s.icon,[232,161,64]);
+      lungeIcon(s.obj,s.baseY);
+      m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
+    }
     if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);}catch(e){}}
     const rm=am.filter(m=>!m.dead);
     if(!rm.length){avic=true;onVic();return;}
@@ -6121,17 +5577,35 @@ k.scene("arena", ()=>{
   function enTurn(){
     const al=am.filter(m=>!m.dead);
     for(const m of al){
-      if(m.target==="p"&&php>0){const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));php=Math.max(0,php-ed);showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);}
-      else if(pehp>0){const ed=Math.max(1,m.atk-1+Math.floor(Math.random()*2));pehp=Math.max(0,pehp-ed);showFloating(AX+17*AT,AY+14*AT,'-'+ed,[232,100,50]);}
+      if(m.target==="p"&&php>0){const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));php=Math.max(0,php-ed);showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);lungeIcon(pIcon,pIconBaseY);}
+      else {
+        const aliveSquad=squad.filter(s=>s.hp>0);
+        if(aliveSquad.length>0){
+          const s=aliveSquad[Math.floor(Math.random()*aliveSquad.length)];
+          const ed=Math.max(1,m.atk-1+Math.floor(Math.random()*2));
+          s.hp=Math.max(0,s.hp-ed);
+          showFloating(s.baseX,AY+14*AT,'-'+ed,[232,100,50]);
+          lungeIcon(s.obj,s.baseY);
+        }
+      }
     }
     updUI();
-    if(php<=0&&pehp<=0){ago=true;onDef();}
+    if(php<=0 && squad.every(s=>s.hp<=0)){ago=true;onDef();}
   }
-  function updUI(){uHP.text="🧑 HP: "+php+"/"+pmhp;uPH.text="🐱 HP: "+pehp+"/"+pemhp;uK.text="🧑"+pk+" - "+ek+"👹";if(php<=0)uHP.color=k.rgb(200,50,50);if(pehp<=0)uPH.color=k.rgb(200,50,50);}
+  function updUI(){
+    uHP.text="🧑 HP: "+php+"/"+pmhp;
+    const totalHp=squad.reduce((a,s)=>a+s.hp,0), totalMax=squad.reduce((a,s)=>a+s.maxHp,0);
+    uPH.text="🐾 Trợ Thủ ("+squad.length+"): "+totalHp+"/"+totalMax;
+    uK.text="🧑"+pk+" - "+ek+"👹";
+    if(php<=0)uHP.color=k.rgb(200,50,50);
+    uPH.color = squad.every(s=>s.hp<=0) ? k.rgb(200,50,50) : k.rgb(232,161,64);
+    for(const s of squad){ if(s.obj) s.obj.opacity = s.hp<=0 ? 0.25 : 1; }
+  }
   function onVic(){
     pk++;uK.text="🧑"+pk+" - "+ek+"👹";
     if(pk>=2){
       // Player wins the arena match!
+      stopAutoBattle();
       showToast("🏆 CHIẾN THẮNG ĐẤU TRƯỜNG! Nhận thưởng lớn!",3000);
       const bigR=10+cw*5;GS.resources.wood+=bigR;GS.resources.stone+=bigR;GS.resources.food+=bigR;GS.player.xp+=20+cw*5;GS.silverCoins=(GS.silverCoins||0)+3;
       checkLevelUp();updateHUD();
@@ -6141,19 +5615,65 @@ k.scene("arena", ()=>{
     const r=3+cw*2;GS.resources.wood+=r;GS.resources.stone+=r;GS.resources.food+=r;GS.player.xp+=5+cw*3;
     if(cw%3===0){GS.silverCoins=(GS.silverCoins||0)+1;showToast("👑 +1 Silver Coin!",2000);}
     showToast("🎉 Wave "+cw+" cleared! +"+r+" resources! (🧑"+pk+"/2 kills)",2000);checkLevelUp();updateHUD();cw++;
-    setTimeout(()=>{avic=false;php=Math.min(pmhp,php+10);pehp=Math.min(pemhp,pehp+10);GS.player.hp=php;GS.pebble.hp=pehp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
+    setTimeout(()=>{avic=false;resetRoundTimer();php=Math.min(pmhp,php+10);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+10);}GS.player.hp=php;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
   }
-  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);pehp=Math.min(pemhp,pehp+15);GS.player.hp=php;GS.pebble.hp=pehp;updUI();ago=false;}
-  fB.onClick(()=>{if(ago||avic)return;patk(-1);});
-  dB.onClick(()=>{if(ago||avic)return;showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
+  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){stopAutoBattle();showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+15);}GS.player.hp=php;updUI();resetRoundTimer();ago=false;}
+  fB.onClick(()=>{if(ago||avic)return;resetRoundTimer();patk(-1);});
+  dB.onClick(()=>{if(ago||avic)return;resetRoundTimer();showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
   hB.onClick(()=>{
     if(ago||avic)return;
-    if(abf.hp>0){abf.hp--;const ha=15+Math.floor(Math.random()*10);if(php<pehp){php=Math.min(pmhp,php+ha);showFloating(AX+2*AT,AY+14*AT,'+'+ha,[46,204,113]);}else{pehp=Math.min(pemhp,pehp+ha);showFloating(AX+17*AT,AY+14*AT,'+'+ha,[232,161,64]);}updUI();const al=am.filter(m=>!m.dead);if(al.length>0)enTurn();}
+    resetRoundTimer();
+    if(abf.hp>0){
+      abf.hp--;
+      const ha=15+Math.floor(Math.random()*10);
+      // Hồi cho ai đang có % máu thấp nhất — người chơi hoặc 1 thành viên trong squad
+      let lowest={kind:"p",pct:pmhp>0?php/pmhp:1};
+      for(const s of squad){ const pct=s.maxHp>0?s.hp/s.maxHp:1; if(pct<lowest.pct) lowest={kind:"s",s,pct}; }
+      if(lowest.kind==="p"){ php=Math.min(pmhp,php+ha); showFloating(AX+2*AT,AY+14*AT,'+'+ha,[46,204,113]); }
+      else { lowest.s.hp=Math.min(lowest.s.maxHp,lowest.s.hp+ha); showFloating(lowest.s.baseX,AY+14*AT,'+'+ha,[232,161,64]); }
+      updUI();const al=am.filter(m=>!m.dead);if(al.length>0)enTurn();
+    }
     else showToast("❌ Hết bình máu! Vào Merchant House quay thưởng.",2000);
   });
-  k.add([k.text("🧑",{size:AT*0.6}),k.pos(AX+2*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
-  k.add([k.text("🐱",{size:AT*0.6}),k.pos(AX+17*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
+  const pIcon=k.add([k.text("🧑",{size:AT*0.6}),k.pos(AX+2*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
+  const pIconBaseY=pIcon.pos.y;
+  // Không còn Pebble mặc định đồng hành — đội trợ thủ bắt đầu trống, gọi thêm qua nút 📣 Trợ Thủ (10 Pebble chuyên trách)
+  // Gọi thêm 1 trong 10 Pebble chuyên trách (theo bộ luật gốc) ra tham chiến, tối đa MAX_SQUAD thành viên
+  function addSquadMember(role){
+    const slotIdx=squad.length;
+    const sx=AX+17*AT + slotIdx*AT*0.85;
+    const obj=k.add([k.text(role.icon,{size:AT*0.5}),k.pos(sx,AY+15*AT),k.anchor("center"),k.z(7)]);
+    squad.push({role:role.id,name:role.name,icon:role.icon,hp:role.hp,maxHp:role.hp,atk:role.atk,obj,baseX:sx,baseY:AY+15*AT});
+    showToast(role.icon+" "+role.name+" đã gia nhập trận đấu!",2000);
+    updUI();
+  }
+  // Hiệu ứng nhún nhẹ lên phía quái (hàng trên) khi tấn công — cho cảm giác 2 bên thực sự đang giao chiến
+  function lungeIcon(icon, baseY){
+    let t=0;
+    const h=icon.onUpdate(()=>{
+      t+=k.dt();
+      const dur=0.15;
+      if(t<dur) icon.pos.y=baseY-(t/dur)*16;
+      else if(t<dur*2) icon.pos.y=baseY-(1-(t-dur)/dur)*16;
+      else { icon.pos.y=baseY; if(h&&h.cancel)h.cancel(); }
+    });
+  }
+  k.onUpdate(()=>{
+    if(ago||avic||autoBattle){
+      uTimer.text = autoBattle ? "🔥 Auto" : "⏳ --";
+      uTimer.color = autoBattle ? k.rgb(230,160,40) : k.rgb(100,100,120);
+      return;
+    }
+    roundTimer -= k.dt();
+    if(roundTimer<=0){
+      resetRoundTimer();
+      patk(-1); // Hết giờ mà chưa thao tác — trận đấu vẫn tự tiến triển
+    }
+    uTimer.text = "⏳ "+Math.ceil(Math.max(0,roundTimer))+"s";
+    uTimer.color = roundTimer<2 ? k.rgb(230,80,80) : k.rgb(150,200,255);
+  });
   spw(cw);
+  updUI();
   k.onKeyPress("space",()=>fB.click());
   k.onKeyPress("d",()=>dB.click());
   k.onKeyPress("h",()=>hB.click());
