@@ -223,7 +223,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <!-- ─── Quick-Action Toolbar (smart popup per button) ─── -->
   <div id="bottom-actions">
     <div class="ba-row">
-      <button class="bot-btn" onclick="window.openPebbleChat()" title="Chat">💬 Chat</button>
       <button class="bot-btn" onclick="window.quickDig()" id="btn-dig" title="Đào Đất">🪓 Đào</button>
       <button class="bot-btn" onclick="window.quickPlant()" id="btn-plant" title="Trồng Cây">🌾 Trồng</button>
       <button class="bot-btn" onclick="window.quickHeal()" id="btn-heal" title="Hồi Máu">💊 Máu</button>
@@ -264,22 +263,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <div id="hud-level">Lv.1</div>
     <div id="hud-xp" style="display:none"><div id="hud-xp-fill-old" style="width:0%"></div></div>
     <div id="hud-xp-text">XP: 0/10</div>
-    <div id="hud-companion" style="display:none">
-      <span id="hud-companion-label">🐱 Pebble</span>
-      <span>❤️ <span id="hud-pebble-hp-text">15/15</span></span>
-      <div id="hud-pebble-hp-bar"><div id="hud-pebble-hp-fill" style="width:100%"></div></div>
-    </div>
-    <div id="hud-cow" style="display:none">
-      <span id="hud-cow-label">🐄 Đàn bò</span>
-      <span id="hud-cow-count">0/10</span>
-      <span>😊 <span id="hud-cow-mood">Happy</span></span>
-      <div style="display:flex;gap:8px;margin-top:2px;font-size:9px;color:#aaa">
-        <span>HP: <span id="hud-cow-hp-text">20/20</span></span>
-        <span>😊 <span id="hud-cow-happy-text">100%</span></span>
-        <span>🥛 <span id="hud-cow-milk-text">0/10</span></span>
-      </div>
-      <div id="hud-cow-hp-bar" style="display:none"><div id="hud-cow-hp-fill" style="width:100%;height:4px;background:#99cc4d;border-radius:2px"></div></div>
-    </div>
   </div>
 </div>
 
@@ -298,7 +281,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <div class="tab-bar">
     <div class="tab-btn active" data-tab="inv-items">Đồ</div>
     <div class="tab-btn" data-tab="inv-equip">Trang Bị</div>
-    <div class="tab-btn" data-tab="inv-pebble">🐱 Pebble</div>
     <div class="tab-btn" data-tab="inv-stats">Stats</div>
   </div>
   <div id="tab-inv-items" class="tab-content active">
@@ -314,10 +296,6 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <div id="tab-inv-equip" class="tab-content">
     <div style="font-size:10px;color:#bdc3c7;margin-bottom:4px">Click slot để tháo. Click vật phẩm để trang bị.</div>
     <div id="equip-panel"></div>
-  </div>
-  <div id="tab-inv-pebble" class="tab-content">
-    <div id="pebble-equip-panel" style="margin-bottom:8px"></div>
-    <div id="pebble-skills-panel"></div>
   </div>
   <div id="tab-inv-stats" class="tab-content">
     <div id="stats-display"></div>
@@ -364,192 +342,10 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <div class="toast" id="toast"></div>
 <div id="error-banner" style="position:fixed;top:90px;left:50%;transform:translateX(-50%);background:rgba(200,40,40,0.92);border:1px solid #ff6b6b;border-radius:8px;padding:5px 12px;z-index:300;display:none;color:#fff;font-size:11px;text-align:center;max-width:400px;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,0.5);"></div>
 
-<!-- ─── PEBBLE CHAT MODAL ─── -->
-<div class="modal-overlay" id="modal-pebble-chat">
-  <div class="modal-box" style="max-width:380px;text-align:center;">
-    <h2>💬 Chat với Pebble</h2>
-    <div id="chat-messages" style="max-height:240px;overflow-y:auto;text-align:left;padding:6px;margin:6px 0;background:rgba(0,0,0,0.3);border-radius:8px;font-size:12px;color:#fff;line-height:1.5;min-height:80px;"></div>
-    <div style="display:flex;gap:4px;">
-      <input id="chat-input" type="text" placeholder="Nhập tin nhắn..." style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:12px;outline:none;">
-      <button id="chat-send" style="background:rgba(232,161,64,0.2);border:1px solid #e8a140;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;cursor:pointer;">Gửi</button>
-    </div>
-    <div style="margin-top:6px;font-size:9px;color:#8899bb;">Gõ "help" để xem danh sách lệnh</div>
-    <button class="modal-close" style="margin-top:6px;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:4px 16px;border-radius:8px;font-size:11px;cursor:pointer;">Đóng</button>
-  </div>
-</div>
 
-<!-- ─── PEBBLE DIALOGUE BUBBLE ─── -->
-<div id="pebble-dialogue" style="position:fixed;bottom:46px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:2px solid #e8a140;border-radius:14px;padding:12px 18px;z-index:150;display:none;max-width:380px;width:92%;color:#fff;font-size:14px;text-align:center;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
-  <div id="dialogue-speaker" style="font-weight:bold;color:#f0c060;margin-bottom:4px;font-size:13px;"></div>
-  <div id="dialogue-text" style="color:#fff;line-height:1.4;"></div>
-  <div id="dialogue-continue" style="font-size:10px;color:#8899bb;margin-top:6px;opacity:0.7;">✦</div>
-</div>
-
-<!-- ─── Pebble Task Modal ─── -->
-<div class="modal-overlay" id="modal-pebble-task">
-  <div class="modal-box" style="max-width:320px;text-align:center;">
-    <h2>🐱 Giao Việc Cho Pebble</h2>
-    <p style="font-size:11px;color:#8899bb;margin:6px 0 10px 0;">Chọn nhiệm vụ cho Pebble:</p>
-    <div id="pebble-task-buttons" style="display:flex;flex-direction:column;gap:6px;">
-      <button class="task-btn" data-task="none" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🔄 Tự Do (Mặc Định)</button>
-      <button class="task-btn" data-task="follow" style="background:rgba(46,160,67,0.2);border:1px solid #2ea043;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">👣 Đi Theo Nhân Vật</button>
-      <button class="task-btn" data-task="defend" style="background:rgba(230,51,51,0.2);border:1px solid #e63333;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🛡️ Bảo Vệ Chủ Nhân</button>
-      <button class="task-btn" data-task="gather" style="background:rgba(232,161,64,0.2);border:1px solid #e8a140;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">🌲 Thu Thập Tài Nguyên</button>
-      <button class="task-btn" data-task="stay" style="background:rgba(100,130,200,0.2);border:1px solid #6482c8;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;">📍 Đứng Yên Tại Chỗ</button>
-    </div>
-    <div style="margin-top:10px;font-size:10px;color:#8899bb;" id="pebble-current-task">Hiện tại: Tự do</div>
-    <button class="modal-close" style="margin-top:10px;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:6px 20px;border-radius:8px;font-size:12px;cursor:pointer;">Đóng</button>
-  </div>
 </div>
 
 <script>
-// ─── Pebble Chat System ───
-const PEBBLE_CHAT_RESPONSES = {
-  "hello":["Meo meo! Chào bạn! 🐱","Chào! Bạn khỏe không? 🐾","Meo! Rất vui được gặp bạn! 🌟"],
-  "hi":["Meo meo! 👋","Chào bạn hiền! 🐱"],
-  "help":["Mình có thể: đi theo (follow), bảo vệ (defend), thu thập (gather), đứng yên (stay) 🐾","Hỏi mình về đảo, quái, hoặc đồ ăn! 🍎"],
-  "follow":["Mình sẽ đi theo bạn! 👣","Dẫn đường đi! Mình theo sau 🐾"],
-  "defend":["Mình sẽ bảo vệ bạn! 🛡️","Có quái cứ để mình lo! ⚔️"],
-  "gather":["Mình đi nhặt đồ đây! 🌲","Nhặt táo với gỗ thôi! 🍎🪵"],
-  "stay":["OK, mình đứng yên đây 📍","Vâng, mình chờ bạn!"],
-  "arena":["Đấu trường vui lắm! Mình cùng chiến đấu! ⚔️","Vào arena đi! Mình đánh cùng! 🐱⚔️"],
-  "fight":["Chiến đấu thôi! ⚔️","Mình khỏe lắm! Để mình lo! 💪"],
-  "food":["Đói quá! Cho mình xin ít đồ ăn! 🍎","Có táo không? Mình thích táo! 🍎"],
-  "apple":["Táo ngon tuyệt! 🍎","Cho mình xin một quả táo nhé! 🐱🍎"],
-  "fish":["Cá! Cá! Mình thích cá! 🐟","Đi câu cá đi! 🎣"],
-  "island":["Mình thích khám phá đảo mới! 🏝️","Đi đảo khác chơi đi! ⛵"],
-  "boss":["Boss khó lắm! Chuẩn bị kỹ vào! 👑","Cùng nhau đánh boss nhé! ⚔️"],
-  "home":["Nhà mình ở gần bờ biển! 🏠","Về nhà thôi! 🏠"],
-  "love":["Mình cũng yêu bạn! ❤️🐱","Meo meo! Thương bạn! 💕"],
-  "good":["Tốt quá! 🎉","Mình vui! 😊"],
-  "bad":["Đừng buồn! Mình ở đây mà! 🐱","Có chuyện gì vậy? Mình lắng nghe 💛"],
-  "bye":["Tạm biệt! Hẹn gặp lại! 👋🐱","Bye bye! Nhớ gọi mình nhé! 🐾"],
-  "skill":["Mình có 3 skill: Slash, Pounce, Screech! ⚡","Học skill trong tab Pebble nhé! 📚"],
-  "task":["Giao việc cho mình qua nút Pebble! 🐱","Follow/Defend/Gather/Stay tùy bạn! 👣"],
-  "map":["Bản đồ đẹp lắm! Có nhiều đảo để khám phá! 🗺️","Đi đến bến tàu để du lịch! ⛵"],
-};
-const PEBBLE_FALLBACK = [
-  "Meo? 🐱","Mình không hiểu lắm! Giải thích đi! 🤔","Hỏi mình về: help, follow, defend, arena... 📚",
-  "Meo meo? 😊","Chơi gì vui không? 🎮","Mình đang dạo chơi! 🌿","Nói gì đó hay đi! 💬",
-];
-
-window.openPebbleChat = function(){
-  document.getElementById("modal-pebble-chat").classList.add("show");
-  const msgDiv = document.getElementById("chat-messages");
-  if(msgDiv.children.length === 0){
-    var sum = (typeof getPebbleMemorySummary === "function") ? getPebbleMemorySummary() : "Minh moi den!";
-    addChatMsg("🐱 Pebble", "Meo meo! Chao ban! Minh co tri nho moi roi! 🐱🧠", msgDiv);
-    addChatMsg("🐱 Pebble", "🧠 Minh nho: " + sum, msgDiv);
-    addChatMsg("🐱 Pebble", "Go 'help', hoi ve 'hom nay', 'nha', 'dao' hoac 'nho'! 📚", msgDiv);
-  } else {
-    if (typeof getPebbleMemorySummary === "function") {
-      addChatMsg("🐱 Pebble", "🧠 Nho moi: " + getPebbleMemorySummary(), msgDiv);
-    }
-  }
-  setTimeout(()=>{
-    const inp = document.getElementById("chat-input");
-    if(inp) inp.focus();
-  }, 300);
-};
-
-function addChatMsg(sender, text, container){
-  if(!container) container = document.getElementById("chat-messages");
-  const div = document.createElement("div");
-  div.style.marginBottom = "4px";
-  div.style.padding = "4px 6px";
-  div.style.borderRadius = "6px";
-  if(sender === "🧑 Bạn"){
-    div.style.background = "rgba(46,204,113,0.1)";
-    div.style.textAlign = "right";
-    div.innerHTML = `<span style="color:#8899bb;font-size:10px;">${sender}</span><br><span style="color:#fff;">${text}</span>`;
-  } else {
-    div.style.background = "rgba(232,161,64,0.1)";
-    div.style.textAlign = "left";
-    div.innerHTML = `<span style="color:#e8a140;font-size:10px;font-weight:bold;">${sender}</span><br><span style="color:#fff;">${text}</span>`;
-  }
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
-
-function getPebbleResponse(input){
-  const lower = input.toLowerCase().trim();
-  const islandId = GS ? GS.currentIsland : "unknown";
-  
-  // Check memory-aware responses first
-  if (typeof pebbleGetTimeAwareResponse === "function") {
-    const memoryResponse = pebbleGetTimeAwareResponse(input, islandId);
-    if (memoryResponse !== null) {
-      pebbleMemory.conversationHistory.push({input, time: Date.now()});
-      if (pebbleMemory.conversationHistory.length > 10) pebbleMemory.conversationHistory.shift();
-      return memoryResponse;
-    }
-  }
-  
-  // Check for keywords
-  for(const [key, responses] of Object.entries(PEBBLE_CHAT_RESPONSES)){
-    if(lower.includes(key)){
-      if (["gather","follow","defend","stay","task"].includes(key) && typeof pebbleRememberEvent === "function") {
-        pebbleRememberEvent("Player asked about "+key, islandId, Math.floor(playerObj?playerObj.pos.x/TILE:0), Math.floor(playerObj?playerObj.pos.y/TILE:0));
-      }
-      return responses[Math.floor(Math.random() * responses.length)];
-    }
-  }
-  
-  // If the input mentions pebble's name
-  if(lower.includes("pebble") || lower.includes("mèo") || lower.includes("cat")){
-    return "Mình nghe! Có gì không bạn? 🐱👂";
-  }
-  
-  // Numbers or questions - use memory
-  if(lower.includes("?") || lower.includes("ai") || lower.includes("gì") || lower.includes("sao")){
-    if (typeof getPebbleMemorySummary === "function") {
-      return "Hmm, để mình nghĩ... 🤔 " + getPebbleMemorySummary() + " 📚";
-    }
-    return "Hmm, để mình nghĩ... 🤔 Mình không rõ lắm! Hỏi 'help' đi! 📚";
-  }
-  
-  // Default random response
-  return PEBBLE_FALLBACK[Math.floor(Math.random() * PEBBLE_FALLBACK.length)];
-}
-
-// Chat send handler
-function setupChat(){
-  const sendBtn = document.getElementById("chat-send");
-  const input = document.getElementById("chat-input");
-  const msgDiv = document.getElementById("chat-messages");
-  if(!sendBtn || !input) return;
-  
-  function sendMessage(){
-    const text = input.value.trim();
-    if(!text) return;
-    input.value = "";
-    addChatMsg("🧑 Bạn", text, msgDiv);
-    setTimeout(() => {
-      const response = getPebbleResponse(text);
-      addChatMsg("🐱 Pebble", response, msgDiv);
-    }, 400 + Math.random() * 400);
-  }
-  
-  sendBtn.addEventListener("click", sendMessage);
-  input.addEventListener("keypress", (e) => {
-    if(e.key === "Enter") sendMessage();
-  });
-}
-
-document.addEventListener("DOMContentLoaded", setupChat);
-
-// ─── Pebble Task UI event handlers ───
-document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll(".task-btn").forEach(btn => {
-    btn.addEventListener("click", function() {
-      try {
-        const task = btn.dataset.task;
-        if(window.setPebbleTask && task) window.setPebbleTask(task);
-      } catch(e) {}
-    });
-  });
-});
-
 // ─── Window error handler: show errors on screen ───
 window.onerror = function(msg, url, line, col, err) {
   console.error("GLOBAL ERROR:", msg, err);
@@ -997,7 +793,6 @@ loadSpriteSafe("stone_sprite", `${IMG_BASE}/stone.png`, { width: TILE, height: T
 // Load palm tree and mine tile sprites
 loadSpriteSafe("palm_tree_sprite", `${IMG_BASE}/palm_tree.png`, { width: TILE, height: TILE });
 loadSpriteSafe("mine_tile_sprite", `${IMG_BASE}/mine_tile.png`, { width: TILE, height: TILE });
-loadSpriteSafe("warrior_cow",  `${IMG_BASE}/warrior_cow.png`, { width: TILE, height: TILE });
 
 // ── Tileset textures (user uploaded pixel art) ──
 loadSpriteSafe("tile_grass",   `${IMG_BASE}/1000180088.png`);   // cỏ+đất tileset 128x128
@@ -1049,13 +844,7 @@ const GS = {
   pebble:{name:"Pebble",hp:15,maxHp:15,attack:3,defense:1,trainingBoost:{atk:0,def:0,hp:0},equipment:{head:null,chest:null,weapon:null,accessory:null},kills:0,skills:{slash:false,pounce:false,screech:false}},
 	  pebbleMode:"roam",
   pebbleTask:"none", // none | follow | defend | gather | stay
-	  // COWS — multiple farm animals on starter island
-	  cows:[
-	    {id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},
-	    {id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"},
-	  ],
-	  cowPen:{x1:12,y1:8,x2:22,y2:16},
-	  maxCows:10,
+	  cows:[], cowPen:{x1:0,y1:0,x2:0,y2:0}, maxCows:0,
   resources:{wood:5,stone:3,food:3,gold:0},
   silverCoins:0,
   currentIsland:"starter_isle",
@@ -1521,7 +1310,8 @@ function loadGame(){
       // Migration: ensure new fields exist in loaded saves
       if(!GS.pebble.trainingBoost) GS.pebble.trainingBoost={atk:0,def:0,hp:0};
       if(!GS.pebble.defense) GS.pebble.defense=1;if(!GS.pebble.equipment) GS.pebble.equipment={head:null,chest:null,weapon:null,accessory:null};if(!GS.pebble.kills) GS.pebble.kills=0;if(!GS.pebble.skills) GS.pebble.skills={slash:false,pounce:false,screech:false};if(GS.arenaKillBuff===undefined) GS.arenaKillBuff=0;
-	      if(!GS.cows) GS.cows=[{id:0,name:"Cow 1",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:16,tileY:10,homeX:16,homeY:10,lastFeed:0,mood:"😊"},{id:1,name:"Cow 2",hp:20,maxHp:20,hunger:80,age:1.0,growing:false,dead:false,tileX:18,tileY:12,homeX:18,homeY:12,lastFeed:0,mood:"😊"}];if(!GS.cowPen)GS.cowPen={x1:12,y1:8,x2:22,y2:16};if(!GS.maxCows)GS.maxCows=10;
+	      if(!GS.cows) GS.cows=[];if(!GS.cowPen)GS.cowPen={x1:0,y1:0,x2:0,y2:0};if(!GS.maxCows)GS.maxCows=0;
+	      GS.cows=[]; // Hệ thống bò đã bị gỡ bỏ khỏi game — dọn sạch dữ liệu bò còn sót trong save cũ
       for(const id of ISLAND_ORDER) getIslandData(id);
       // Validate all island maps: clear corrupt ones so they regenerate fresh on scene entry
       for(const id of ISLAND_ORDER) {
@@ -1653,14 +1443,6 @@ function updateHUD(){
   document.getElementById("hud-level").textContent=`Lv.${p.level}`;
   document.getElementById("hud-xp-fill").style.width=(p.xp/(p.level*10)*100)+"%";
   document.getElementById("hud-xp-text").textContent=`XP: ${p.xp}/${p.level*10}`;
-  // Companion HUD
-  const cp = getPebbleStats();
-  document.getElementById("hud-pebble-hp-text").textContent=`${cp.hp}/${cp.maxHp}`;
-  document.getElementById("hud-pebble-hp-fill").style.width=(cp.hp/cp.maxHp*100)+"%";
-  // Cow count (simplified - HP shown above each cow)
-  const aliveCows = GS.cows.filter(c=>!c.dead).length;
-  const elCowCount = document.getElementById("hud-cow-count");
-  if (elCowCount) elCowCount.textContent = aliveCows + "/" + GS.maxCows;
   document.getElementById("r-wood").textContent=GS.resources.wood||0;
   document.getElementById("r-stone").textContent=GS.resources.stone;
   document.getElementById("r-food").textContent=GS.resources.food;
@@ -2506,7 +2288,6 @@ function pebbleGetTimeAwareResponse(input, islandId) {
   if(l.indexOf('tai nguyen')>=0||l.indexOf('cay')>=0||l.indexOf('da')>=0){return 'Thay '+(pebbleMemory.observedResources||'vai')+' tai nguyen o '+islandId;}
   if(l.indexOf('dao')>=0||l.indexOf('island')>=0||l.indexOf('noi')>=0){var v=[];for(var i=0;i<pebbleMemory.visitedPlaces.length;i++){if(v.indexOf(pebbleMemory.visitedPlaces[i].island)<0)v.push(pebbleMemory.visitedPlaces[i].island);}return v.length>0?'Da kham pha: '+v.join(', '):'Chi o day thoi!';}
   if(l.indexOf('quai')>=0||l.indexOf('enemy')>=0||l.indexOf('monster')>=0){return 'Co quai vat! Can than!';}
-  if(l.indexOf('bo')>=0||l.indexOf('cow')>=0){return 'Bo dang o chuong!';}
   if(l.indexOf('nho')>=0||l.indexOf('remember')>=0){if(pebbleMemory.visitedPlaces.length>0){return 'Minh nho: '+pebbleMemory.visitedPlaces[0].description+' luc '+pebbleMemory.visitedPlaces[0].time;}return 'Chua nho gi!';}
   return null;
 }
@@ -2631,7 +2412,6 @@ function findNearestResource() {
 // ════════════════════════════════════════════════════════════════════════════
 // Stubs prevent "is not a function" errors when buttons are clicked before scene loads
 window.farmAction = window.farmAction || function() { showToast("⚠️ Game not ready yet", 1000); };
-window.cowAction = window.cowAction || function() { showToast("⚠️ Game not ready yet", 1000); };
 window.togglePebble = window.togglePebble || function() { showToast("⚠️ Game not ready yet", 1000); };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -3437,674 +3217,6 @@ console.log("🎮 Đang khởi tạo...");
 
   // (Removed follow-position history — Pebble now uses free-roam AI)
 
-  // ─── Pebble call / dialogue state ───
-  let pebbleCallPhase = "idle"; // "idle" | "walking" | "dialoguing"
-  let pebbleWalkTarget = null;  // {x, y} player's position when call started
-  let currentDialogue = null;   // selected dialogue array
-  let dialogueIndex = 0;        // current line in dialogue
-  let dialogueTimer = 0;        // auto-advance timer
-  let dialogueActive = false;   // whether dialogue bubble is shown
-  let lastDialogueUsed = -1;    // index of last used dialogue, to avoid repeats
-
-  // Spawn pebble near the player initially
-  const pebSx=sx+25,pebSy=sy+10;
-
-  // Pebble body (cat) - redesigned to look like 🐱 emoji
-  pebbleObj=k.add([
-    k.circle(TILE/2-3),k.pos(pebSx,pebSy+3),CAT_COLOR,
-    k.outline(2,k.color(0,0,0)),k.z(10),k.area(),"pebble",
-    {moving:false},
-  ]);
-  // Bigger round head (emoji style)
-  const pebDau=k.add([k.circle(TILE/2-5),k.pos(pebSx,pebSy-5),CAT_COLOR,k.outline(2,k.color(0,0,0)),k.z(11)]);
-  // Pointy cat ears
-  const pebEarL=k.add([k.polygon([k.vec2(pebSx-14,pebSy-6),k.vec2(pebSx-6,pebSy-26),k.vec2(pebSx,pebSy-6)]),CAT_DARK,k.z(11)]);
-  const pebEarR=k.add([k.polygon([k.vec2(pebSx+14,pebSy-6),k.vec2(pebSx+6,pebSy-26),k.vec2(pebSx,pebSy-6)]),CAT_DARK,k.z(11)]);
-  // Pink inner ears
-  const pebEarInnerL=k.add([k.polygon([k.vec2(pebSx-11,pebSy-7),k.vec2(pebSx-6,pebSy-21),k.vec2(pebSx-2,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
-  const pebEarInnerR=k.add([k.polygon([k.vec2(pebSx+11,pebSy-7),k.vec2(pebSx+6,pebSy-21),k.vec2(pebSx+2,pebSy-7)]),k.color(255,179,179),k.opacity(0.6),k.z(12)]);
-  // Forehead tabby stripes (3 small dark orange lines)
-  const pebStripeM=k.add([k.rect(3,7),k.pos(pebSx-1.5,pebSy-18),CAT_DARK,k.opacity(0.7),k.z(12)]);
-  const pebStripeL=k.add([k.rect(2.5,5),k.pos(pebSx-7,pebSy-17),CAT_DARK,k.opacity(0.5),k.z(12)]);
-  const pebStripeR=k.add([k.rect(2.5,5),k.pos(pebSx+5,pebSy-17),CAT_DARK,k.opacity(0.5),k.z(12)]);
-  // Big round eyes with catchlights (kawaii style)
-  const pebEyeL=k.add([k.circle(5.5),k.pos(pebSx-8,pebSy-6),k.color(255,255,255),k.outline(1.5,k.color(80,80,80)),k.z(12)]);
-  const pebEyeR=k.add([k.circle(5.5),k.pos(pebSx+8,pebSy-6),k.color(255,255,255),k.outline(1.5,k.color(80,80,80)),k.z(12)]);
-  const pebPupilL=k.add([k.circle(3.5),k.pos(pebSx-7,pebSy-5),k.color(30,30,30),k.z(13)]);
-  const pebPupilR=k.add([k.circle(3.5),k.pos(pebSx+9,pebSy-5),k.color(30,30,30),k.z(13)]);
-  // Catchlights (white dots in eyes)
-  const pebCatchL=k.add([k.circle(1.8),k.pos(pebSx-6,pebSy-8),k.color(255,255,255),k.z(14)]);
-  const pebCatchR=k.add([k.circle(1.8),k.pos(pebSx+10,pebSy-8),k.color(255,255,255),k.z(14)]);
-  // Pink nose (inverted triangle)
-  const pebNose=k.add([k.polygon([k.vec2(pebSx,pebSy+1),k.vec2(pebSx-3,pebSy+4),k.vec2(pebSx+3,pebSy+4)]),k.color(255,128,153),k.z(12)]);
-  // Cute "w" shaped mouth
-  const pebMouth=k.add([k.polygon([k.vec2(pebSx-5,pebSy+5),k.vec2(pebSx-2,pebSy+8),k.vec2(pebSx,pebSy+6),k.vec2(pebSx+2,pebSy+8),k.vec2(pebSx+5,pebSy+5)]),k.color(80,40,30),k.z(13)]);
-  // Rosy pink cheeks
-  const pebCheekL=k.add([k.circle(4),k.pos(pebSx-14,pebSy+3),k.color(255,150,150),k.opacity(0.4),k.z(12)]);
-  const pebCheekR=k.add([k.circle(4),k.pos(pebSx+14,pebSy+3),k.color(255,150,150),k.opacity(0.4),k.z(12)]);
-
-  // Whiskers (3 on each side)
-  const pebWhiskers=[];
-  const pebWhiskerData=[
-    [pebSx-10,pebSy+1,pebSx-20,pebSy-1],[pebSx-10,pebSy+3,pebSx-22,pebSy+3],[pebSx-10,pebSy+5,pebSx-20,pebSy+7],
-    [pebSx+10,pebSy+1,pebSx+20,pebSy-1],[pebSx+10,pebSy+3,pebSx+22,pebSy+3],[pebSx+10,pebSy+5,pebSx+20,pebSy+7],
-  ];
-  for(const wd of pebWhiskerData){
-    const midX=(wd[0]+wd[2])/2,midY=(wd[1]+wd[3])/2;
-    const w=k.add([k.rect(12,1),k.pos(midX-6,midY),k.color(200,200,200),k.opacity(0.8),k.z(11)]);
-    w._ax=wd[0];w._ay=wd[1];w._bx=wd[2];w._by=wd[3];w._mx=midX;w._my=midY;
-    pebWhiskers.push(w);
-  }
-
-  // Small paws at the bottom
-  const pebPawL=k.add([k.rect(5,4),k.pos(pebSx-9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
-  const pebPawR=k.add([k.rect(5,4),k.pos(pebSx+9,pebSy+28),CAT_COLOR,k.outline(1.5,k.color(0,0,0)),k.z(10)]);
-
-  // Tail (curved, made of small circles going up and to the left)
-  const pebTail=[];
-  const tailPositions=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
-  for(const tp of tailPositions){
-    const seg=k.add([k.circle(4),k.pos(pebSx+tp[0],pebSy+tp[1]),CAT_DARK,k.outline(1,k.color(0,0,0)),k.z(9)]);
-    pebTail.push(seg);
-  }
-
-  const pebCatParts=[pebDau,pebEarL,pebEarR,pebEarInnerL,pebEarInnerR,pebStripeM,pebStripeL,pebStripeR,pebEyeL,pebEyeR,pebPupilL,pebPupilR,pebCatchL,pebCatchR,pebNose,pebMouth,pebCheekL,pebCheekR,pebPawL,pebPawR,...pebWhiskers];
-
-  // ─── PEBBLE FREE-ROAM AI STATE MACHINE ──────────
-  let roamState = 'roaming';     // roaming | investigating | sniffing | going_home | resting
-  let roamTarget = null;         // {x: number, y: number} target position in pixels
-  let roamStateTimer = 0;        // how long in current state
-  let roamHomeTimer = 5 + Math.random() * 5; // countdown until return home
-  let roamHomeReturning = false; // true when once we've decided to go home this cycle
-  let investigateTarget = null;  // {tx: number, ty: number, type: number} tile being investigated
-  let sniffBounceTimer = 0;      // tiny bounce counter for sniff anim
-  let roamDialogueCooldown = 0;  // seconds between proximity dialogues
-  let roamSpeed = 55;            // pixels per second walk speed
-  let roamLastHomeCheck = 0;     // last time we checked if at home
-
-  // ─── PEBBLE HOME POSITION (pixel coords) ─────────
-  const PEBBLE_HOME_POS = {
-    x: PEBBLE_HOME_TILE.x * TILE + TILE/2,
-    y: PEBBLE_HOME_TILE.y * TILE + TILE/2,
-  };
-
-  // ─── Free-roam helper: pick a random walkable tile near Pebble ───
-  function pickRoamTarget() {
-    if (!pebbleObj) return null;
-    const px = Math.floor(pebbleObj.pos.x / TILE);
-    const py = Math.floor(pebbleObj.pos.y / TILE);
-    const RADIUS = 6; // max tiles away from current position
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const tx = px + Math.floor(Math.random() * RADIUS * 2 - RADIUS);
-      const ty = py + Math.floor(Math.random() * RADIUS * 2 - RADIUS);
-      if (tx < 1 || tx >= COLS - 1 || ty < 1 || ty >= ROWS - 1) continue;
-      const tile = getTile(ty, tx, map);
-      // Must be walkable: grass(0), sand(1), path(8), beach(7), grass_flower(10), tall_grass(13), stone(2)
-      if (!isSolid(tile) && tile !== 3 && tile !== 14) {
-        return { x: tx * TILE + TILE/2, y: ty * TILE + TILE/2 };
-      }
-    }
-    // Fallback: try moving toward center
-    return { x: Math.floor(COLS/2) * TILE + TILE/2, y: Math.floor(ROWS/2) * TILE + TILE/2 };
-  }
-
-  // ─── Free-roam helper: find interesting object within range ───
-  const INTERESTING_TILES = [4, 2, 6, 10, 13, 8]; // tree, stone, bush, flower, tall_grass, path
-  function findInterestingObject() {
-    if (!pebbleObj) return null;
-    const px = Math.floor(pebbleObj.pos.x / TILE);
-    const py = Math.floor(pebbleObj.pos.y / TILE);
-    const RANGE = 5; // tiles to scan (120px / 64 ≈ 2, but let's use 3)
-    let best = null;
-    let bestDist = Infinity;
-    for (let dy = -RANGE; dy <= RANGE; dy++) {
-      for (let dx = -RANGE; dx <= RANGE; dx++) {
-        const tx = px + dx, ty = py + dy;
-        if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) continue;
-        const tile = getTile(ty, tx, map);
-        if (INTERESTING_TILES.includes(tile)) {
-          const dist = Math.abs(dx) + Math.abs(dy);
-          if (dist < bestDist && dist >= 1) {
-            bestDist = dist;
-            best = { tx, ty, type: tile };
-          }
-        }
-      }
-    }
-    return best;
-  }
-
-  // ─── Free-roam helper: sniff animation (tiny bounce + overhead exclamation) ───
-  let sniffMark = null;
-  function doSniffAnimation() {
-    if (!sniffMark || !sniffMark.exists()) {
-      sniffMark = k.add([k.text("!", {size: 14}), k.pos(0, 0), k.z(15), k.opacity(0)]);
-    }
-    if (pebbleObj) {
-      sniffMark.pos = k.vec2(pebbleObj.pos.x, pebbleObj.pos.y - 30);
-      sniffMark.opacity = 1;
-    }
-  }
-  function hideSniffMarker() {
-    if (sniffMark && sniffMark.exists()) {
-      sniffMark.opacity = 0;
-    }
-  }
-
-  // ─── Free-roam helper: update pebble visual parts ───
-  function updatePebbleParts(pebMoved, pebObj) {
-    if (!pebObj) return;
-    const ppx = pebObj.pos.x, ppy = pebObj.pos.y;
-    const pBobY = ppy - 4;
-    const sniffBounce = (roamState === 'sniffing' || roamState === 'resting') ? Math.sin(Date.now() * 0.004) * 1.5 : 0;
-    const bobY = pBobY + sniffBounce;
-
-    // Head center
-    pebDau.pos = k.vec2(ppx, bobY);
-    // Ears (anchored to head center)
-    pebEarL.pos = k.vec2(ppx, bobY); pebEarR.pos = k.vec2(ppx, bobY);
-    pebEarInnerL.pos = k.vec2(ppx, bobY); pebEarInnerR.pos = k.vec2(ppx, bobY);
-    // Forehead stripes
-    pebStripeM.pos = k.vec2(ppx - 1.5, bobY - 13);
-    pebStripeL.pos = k.vec2(ppx - 7, bobY - 12);
-    pebStripeR.pos = k.vec2(ppx + 5, bobY - 12);
-    // Eyes with catchlights
-    pebEyeL.pos = k.vec2(ppx - 8, bobY - 1); pebEyeR.pos = k.vec2(ppx + 8, bobY - 1);
-    pebPupilL.pos = k.vec2(ppx - 7, bobY); pebPupilR.pos = k.vec2(ppx + 9, bobY);
-    pebCatchL.pos = k.vec2(ppx - 6, bobY - 3); pebCatchR.pos = k.vec2(ppx + 10, bobY - 3);
-    // Nose (inverted triangle)
-    pebNose.pos = k.vec2(ppx, bobY + 5);
-    // Mouth (w shape)
-    pebMouth.pos = k.vec2(ppx, bobY + 8);
-    // Rosy cheeks
-    pebCheekL.pos = k.vec2(ppx - 14, bobY + 4); pebCheekR.pos = k.vec2(ppx + 14, bobY + 4);
-    // Paws at bottom
-    pebPawL.pos = k.vec2(ppx - 9, bobY + 28); pebPawR.pos = k.vec2(ppx + 9, bobY + 28);
-    // Tail segments (curved line behind body)
-    const tailPos=[[-8,22],[-14,16],[-18,10],[-20,4],[-18,-2],[-14,-8]];
-    for(let i=0; i<pebTail.length && i<tailPos.length; i++){
-      pebTail[i].pos = k.vec2(ppx + tailPos[i][0], bobY + tailPos[i][1]);
-    }
-
-    // Whisker bounce during sniff
-    const wBounce = (roamState === 'sniffing') ? Math.sin(Date.now() * 0.006) * 0.8 : 0;
-    const wData = [[-10,1,-20,-1],[-10,3,-22,3],[-10,5,-20,7],[10,1,20,-1],[10,3,22,3],[10,5,20,7]];
-    for (let i = 0; i < 6 && i < pebWhiskers.length; i++) {
-      const w = pebWhiskers[i];
-      const wd = wData[i];
-      const mx = ppx + wd[0], my = bobY + wd[1] + wBounce;
-      w.pos = k.vec2(mx - 6, my);
-    }
-  }
-
-  // ─── Free-roam helper: step toward target ───
-  function roamStepToward(target, speed) {
-    if (!pebbleObj || !target) return false;
-    const dx = target.x - pebbleObj.pos.x;
-    const dy = target.y - pebbleObj.pos.y;
-    const d = Math.sqrt(dx * dx + dy * dy);
-    if (d < 4) return true; // arrived
-    const step = speed * k.dt();
-    if (step >= d) {
-      pebbleObj.pos.x = target.x;
-      pebbleObj.pos.y = target.y;
-      return true;
-    }
-    const nx = pebbleObj.pos.x + (dx / d) * step;
-    const ny = pebbleObj.pos.y + (dy / d) * step;
-    // Check if new position is walkable
-    const ntx = Math.floor(nx / TILE);
-    const nty = Math.floor(ny / TILE);
-    if (ntx >= 0 && ntx < COLS && nty >= 0 && nty < ROWS) {
-      const tile = getTile(nty, ntx, map);
-      if (!isSolid(tile) && tile !== 3) {
-        pebbleObj.pos.x = nx;
-        pebbleObj.pos.y = ny;
-      } else {
-        // Hit solid — pick new target
-        return true; // treat as arrived to trigger re-roll
-      }
-    }
-    return false;
-  }
-
-  // ─── Free-roam proximity dialogue check ───
-  function checkProximityDialogue() {
-    if (roamDialogueCooldown > 0) return;
-    if (!playerObj || !pebbleObj) return;
-    if (pebbleCallPhase !== "idle") return;
-    const dx = playerObj.pos.x - pebbleObj.pos.x;
-    const dy = playerObj.pos.y - pebbleObj.pos.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < TILE * 2.5) {
-      // Player is near — show quick dialogue
-      const phrases = [
-        '🐱 "Meo meo!"',
-        '🐱 "Chào bạn!"',
-        '🐱 *vẫy đuôi*',
-        '🐱 "Đang dạo chơi à?"',
-        '🐱 "Có gì ngon không?"',
-      ];
-      const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-      showToast(phrase, 2000);
-      roamDialogueCooldown = 12; // seconds before next proximity dialogue
-    }
-  }
-
-  // ─── Free-roam AI update ───
-  function updateRoamAI(dt) {
-    if (!pebbleObj || !playerObj) return;
-    if (pebbleCallPhase === "walking" || pebbleCallPhase === "dialoguing") return;
-    if (GS.pebbleMode !== "roam") return;
-    if (pebbleObj._hidden) { pebbleObj.visible = true; pebbleObj._hidden = false; }
-
-    roamStateTimer += dt;
-    roamHomeTimer -= dt;
-    if (roamDialogueCooldown > 0) roamDialogueCooldown -= dt;
-
-    // Check proximity dialogue
-    checkProximityDialogue();
-
-    // Determine a near-player spawn if Pebble is far away (teleport back if > 30 tiles away)
-    const distToPlayer = Math.sqrt(
-      (pebbleObj.pos.x - playerObj.pos.x) ** 2 +
-      (pebbleObj.pos.y - playerObj.pos.y) ** 2
-    );
-    if (distToPlayer > TILE * 30) {
-      // Teleport Pebble closer to player
-      const angle = Math.random() * Math.PI * 2;
-      pebbleObj.pos.x = playerObj.pos.x + Math.cos(angle) * TILE * 3;
-      pebbleObj.pos.y = playerObj.pos.y + Math.sin(angle) * TILE * 3;
-    }
-
-    let arrived = false;
-
-    switch (roamState) {
-      case 'roaming': {
-        // If no target or arrived, pick a new one
-        if (!roamTarget || ((arrived = roamStepToward(roamTarget, roamSpeed)) === true)) {
-          // Check for interesting object nearby
-          const obj = findInterestingObject();
-          if (obj && Math.random() < 0.35) {
-            // Investigate!
-            investigateTarget = obj;
-            roamState = 'investigating';
-            roamStateTimer = 0;
-            roamTarget = {
-              x: obj.tx * TILE + TILE/2,
-              y: obj.ty * TILE + TILE/2,
-            };
-            break;
-          }
-          roamTarget = pickRoamTarget();
-          roamStateTimer = 0;
-        }
-        // Check if it's time to go home
-        if (roamHomeTimer <= 0) {
-          roamState = 'going_home';
-          roamStateTimer = 0;
-          roamTarget = { x: PEBBLE_HOME_POS.x, y: PEBBLE_HOME_POS.y };
-          hideSniffMarker();
-        }
-        break;
-      }
-
-      case 'investigating': {
-        if (!roamTarget || !investigateTarget) {
-          roamState = 'roaming';
-          roamTarget = pickRoamTarget();
-          break;
-        }
-        arrived = roamStepToward(roamTarget, roamSpeed * 0.8);
-        if (arrived || roamStateTimer > 5) {
-          // Remember this place in Pebble's memory
-          if (investigateTarget && typeof pebbleRememberPlace === "function") {
-            var objType = investigateTarget.type;
-            var desc = "";
-            if (objType === 4) desc = "mot cay xanh";
-            else if (objType === 2) desc = "mot mo da";
-            else if (objType === 6 || objType === 8 || objType === 13) desc = "bui cay hoac co";
-            else desc = "mot noi thu vi";
-            pebbleRememberPlace(GS.currentIsland,
-              Math.floor(pebbleObj.pos.x / TILE),
-              Math.floor(pebbleObj.pos.y / TILE),
-              desc);
-            pebbleRememberResource(objType);
-          }
-          // Arrived at object — sniff!
-          roamState = 'sniffing';
-          roamStateTimer = 0;
-          doSniffAnimation();
-        }
-        break;
-      }
-
-      case 'sniffing': {
-        if (roamStateTimer > 2.5) {
-          hideSniffMarker();
-          roamState = 'roaming';
-          roamTarget = pickRoamTarget();
-          roamStateTimer = 0;
-        }
-        break;
-      }
-
-      case 'going_home': {
-        if (!roamTarget) {
-          roamTarget = { x: PEBBLE_HOME_POS.x, y: PEBBLE_HOME_POS.y };
-        }
-        arrived = roamStepToward(roamTarget, roamSpeed * 1.1);
-        if (arrived || roamStateTimer > 10) {
-          roamState = 'resting';
-          roamStateTimer = 0;
-          roamHomeTimer = 5 + Math.random() * 3; // rest period
-        }
-        break;
-      }
-
-      case 'resting': {
-        // Stay at home, gentle bounce
-        if (roamStateTimer > roamHomeTimer) {
-          roamState = 'roaming';
-          roamTarget = pickRoamTarget();
-          roamStateTimer = 0;
-          roamHomeTimer = 15 + Math.random() * 8; // 15-23s before going home again
-        }
-        // Snap to home position
-        if (pebbleObj) {
-          const dx = PEBBLE_HOME_POS.x - pebbleObj.pos.x;
-          const dy = PEBBLE_HOME_POS.y - pebbleObj.pos.y;
-          if (Math.sqrt(dx*dx + dy*dy) > 8) {
-            pebbleObj.pos.x = PEBBLE_HOME_POS.x;
-            pebbleObj.pos.y = PEBBLE_HOME_POS.y;
-          }
-        }
-        break;
-      }
-    }
-
-    // Scan for nearby buildings and remember them
-    if (Math.random() < 0.02 && typeof pebbleRememberBuilding === "function") {
-      var ptx = Math.floor(pebbleObj.pos.x / TILE);
-      var pty = Math.floor(pebbleObj.pos.y / TILE);
-      var scanData = getIslandData(GS.currentIsland);
-      if (scanData && scanData.buildings) {
-        for (var bi = 0; bi < scanData.buildings.length; bi++) {
-          var b = scanData.buildings[bi];
-          if (Math.abs(b.tileX - ptx) <= 3 && Math.abs(b.tileY - pty) <= 3) {
-            pebbleRememberBuilding(b.name || b.type || "building");
-          }
-        }
-      }
-    }
-    // Update pebble visual parts
-    const moving = roamState === 'roaming' || roamState === 'investigating' || roamState === 'going_home';
-    updatePebbleParts(moving, pebbleObj);
-  }
-
-  // ─═══ NEW COW SYSTEM — Individual cows with pen, breeding, AI ═══──
-  const cowPenArea = GS.cowPen;
-  let cowObjects = [];
-  let cowBreedTimer = 0;
-
-  // Draw cow pen fence (only on starter isle)
-  if (GS.currentIsland === 'starter_isle') {
-    const p = cowPenArea;
-    // Fence posts
-    for (let x = p.x1; x <= p.x2; x++) {
-      k.add([k.rect(5,12),k.pos(x*TILE+TILE/2-2.5,p.y1*TILE+TILE-12),k.rgb(120,80,30),k.z(3)]);
-      k.add([k.rect(5,12),k.pos(x*TILE+TILE/2-2.5,p.y2*TILE-2),k.rgb(120,80,30),k.z(3)]);
-    }
-    for (let y = p.y1; y <= p.y2; y++) {
-      k.add([k.rect(5,12),k.pos(p.x1*TILE+TILE-4,y*TILE+TILE/2-6),k.rgb(120,80,30),k.z(3)]);
-      k.add([k.rect(5,12),k.pos(p.x2*TILE-2,y*TILE+TILE/2-6),k.rgb(120,80,30),k.z(3)]);
-    }
-    // Rails (horizontal)
-    for (let x = p.x1; x < p.x2; x += 1) {
-      for (let y of [p.y1, p.y2]) {
-        k.add([k.rect(64,3),k.pos(x*TILE,y*TILE+TILE-4),k.rgb(100,65,25),k.z(3)]);
-        k.add([k.rect(64,3),k.pos(x*TILE,y*TILE+TILE-9),k.rgb(100,65,25),k.z(3)]);
-      }
-    }
-    // Gate
-    k.add([k.text("🐄 CHU\u1ed2NG B\u00d2",{size:10}),k.pos(p.x1*TILE+10,p.y1*TILE-16),k.rgb(153,204,77),k.z(4)]);
-  }
-
-  // School area for surplus cows
-  // Trước đây toạ độ này bị cố định cứng {x:6,y:7} nên trên một số bản đồ lại rơi ra ngoài biển,
-  // người chơi không thể đi tới. Giờ tự động dò tìm ô đất hợp lệ gần vị trí mong muốn nhất.
-  function findWalkableSchoolPos(cx, cy, maxRadius){
-    for(let r=0; r<=maxRadius; r++){
-      for(let ddx=-r; ddx<=r; ddx++){
-        for(let ddy=-r; ddy<=r; ddy++){
-          if(Math.max(Math.abs(ddx),Math.abs(ddy))!==r) continue; // chỉ quét viền vòng r, loang dần ra xa
-          const tx=cx+ddx, ty=cy+ddy;
-          let ok = true;
-          // Cả vùng 5x5 (khớp với vùng vẽ bên dưới) phải là đất đi được, không dính nước/vật cản
-          for(let sx=tx-1; sx<=tx+3 && ok; sx++){
-            for(let sy=ty-1; sy<=ty+3 && ok; sy++){
-              if(sx<0||sx>=COLS||sy<0||sy>=ROWS){ ok=false; break; }
-              if(isSolid(getTile(sy, sx, map))) ok=false;
-            }
-          }
-          if(ok) return {x:tx, y:ty};
-        }
-      }
-    }
-    return {x:cx, y:cy}; // hiếm khi xảy ra, dùng lại toạ độ gốc nếu không tìm được ô nào hợp lệ
-  }
-  const SCHOOL_POS = (GS.currentIsland === 'starter_isle') ? findWalkableSchoolPos(6, 7, 20) : {x:6, y:7};
-  // Draw school area on starter island
-  if (GS.currentIsland === 'starter_isle') {
-    for (let sx = SCHOOL_POS.x-1; sx <= SCHOOL_POS.x+3; sx++) {
-      for (let sy = SCHOOL_POS.y-1; sy <= SCHOOL_POS.y+3; sy++) {
-        k.add([k.rect(4,4),k.pos(sx*TILE+2,sy*TILE+2),k.rgb(200,180,120),k.opacity(0.15),k.z(2)]);
-      }
-    }
-    k.add([k.text('Khu truong hoc',{size:9}),k.pos(SCHOOL_POS.x*TILE,SCHOOL_POS.y*TILE-12),k.rgb(200,200,150),k.z(4)]);
-  }
-
-  // Cow rendering colors
-  const CWHITE = k.rgb(250,248,240), CBLACK = k.rgb(35,35,35), CPINK = k.rgb(255,182,193);
-
-  // Create a cow entity
-  function createCow(cw) {
-    if (!cw || cw.dead) return null;
-    const px = cw.tileX * TILE + TILE/2, py = cw.tileY * TILE + TILE/2;
-    const parts = {};
-    // Use warrior_cow sprite if loaded, fallback to circles
-    try { parts.sprite = k.add([k.sprite("warrior_cow"),k.pos(px,py),k.anchor("center"),k.z(5)]); }
-    catch(e) {
-      parts.body = k.add([k.circle(10),k.pos(px,py),CWHITE,k.outline(1.5,CBLACK),k.z(5)]);
-      parts.head = k.add([k.circle(6),k.pos(px+12,py-4),CWHITE,k.outline(1.5,CBLACK),k.z(6)]);
-    }
-    parts.hpBg = k.add([k.rect(22,3),k.pos(px-11,py-18),k.rgb(51,51,51),k.z(9)]);
-    parts.hpFill = k.add([k.rect(22,3),k.pos(px-11,py-18),k.rgb(46,204,113),k.z(10)]);
-    parts.label = k.add([k.text(cw.name||"B\u00f2",{size:5}),k.pos(px-10,py-22),k.rgb(153,204,77),k.z(8)]);
-    parts.area = k.add([k.rect(TILE,TILE),k.pos(cw.tileX*TILE,cw.tileY*TILE),k.opacity(0),k.area(),k.z(6)]);
-    parts.area.onClick(()=>{window._clickConsumed=true; window.interactCow(cw);});
-    parts.data = cw;
-    cowObjects.push(parts);
-    return parts;
-  }
-
-  window.interactCow = function(cw) {
-    if (!cw || cw.dead) return;
-    const now = Date.now();
-    if (cw.hunger < 60 && GS.resources.food >= 2) {
-      GS.resources.food -= 2;
-      cw.hunger = Math.min(100, cw.hunger + 35);
-      cw.mood = "😊";
-      cw.hp = Math.min(cw.maxHp, cw.hp + 5);
-      showToast(`🌿 ${cw.name} \u0111\u01b0\u1ee3c cho \u0103n!`,1500);
-    } else {
-      cw.happiness = Math.min(100, (cw.happiness||50) + 3);
-      cw.mood = "😊";
-      showToast(`🐄 ${cw.name} \u0111\u01b0\u1ee3c vu\u1ed1t ve!`,1500);
-    }
-    syncCows();
-  };
-
-  // Initialize cow entities
-  for (const cw of GS.cows) createCow(cw);
-
-  // Sync cow visuals with data
-  function syncCows() {
-    // Remove destroyed entities
-    cowObjects = cowObjects.filter(co => {
-      if (!co.data || co.data.dead) {
-        for (const kk of Object.values(co)) try{k.destroy(kk)}catch(e){}
-        return false;
-      }
-      return true;
-    });
-    for (const co of cowObjects) {
-      const d = co.data;
-      const px = d.tileX * TILE + TILE/2, py = d.tileY * TILE + TILE/2;
-      const off = d.inSchool ? -10 : 0;
-      if (co.body) co.body.pos = k.vec2(px, py+off); if (co.head) co.head.pos = k.vec2(px+12, py-4+off);
-      if (co.earL) co.earL.pos = k.vec2(px+10, py-8+off); if (co.earR) co.earR.pos = k.vec2(px+16, py-8+off);
-      if (co.snout) co.snout.pos = k.vec2(px+16, py+off); if (co.eye) co.eye.pos = k.vec2(px+13, py-5+off);
-      co.hpBg.pos = k.vec2(px-11, py-18+off); co.hpFill.pos = k.vec2(px-11, py-18+off);
-      co.hpFill.width = 22 * (d.hp/d.maxHp);
-      co.label.pos = k.vec2(px-10, py-22+off);
-      co.area.pos = k.vec2(d.tileX*TILE, d.tileY*TILE);
-    }
-  }
-
-  // Cow AI: update in game loop
-  function updateCows(dt) {
-    if (GS.currentIsland !== 'starter_isle') return;
-    const cows = GS.cows;
-    cowBreedTimer += dt;
-
-    for (const cw of cows) {
-      if (cw.dead) continue;
-      // Đói decreases
-      cw.hunger = Math.max(0, cw.hunger - dt * 0.4);
-      // Starvation damage: lose HP when hunger hits 0
-      if (cw.hunger <= 0) {
-        cw.hp -= dt * 1.5;
-        if (cw.hp <= 0) { cw.dead = true; cw.hp = 0; }
-      }
-      // Age increases
-      if (!cw.growing) cw.age += dt * 0.01;
-      else { cw.age += dt * 0.02; if (cw.age >= 1) cw.growing = false; } // calf matures in ~50s
-
-      // Defend against nearby monsters
-      let nearMonster = null;
-      let nearMonDist = 999;
-      for (const co of cowObjects) {
-        if (!co.data || co.data.dead || co.data === cw) continue;
-      }
-      // Find nearest enemy within range
-      const allEnemies = k.get("enemy");
-      for (const e of allEnemies) {
-        if (e.dead) continue;
-        const ed = Math.abs(e.pos.x/64 - cw.tileX) + Math.abs(e.pos.y/64 - cw.tileY);
-        if (ed < 7 && ed < nearMonDist) { nearMonster = e; nearMonDist = ed; }
-      }
-      if (nearMonster && cw.hp > 5) {
-        // Move toward monster to defend
-        const mtx = Math.floor(nearMonster.pos.x / TILE);
-        const mty = Math.floor(nearMonster.pos.y / TILE);
-        const dx = mtx - cw.tileX, dy = mty - cw.tileY;
-        const dist = Math.abs(dx) + Math.abs(dy);
-        if (dist > 1) {
-          // Move toward monster
-          let nx = cw.tileX + (dx > 0 ? 1 : dx < 0 ? -1 : 0);
-          let ny = cw.tileY + (dy > 0 ? 1 : dy < 0 ? -1 : 0);
-          // Check not solid
-          if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-            const t = getTile(ny, nx, map);
-            if (!isSolid(t) && t !== 14 && t !== 9 && t !== 3) { cw.tileX = nx; cw.tileY = ny; }
-          }
-        } else {
-          // Attack monster - deal damage
-          if (Math.random() < 0.02) {
-            const dmg = 2 + (cw.defense||0);
-            nearMonster.hp = (nearMonster.hp || 10) - dmg;
-            showFloating(nearMonster.pos.x, nearMonster.pos.y-16, '-'+dmg+'HP', [153,204,77]);
-            // Counter-attack: monster hits cow
-            cw.hp -= 3;
-            if (cw.hp <= 0) { cw.dead = true; cw.hp = 0; showToast('💀 '+cw.name+' bị quái đánh bại!',2000); }
-          }
-        }
-        continue; // Skip wandering, cow is defending
-      }
-
-      // Wander within pen (or school area)
-      if (Math.random() < 0.015) {
-        const bounds = cw.inSchool ? {x1:SCHOOL_POS.x-1,y1:SCHOOL_POS.y-1,x2:SCHOOL_POS.x+3,y2:SCHOOL_POS.y+3} : cowPenArea;
-        let nx, ny, att = 0;
-        do {
-          nx = bounds.x1 + 1 + Math.floor(Math.random() * (bounds.x2 - bounds.x1 - 2));
-          ny = bounds.y1 + 1 + Math.floor(Math.random() * (bounds.y2 - bounds.y1 - 2));
-          att++;
-        } while (att < 15 && isSolid(getTile(ny, nx, map)));
-        if (att < 15) { cw.tileX = nx; cw.tileY = ny; }
-      }
-
-      // Graze on grass when hungry
-      if (cw.hunger < 45) {
-        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-          const gx = cw.tileX + dx, gy = cw.tileY + dy;
-          if (gx>=0&&gy>=0&&gx<COLS&&gy<ROWS) {
-            const t = getTile(gy, gx, map);
-            if (t === 0 || t === 13) {
-              cw.tileX = gx; cw.tileY = gy;
-              cw.hunger = Math.min(100, cw.hunger + 20);
-              cw.mood = "😊";
-              if (t === 13) setTile(gy, gx, 0, map);
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    // Breeding
-    if (cowBreedTimer > 25 && cows.filter(c=>!c.dead).length < GS.maxCows) {
-      const fed = cows.filter(c=>!c.dead&&!c.growing&&c.hunger>60);
-      if (fed.length >= 2) {
-        const p = cowPenArea;
-        const px = p.x1+2+Math.floor(Math.random()*(p.x2-p.x1-4));
-        const py = p.y1+2+Math.floor(Math.random()*(p.y2-p.y1-4));
-                // Genetics: pass on improved stats from parents
-        let bonusHp = 0, bonusDef = 0;
-        const parent1 = fed[0], parent2 = fed[1];
-        if (parent1.genetics) { bonusHp += parent1.genetics.hpBonus || 0; bonusDef += parent1.genetics.defBonus || 0; }
-        if (parent2.genetics) { bonusHp += parent2.genetics.hpBonus || 0; bonusDef += parent2.genetics.defBonus || 0; }
-        // Random mutation (5% chance for +2 HP, 3% chance for +1 def)
-        const mutHp = Math.random() < 0.05 ? 2 : 0;
-        const mutDef = Math.random() < 0.03 ? 1 : 0;
-        const calfHp = 15 + Math.floor(bonusHp/2) + mutHp;
-        const calfDef = Math.floor(bonusDef/2) + mutDef;
-        const calfGen = { hpBonus: Math.floor(bonusHp/2) + mutHp, defBonus: calfDef };
-        cows.push({id:cows.length,name:"B\u00ea #"+(cows.length+1),hp:calfHp,maxHp:calfHp,hunger:80,age:0,growing:true,tileX:px,tileY:py,homeX:px,homeY:py,lastFeed:0,mood:"🐮",happiness:60,maxHappiness:100,dead:false,genetics:calfGen,defense:calfDef});
-        cowBreedTimer = 0;
-        showToast(`🐮 B\u00ea m\u1edbi! (${cows.filter(c=>!c.dead).length}/${GS.maxCows})`,2500);
-        // Rebuild cow entities
-        for (const co of cowObjects) for (const kk of Object.values(co)) try{k.destroy(kk)}catch(e){}
-        cowObjects = [];
-        for (const cw of cows) if (!cw.dead) createCow(cw);
-      }
-    }
-
-    // Overflow > maxCows → move oldest to school
-    if (cows.filter(c=>!c.dead).length > GS.maxCows) {
-      const toMove = cows.filter(c=>!c.dead&&!c.inSchool).sort((a,b)=>a.age-b.age).slice(0, cows.filter(c=>!c.dead).length - GS.maxCows);
-      for (const sc of toMove) {
-        sc.tileX = SCHOOL_POS.x + Math.floor(Math.random()*3);
-        sc.tileY = SCHOOL_POS.y + Math.floor(Math.random()*3);
-        sc.inSchool = true;
-        showToast(`📚 ${sc.name} \u0111\u1ebfn tr\u01b0\u1eddng!`,2000);
-      }
-    }
-
-    syncCows();
-  }
-
   // ─── Initial enemies ─────────────────────────────────────────
   // Spawn enemy packs (3 waves, groups of 2-4)
   const packCount = 2 + Math.floor(def.diff * 0.8);
@@ -4127,34 +3239,6 @@ console.log("🎮 Đang khởi tạo...");
     const conn=ISLAND_CONNECTIONS[islandId]||[];
     openTravelModal(conn);
   });
-
-  // ─── PEBBLE'S HOME 🏠 — small hut near center-left of starter island ─────
-  const phx = PEBBLE_HOME_TILE.x * TILE;
-  const phy = PEBBLE_HOME_TILE.y * TILE;
-
-  // Only render home on starter island
-  if (islandId === 'starter_isle') {
-    // House walls (warm brown)
-    k.add([k.rect(TILE-2, TILE-10), k.pos(phx+1, phy+TILE/2+4), k.color(160,100,45), k.opacity(0.9), k.z(4)]);
-    // Roof (orange-brown triangle)
-    k.add([k.polygon([k.vec2(phx-3, phy+TILE/2+2), k.vec2(phx+TILE/2, phy-4), k.vec2(phx+TILE+3, phy+TILE/2+2)]), k.color(210,130,30), k.opacity(0.95), k.z(4)]);
-    // Roof highlight
-    k.add([k.polygon([k.vec2(phx+TILE/2, phy), k.vec2(phx+6, phy+TILE/2), k.vec2(phx+TILE/2, phy+TILE/2-4)]), k.color(230,150,50), k.opacity(0.7), k.z(4)]);
-    // Door
-    k.add([k.rect(10,14), k.pos(phx+TILE/2-5, phy+TILE/2+4), k.color(80,40,15), k.opacity(0.9), k.z(5)]);
-    // Door knob
-    k.add([k.circle(1.5), k.pos(phx+TILE/2+3, phy+TILE/2+12), k.color(200,180,100), k.z(6)]);
-    // Window (lit yellow)
-    k.add([k.rect(8,8), k.pos(phx+TILE/2-12, phy+TILE/2), k.color(255,220,150), k.opacity(0.7), k.z(5)]);
-    // Window cross
-    k.add([k.rect(1,8), k.pos(phx+TILE/2-8, phy+TILE/2), k.color(120,80,30), k.opacity(0.5), k.z(6)]);
-    k.add([k.rect(8,1), k.pos(phx+TILE/2-12, phy+TILE/2+4), k.color(120,80,30), k.opacity(0.5), k.z(6)]);
-    // Small mushroom decoration next to house
-    k.add([k.rect(3,6), k.pos(phx+TILE-6, phy+TILE/2+8), k.color(200,200,210), k.z(3)]);
-    k.add([k.polygon([k.vec2(phx+TILE-10, phy+TILE/2+6), k.vec2(phx+TILE-3, phy+TILE/2+6), k.vec2(phx+TILE-6.5, phy+TILE/2+1)]), k.color(230,80,80), k.opacity(0.9), k.z(4)]);
-    // Small sign: "🏠 Pebble"
-    const sign = k.add([k.text("🏠 Pebble", {size: 9}), k.pos(phx+2, phy-10), k.z(6)]);
-  }
 
   // ─── MOVEMENT (controls PLAYER) ──────────────────────────────
   function movePlayerTo(tx,ty){
@@ -5346,8 +4430,6 @@ console.log("🎮 Đang khởi tạo...");
 
     updateHUD();
 
-    // Cow AI update (only on starter isle)
-    if (typeof updateCows === "function") updateCows(k.dt());
 
     // Farm button update & growth check
     updateFarmButton();
@@ -5861,28 +4943,6 @@ console.log("🎮 Đang khởi tạo...");
     }
   };
 
-  // ─── Cow interaction ──────────────────────────────────────────────
-  window.cowAction = function() {
-    showCowHerdInfo();
-  };
-
-  function showCowHerdInfo() {
-    const alive = GS.cows.filter(c=>!c.dead);
-    if (!alive.length) { showToast("🐄 Không có b\u00f2 trong chu\u1ed3ng",1500); return; }
-    let msg = `🐄 \u0110\u00e0n b\u00f2: ${alive.length}/${GS.maxCows}\n`;
-    for (const cw of alive) {
-      const loc = cw.inSchool ? "\u1edf tr\u01b0\u1eddng" : "trong chu\u1ed3ng";
-      msg += `\n${cw.mood||"🐄"} ${cw.name}: \u2764\ufe0f${Math.floor(cw.hp)}/${cw.maxHp} \ud83c\udf7d\ufe0f${Math.floor(cw.hunger)}% ${loc}`;
-    }
-    showToast(msg, 3000);
-  }
-
-  // Show cow button on starter island
-  const cowBtn = document.getElementById("cow-btn");
-  if (cowBtn) {
-    cowBtn.style.display = GS.currentIsland === 'starter_isle' ? 'inline-block' : 'none';
-  }
-
   // Initialize pebble button text & visibility based on current mode
   const pebbleBtn = document.getElementById("pebble-btn");
   if (pebbleBtn) {
@@ -5933,36 +4993,6 @@ k.scene("title", ()=>{
   k.add([k.text("Claw Quest V12",{size:38}),k.pos(W/2,85),k.anchor("center"),k.color(230,191,97)]);
   k.add([k.text("Sinh Tồn Trên Đảo",{size:22}),k.pos(W/2,125),k.anchor("center"),k.color(242,199,15)]);
   k.add([k.text("🧑 Hành Trình Khám Phá 7 Hòn Đảo",{size:13}),k.pos(W/2,152),k.anchor("center"),k.color(179,179,204)]);
-  k.add([k.text("🐱 Pebble tự do dạo chơi — has its own home!",{size:11}),k.pos(W/2,167),k.anchor("center"),k.color(232,161,64)]);
-
-  // Warrior Cow on title
-  const wcx=W/2-80,wcy=225;
-  // Cape
-  k.add([k.rect(10,24),k.pos(wcx-5,wcy+8),k.color(200,40,40),k.z(2)]);
-  // Cow body (white)
-  k.add([k.rect(16,14),k.pos(wcx-8,wcy+6),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
-  // Spots
-  k.add([k.circle(4),k.pos(wcx-4,wcy+6),k.color(35,35,35),k.z(3)]);
-  k.add([k.circle(3),k.pos(wcx+4,wcy+10),k.color(35,35,35),k.z(3)]);
-  // Armor
-  k.add([k.rect(12,10),k.pos(wcx-6,wcy+6),k.color(160,100,45),k.opacity(0.8),k.z(3)]);
-  k.add([k.rect(14,3),k.pos(wcx-7,wcy+3),k.color(200,170,50),k.opacity(0.9),k.z(3)]);
-  // Head
-  k.add([k.rect(10,9),k.pos(wcx+10,wcy),k.color(250,248,240),k.outline(1.5,k.color(35,35,35)),k.z(3)]);
-  k.add([k.circle(2),k.pos(wcx+12,wcy-1),k.color(0,0,0),k.z(4)]); // Eye
-  // Helmet
-  k.add([k.rect(10,4),k.pos(wcx+10,wcy-4),k.color(180,130,50),k.opacity(0.9),k.z(4)]);
-  k.add([k.rect(2,8),k.pos(wcx+9,wcy-12),k.color(220,50,50),k.z(4)]); // Plume
-  // Horns
-  k.add([k.polygon([k.vec2(wcx+4,wcy-4),k.vec2(wcx+1,wcy-10),k.vec2(wcx+6,wcy-4)]),k.color(200,180,140),k.z(3)]);
-  // Sword
-  k.add([k.rect(2,16),k.pos(wcx+18,wcy+2),k.color(200,200,210),k.outline(0.5,k.color(100,100,100)),k.z(4)]);
-  k.add([k.rect(4,3),k.pos(wcx+17,wcy),k.color(180,160,80),k.z(4)]); // Handle
-  k.add([k.circle(2),k.pos(wcx+19,wcy-2),k.color(255,50,50),k.z(4)]); // Gem
-  // Legs
-  for(let wi=0;wi<4;wi++){k.add([k.rect(3,8),k.pos(wcx-10+wi*6,wcy+18),k.color(250,248,240),k.outline(0.5,k.color(35,35,35)),k.z(2)]);}
-  // Label
-  k.add([k.text("🐮 Bò Chiến Binh",{size:8}),k.pos(wcx+6,wcy+32),k.anchor("center"),k.color(153,204,77)]);
 
   // Player character on title (farmer with cowboy hat) — smaller
   const tcx=W/2-20,tcy=225;
@@ -6585,9 +5615,9 @@ k.scene("arena", ()=>{
     const r=3+cw*2;GS.resources.wood+=r;GS.resources.stone+=r;GS.resources.food+=r;GS.player.xp+=5+cw*3;
     if(cw%3===0){GS.silverCoins=(GS.silverCoins||0)+1;showToast("👑 +1 Silver Coin!",2000);}
     showToast("🎉 Wave "+cw+" cleared! +"+r+" resources! (🧑"+pk+"/2 kills)",2000);checkLevelUp();updateHUD();cw++;
-    setTimeout(()=>{avic=false;resetRoundTimer();php=Math.min(pmhp,php+10);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+10);}GS.player.hp=php;GS.pebble.hp=squad[0].hp;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
+    setTimeout(()=>{avic=false;resetRoundTimer();php=Math.min(pmhp,php+10);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+10);}GS.player.hp=php;uW.text="Wave "+cw;st.text="⭐".repeat(Math.min(cw,5))+"☆".repeat(Math.max(0,5-Math.min(cw,5)))+"  👹"+(3+cw-1);updUI();spw(cw);},1500);
   }
-  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){stopAutoBattle();showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);GS.pebble.hp=Math.floor(GS.pebble.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+15);}GS.player.hp=php;GS.pebble.hp=squad[0].hp;updUI();resetRoundTimer();ago=false;}
+  function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){stopAutoBattle();showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+15);}GS.player.hp=php;updUI();resetRoundTimer();ago=false;}
   fB.onClick(()=>{if(ago||avic)return;resetRoundTimer();patk(-1);});
   dB.onClick(()=>{if(ago||avic)return;resetRoundTimer();showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
   hB.onClick(()=>{
@@ -6606,10 +5636,8 @@ k.scene("arena", ()=>{
     else showToast("❌ Hết bình máu! Vào Merchant House quay thưởng.",2000);
   });
   const pIcon=k.add([k.text("🧑",{size:AT*0.6}),k.pos(AX+2*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
-  const peIcon=k.add([k.text("🐱",{size:AT*0.6}),k.pos(AX+17*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
-  const pIconBaseY=pIcon.pos.y, peIconBaseY=peIcon.pos.y;
-  // Pebble mặc định (đồng hành sẵn có) luôn là thành viên đầu tiên trong đội trợ thủ
-  squad.push({role:"companion",name:"Pebble",icon:"🐱",hp:GS.pebble.hp,maxHp:GS.pebble.maxHp,atk:GS.pebble.attack+abf.pea,obj:peIcon,baseX:peIcon.pos.x,baseY:peIcon.pos.y});
+  const pIconBaseY=pIcon.pos.y;
+  // Không còn Pebble mặc định đồng hành — đội trợ thủ bắt đầu trống, gọi thêm qua nút 📣 Trợ Thủ (10 Pebble chuyên trách)
   // Gọi thêm 1 trong 10 Pebble chuyên trách (theo bộ luật gốc) ra tham chiến, tối đa MAX_SQUAD thành viên
   function addSquadMember(role){
     const slotIdx=squad.length;
