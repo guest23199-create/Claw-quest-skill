@@ -193,6 +193,12 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
 
+  <!-- ─── Thanh báo đang ở chế độ xây dựng — luôn hiện nút Huỷ để không bị kẹt trên di động ─── -->
+  <div id="buildmode-banner" style="position:fixed;top:46px;left:50%;transform:translateX(-50%);z-index:25;pointer-events:auto;background:rgba(20,30,10,0.92);border:2px solid #5fe089;border-radius:10px;padding:6px 10px;display:none;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.5);">
+    <span style="font-size:11px;color:#5fe089;">🏗️ Đang xây — chạm bản đồ để đặt</span>
+    <button onclick="window.cancelBuildMode()" style="background:#a83232;border:1px solid #ff6b6b;color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">✖ Huỷ</button>
+  </div>
+
   <!-- ─── Mini-map: xem vị trí hiện tại + chạm để đặt công trình từ xa ─── -->
   <div id="minimap-wrap" style="position:fixed;top:80px;right:8px;z-index:16;pointer-events:auto;text-align:center;">
     <canvas id="minimap" width="96" height="68" style="width:200px;height:141px;display:block;background:#0a1628;border:2px solid #0a1424;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.55);image-rendering:pixelated;cursor:pointer;"></canvas>
@@ -226,6 +232,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
       <button class="bot-btn" onclick="window.quickDig()" id="btn-dig" title="Đào Đất">🪓 Đào</button>
       <button class="bot-btn" onclick="window.quickPlant()" id="btn-plant" title="Trồng Cây">🌾 Trồng</button>
       <button class="bot-btn" onclick="window.quickHeal()" id="btn-heal" title="Hồi Máu">💊 Máu</button>
+      <button class="bot-btn" onclick="window.openPebbleManager()" title="Quản Lý Pebble">🐾 Pebble</button>
     </div>
     <div class="ba-row">
       <button class="bot-btn" onclick="window.quickWeapon()" id="btn-weapon" title="Vũ Khí">⚔️ Vũ Khí</button>
@@ -319,6 +326,14 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <h2>⛵ Island Travel</h2>
   <div class="modal-sub">Walk to dock and pick a destination</div>
   <div id="travel-list"></div>
+</div></div>
+
+<!-- ─── PEBBLE MANAGER MODAL ─── -->
+<div class="modal-overlay" id="modal-pebble-manager"><div class="modal-box" style="max-width:420px">
+  <span class="modal-close" onclick="window.closeModals()">&times;</span>
+  <h2>🐾 Quản Lý 10 Pebble</h2>
+  <div class="modal-sub">Chạm vào 1 Pebble để giao việc</div>
+  <div id="pebble-manager-list" style="max-height:60vh;overflow-y:auto;"></div>
 </div></div>
 
 <!-- ─── MAP MODAL ─── -->
@@ -1410,14 +1425,18 @@ function setGameHUDVisible(visible){
     const el = document.getElementById(id);
     if(el) el.style.display = visible ? "" : "none";
   });
+  if(!visible){
+    const bmb = document.getElementById("buildmode-banner");
+    if(bmb) bmb.style.display = "none";
+  }
 }
 
 window.cancelBuildMode = function() {
   GS.buildMode = null;
-  if (ghostObj) { try { if (ghostObj && ghostObj.exists) k.destroy(ghostObj); } catch(e) {} ghostObj = null; }
+  try { if (typeof ghostObj !== 'undefined' && ghostObj && ghostObj.exists) { k.destroy(ghostObj); ghostObj = null; } } catch(e) {}
   window.closeModals();
   showToast("✅ Đã hủy xây dựng", 800);
-};;
+};
 document.querySelectorAll(".modal-close").forEach(b=>b.addEventListener("click",window.closeModals));
 document.querySelectorAll(".modal-overlay").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)window.closeModals();}));
 
@@ -2860,6 +2879,8 @@ console.log("🎮 Đang khởi tạo...");
     }
     const hintEl = document.getElementById("minimap-hint");
     if(hintEl) hintEl.style.display = GS.buildMode ? "inline-block" : "none";
+    const bmb = document.getElementById("buildmode-banner");
+    if(bmb) bmb.style.display = GS.buildMode ? "flex" : "none";
   }
   if(mmCanvas){
     mmCanvas.onclick = (evt)=>{
@@ -3239,6 +3260,24 @@ console.log("🎮 Đang khởi tạo...");
     }
   }
   spawnPebbleCrew();
+
+  const PEBBLE_MODE_LABEL = {wander:"🌾 Tự do lang thang", mine:"⛏️ Đang khai thác", explore:"🗺️ Đang khám phá", stay:"📍 Đứng yên"};
+  window.openPebbleManager = function(){
+    window.closeModals();
+    document.getElementById("modal-pebble-manager").classList.add("show");
+    const L = document.getElementById("pebble-manager-list");
+    L.innerHTML = "";
+    for(const pc of pebbleCrew){
+      const div = document.createElement("div");
+      div.className = "map-card";
+      div.style.cursor = "pointer";
+      const hpPct = Math.round((pc.hp/pc.maxHp)*100);
+      div.innerHTML = `<span class="mc-name">${pc.role.icon} ${pc.role.name}</span>
+        <span class="mc-info">${PEBBLE_MODE_LABEL[pc.mode]||pc.mode} · ❤️${hpPct}%</span>`;
+      div.addEventListener("click", ()=>{ window.closeModals(); openPebbleCrewMenu(pc); });
+      L.appendChild(div);
+    }
+  };
 
   function openPebbleCrewMenu(pc){
     const items = [
