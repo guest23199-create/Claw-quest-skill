@@ -4225,41 +4225,6 @@ console.log("🎮 Đang khởi tạo...");
       }
     }
 
-    // ─── PEBBLE FREE-ROAM AI (replaces old follow mode) ───
-    if (GS.pebbleMode === "roam" && pebbleCallPhase !== "walking" && pebbleCallPhase !== "dialoguing") {
-      // Run every 3 frames
-      if (GS.gameTicks % 3 === 0) updateRoamAI(k.dt());
-    }
-
-    // ── Pebble still attacks enemies when roaming (defensive only) ──
-    if(pebbleObj && GS.pebbleMode === "roam" && pebbleCallPhase !== "walking" && pebbleCallPhase !== "dialoguing" && !pebbleObj.dead){
-      // Throttle: only check every 5 frames
-      if (GS.gameTicks % 5 === 0) {
-      for(const enemy of enemyObjs){
-        if(enemy.dead) continue;
-        const dist=Math.sqrt((pebbleObj.pos.x-enemy.pos.x)**2+(pebbleObj.pos.y-enemy.pos.y)**2);
-        if(dist<TILE*1.5&&Math.random()<0.01){
-          const pebDmg=Math.max(1,getPebbleStats().attack+Math.floor(Math.random()*2));
-          enemy.hp-=pebDmg;
-          showFloating(enemy.pos.x,enemy.pos.y-20,`-${pebDmg}`,[232,161,64]);
-          if(enemy.hp<=0){
-            enemy.dead=true;
-            const dr=enemy.eTy.drops;
-            GS.resources.wood+=(dr.wood||0)+Math.floor(Math.random()*2);
-            GS.resources.stone+=(dr.stone||0)+Math.floor(Math.random()*2);
-            GS.resources.food+=(dr.food||0);GS.resources.gold+=(dr.gold||0);
-            spawnParticles(enemy.pos.x,enemy.pos.y,6,[230,230,51]);
-            try{k.destroy(enemy._hpBg);k.destroy(enemy._hpFill);}catch(e){}
-            for(const eo of enemy._eyes||[]) try{k.destroy(eo)}catch(e){}
-            try{k.destroy(enemy);}catch(e){}
-            const idx=enemyObjs.indexOf(enemy);if(idx>=0)enemyObjs.splice(idx,1);
-            updateHUD();
-          }
-        }
-      }
-      }
-    }
-
     // Enemy spawn
     enemySpawnTimer+=k.dt();
     if(enemySpawnTimer>8&&enemyObjs.length<5+Math.floor(def.diff*0.5)){enemySpawnTimer=0;spawnEnemy();}
@@ -4875,7 +4840,7 @@ console.log("🎮 Đang khởi tạo...");
         GS.pebbleMode = "roam";
         // Reset roam state so Pebble starts wandering after dialogue
         roamState = 'roaming';
-        roamTarget = pickRoamTarget();
+        if (typeof pickRoamTarget === 'function') roamTarget = pickRoamTarget();
         roamHomeTimer = 10 + Math.random() * 8;
         roamStateTimer = 0;
         currentDialogue = null;
