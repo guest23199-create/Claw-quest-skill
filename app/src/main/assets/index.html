@@ -518,16 +518,16 @@ const ARCHIPELAGO_LAYOUT = {
 // 10 vai trò Pebble theo đúng bộ luật gốc (SKILL.md) — dùng làm trợ thủ có thể gọi ra tham chiến ở Đấu Trường.
 // Vai trò thiên chiến đấu (Defender/Scout/Miner/Lumberjack) có chỉ số cao hơn vai trò hậu cần (Farmer/Cook/Gatherer...).
 const PEBBLE_ROLES = [
-  {id:"explorer",   name:"Explorer (Trinh Sát)", icon:"🔍", atk:2, hp:14},
-  {id:"miner",      name:"Miner (Thợ Mỏ)",       icon:"⛏️", atk:4, hp:18},
-  {id:"lumberjack", name:"Lumberjack (Tiều Phu)", icon:"🪓", atk:4, hp:17},
-  {id:"builder",    name:"Builder (Thợ Xây)",     icon:"🔨", atk:2, hp:20},
-  {id:"crafter",    name:"Crafter (Thợ Rèn)",     icon:"⚒️", atk:3, hp:15},
-  {id:"farmer",     name:"Farmer (Nông Dân)",     icon:"🌾", atk:1, hp:16},
-  {id:"cook",       name:"Cook (Đầu Bếp)",        icon:"🍳", atk:1, hp:16},
-  {id:"defender",   name:"Defender (Vệ Sĩ)",      icon:"🛡️", atk:6, hp:26},
-  {id:"scout",      name:"Scout (Trinh Sát Nhanh)", icon:"🏃", atk:3, hp:16},
-  {id:"gatherer",   name:"Gatherer (Thu Lượm)",   icon:"🧺", atk:1, hp:15},
+  {id:"explorer",   name:"Explorer (Trinh Sát)", icon:"🔍", atk:2, hp:14, color:[170,170,255], job:"explore"},
+  {id:"miner",      name:"Miner (Thợ Mỏ)",       icon:"⛏️", atk:4, hp:18, color:[138,138,122], job:"mine_stone"},
+  {id:"lumberjack", name:"Lumberjack (Tiều Phu)", icon:"🪓", atk:4, hp:17, color:[102,204,102], job:"mine_wood"},
+  {id:"builder",    name:"Builder (Thợ Xây)",     icon:"🔨", atk:2, hp:20, color:[102,204,255], job:"build"},
+  {id:"crafter",    name:"Crafter (Thợ Rèn)",     icon:"⚒️", atk:3, hp:15, color:[204,150,80], job:"build"},
+  {id:"farmer",     name:"Farmer (Nông Dân)",     icon:"🌾", atk:1, hp:16, color:[220,190,90], job:"mine_wood"},
+  {id:"cook",       name:"Cook (Đầu Bếp)",        icon:"🍳", atk:1, hp:16, color:[255,153,102], job:"guard"},
+  {id:"defender",   name:"Defender (Vệ Sĩ)",      icon:"🛡️", atk:6, hp:26, color:[204,68,68], job:"guard"},
+  {id:"scout",      name:"Scout (Trinh Sát Nhanh)", icon:"🏃", atk:3, hp:16, color:[153,102,255], job:"explore"},
+  {id:"gatherer",   name:"Gatherer (Thu Lượm)",   icon:"🧺", atk:1, hp:15, color:[68,170,255], job:"mine_stone"},
 ];
 const ISLAND_CONNECTIONS = {
   starter_isle:["ember_isle","crystal_atoll"],
@@ -3211,6 +3211,110 @@ console.log("🎮 Đang khởi tạo...");
   // Set initial camera to follow player
   k.camPos(playerObj.pos.x, playerObj.pos.y);
 
+  // ─═══ PEBBLE CREW — 10 trợ thủ xuất hiện quanh nhân vật, thực thi lệnh ═══──
+  // Theo bộ luật gốc (SKILL.md): mỗi Pebble có vai trò riêng (Miner/Builder/Explorer...),
+  // tự động khai thác/lang thang/khám phá quanh căn cứ, có thể chạm để giao việc.
+  const pebbleCrew = [];
+  function spawnPebbleCrew(){
+    for(let i=0;i<PEBBLE_ROLES.length;i++){
+      const role = PEBBLE_ROLES[i];
+      const angle = (i / PEBBLE_ROLES.length) * Math.PI * 2;
+      const dist = 55 + Math.random()*35;
+      const px = playerObj.pos.x + Math.cos(angle)*dist;
+      const py = playerObj.pos.y + Math.sin(angle)*dist;
+      const body = k.add([
+        k.circle(9), k.pos(px,py), k.color(role.color[0],role.color[1],role.color[2]),
+        k.outline(2,k.rgb(20,20,30)), k.z(8), k.area(), "pebble-crew"
+      ]);
+      const iconLabel = k.add([k.text(role.icon,{size:11}),k.pos(px,py),k.anchor("center"),k.z(9)]);
+      const pc = {
+        role, body, iconLabel,
+        homeX: px, homeY: py,
+        mode: (role.job==="mine_wood"||role.job==="mine_stone") ? "mine" : (role.job==="explore" ? "explore" : "wander"),
+        targetX: null, targetY: null, _targetTile:null,
+        gatherCooldown: Math.random()*2, stateTimer: 0,
+        hp: role.hp, maxHp: role.hp,
+      };
+      pebbleCrew.push(pc);
+    }
+  }
+  spawnPebbleCrew();
+
+  function openPebbleCrewMenu(pc){
+    const items = [
+      {icon:"🌾", label:"Tự do lang thang", sublabel:"Đi loanh quanh gần bạn", enabled:true,
+        action(){window.closeQuickPopup();pc.mode="wander";pc.targetX=null;showToast(pc.role.icon+" "+pc.role.name+": Tự do lang thang",1500);}},
+      {icon:"⛏️", label:"Tự động khai thác", sublabel:"Tự tìm gỗ/đá gần đó để đào", enabled:true,
+        action(){window.closeQuickPopup();pc.mode="mine";pc.targetX=null;showToast(pc.role.icon+" "+pc.role.name+": Bắt đầu khai thác!",1500);}},
+      {icon:"🗺️", label:"Khám phá xa", sublabel:"Đi xa hơn quanh đảo", enabled:true,
+        action(){window.closeQuickPopup();pc.mode="explore";pc.targetX=null;showToast(pc.role.icon+" "+pc.role.name+": Đi khám phá!",1500);}},
+      {icon:"📍", label:"Đứng yên tại chỗ", sublabel:"", enabled:true,
+        action(){window.closeQuickPopup();pc.mode="stay";pc.targetX=null;showToast(pc.role.icon+" "+pc.role.name+": Đứng yên",1500);}},
+    ];
+    openQuickPopup(pc.role.icon+" "+pc.role.name, items, null);
+  }
+
+  function updatePebbleCrew(dt){
+    for(const pc of pebbleCrew){
+      if(pc.hp<=0) continue;
+      if(pc.mode === "stay"){
+        // đứng yên, không làm gì
+      } else if(pc.mode === "mine"){
+        if(pc.gatherCooldown > 0){
+          pc.gatherCooldown -= dt;
+        } else if(pc.targetX == null){
+          const px=pc.body.pos.x, py=pc.body.pos.y;
+          const ptx=Math.floor(px/TILE), pty=Math.floor(py/TILE);
+          const wantWood = pc.role.job==="mine_wood";
+          let best=null,bestD=999;
+          for(let dx=-8;dx<=8;dx++) for(let dy=-8;dy<=8;dy++){
+            const tx=ptx+dx, ty=pty+dy;
+            if(tx<0||tx>=COLS||ty<0||ty>=ROWS) continue;
+            const t=getTile(ty,tx,map);
+            const isMatch = wantWood ? t===4 : (t===2||t===4);
+            if(isMatch){ const d=dx*dx+dy*dy; if(d<bestD){bestD=d;best={tx,ty,t};} }
+          }
+          if(best){ pc.targetX=best.tx*TILE+TILE/2; pc.targetY=best.ty*TILE+TILE/2; pc._targetTile=best; }
+          else {
+            // Không thấy tài nguyên gần — đi loanh quanh chờ
+            const a=Math.random()*Math.PI*2;
+            pc.targetX=px+Math.cos(a)*40; pc.targetY=py+Math.sin(a)*40;
+            pc._targetTile=null; pc.gatherCooldown=2;
+          }
+        } else {
+          const dx=pc.targetX-pc.body.pos.x, dy=pc.targetY-pc.body.pos.y, d=Math.hypot(dx,dy);
+          if(d<6){
+            if(pc._targetTile){
+              const tt=getTile(pc._targetTile.ty,pc._targetTile.tx,map);
+              if(tt===2||tt===4) gatherResource(pc._targetTile.tx,pc._targetTile.ty,tt);
+            }
+            pc.targetX=null; pc.targetY=null; pc._targetTile=null;
+            pc.gatherCooldown = 1.2+Math.random();
+          } else {
+            pc.body.pos.x += (dx/d)*40*dt;
+            pc.body.pos.y += (dy/d)*40*dt;
+          }
+        }
+      } else { // wander / explore / build / guard đều dùng chung kiểu lang thang quanh nhà
+        if(pc.stateTimer<=0){
+          const radius = pc.mode==="explore" ? 220 : 70;
+          const angle = Math.random()*Math.PI*2;
+          const dist = 30+Math.random()*radius;
+          pc.targetX = pc.homeX + Math.cos(angle)*dist;
+          pc.targetY = pc.homeY + Math.sin(angle)*dist;
+          pc.stateTimer = 3+Math.random()*3;
+        } else {
+          pc.stateTimer -= dt;
+        }
+        if(pc.targetX!=null){
+          const dx=pc.targetX-pc.body.pos.x, dy=pc.targetY-pc.body.pos.y, d=Math.hypot(dx,dy);
+          if(d>4){ pc.body.pos.x += (dx/d)*30*dt; pc.body.pos.y += (dy/d)*30*dt; }
+        }
+      }
+      pc.iconLabel.pos = pc.body.pos;
+    }
+  }
+
   // ─═══ PEBBLE — Orange Cat Companion (follower) ═══──
   const CAT_COLOR=k.color(232,161,64);
   const CAT_DARK=k.color(199,128,38);
@@ -3403,6 +3507,15 @@ console.log("🎮 Đang khởi tạo...");
   k.onMousePress(()=>{
     const pos = k.mousePos();
     if(window._clickConsumed){window._clickConsumed=false;return;}
+    // ─── ƯU TIÊN CHẠM PEBBLE CREW ─────────────────────────────────
+    // Chạm trúng 1 Pebble trợ thủ trên bản đồ → mở menu giao việc ngay, không rơi xuống xây/đào
+    for(const pc of pebbleCrew){
+      if(pc.hp<=0) continue;
+      if(Math.hypot(pos.x-pc.body.pos.x,pos.y-pc.body.pos.y) < 14){
+        openPebbleCrewMenu(pc);
+        return;
+      }
+    }
     // ─── ƯU TIÊN CHIẾN ĐẤU ───────────────────────────────────────
     // Nếu bấm trúng (hoặc rất gần) một con quái còn sống, LUÔN tấn công trước tiên,
     // kể cả khi đang ở chế độ xây dựng/đào — tránh lỗi vừa định đánh quái vừa bị
@@ -4225,40 +4338,7 @@ console.log("🎮 Đang khởi tạo...");
       }
     }
 
-    // ─── PEBBLE FREE-ROAM AI (replaces old follow mode) ───
-    if (GS.pebbleMode === "roam" && pebbleCallPhase !== "walking" && pebbleCallPhase !== "dialoguing") {
-      // Run every 3 frames
-      if (GS.gameTicks % 3 === 0) updateRoamAI(k.dt());
-    }
-
-    // ── Pebble still attacks enemies when roaming (defensive only) ──
-    if(pebbleObj && GS.pebbleMode === "roam" && pebbleCallPhase !== "walking" && pebbleCallPhase !== "dialoguing" && !pebbleObj.dead){
-      // Throttle: only check every 5 frames
-      if (GS.gameTicks % 5 === 0) {
-      for(const enemy of enemyObjs){
-        if(enemy.dead) continue;
-        const dist=Math.sqrt((pebbleObj.pos.x-enemy.pos.x)**2+(pebbleObj.pos.y-enemy.pos.y)**2);
-        if(dist<TILE*1.5&&Math.random()<0.01){
-          const pebDmg=Math.max(1,getPebbleStats().attack+Math.floor(Math.random()*2));
-          enemy.hp-=pebDmg;
-          showFloating(enemy.pos.x,enemy.pos.y-20,`-${pebDmg}`,[232,161,64]);
-          if(enemy.hp<=0){
-            enemy.dead=true;
-            const dr=enemy.eTy.drops;
-            GS.resources.wood+=(dr.wood||0)+Math.floor(Math.random()*2);
-            GS.resources.stone+=(dr.stone||0)+Math.floor(Math.random()*2);
-            GS.resources.food+=(dr.food||0);GS.resources.gold+=(dr.gold||0);
-            spawnParticles(enemy.pos.x,enemy.pos.y,6,[230,230,51]);
-            try{k.destroy(enemy._hpBg);k.destroy(enemy._hpFill);}catch(e){}
-            for(const eo of enemy._eyes||[]) try{k.destroy(eo)}catch(e){}
-            try{k.destroy(enemy);}catch(e){}
-            const idx=enemyObjs.indexOf(enemy);if(idx>=0)enemyObjs.splice(idx,1);
-            updateHUD();
-          }
-        }
-      }
-      }
-    }
+    updatePebbleCrew(k.dt());
 
     // Enemy spawn
     enemySpawnTimer+=k.dt();
@@ -4875,7 +4955,7 @@ console.log("🎮 Đang khởi tạo...");
         GS.pebbleMode = "roam";
         // Reset roam state so Pebble starts wandering after dialogue
         roamState = 'roaming';
-        roamTarget = pickRoamTarget();
+        if (typeof pickRoamTarget === 'function') roamTarget = pickRoamTarget();
         roamHomeTimer = 10 + Math.random() * 8;
         roamStateTimer = 0;
         currentDialogue = null;
