@@ -5678,14 +5678,14 @@ k.scene("arena", ()=>{
     const m=am[idx];if(!m||m.dead)return;
     const d=Math.max(1,GS.player.attack+getEquipStats().atk+abf.pa+Math.floor(Math.random()*4)-m.def);
     m.hp-=d;showFloating(m.o.pos.x,m.o.pos.y-15,'-'+d,[255,50,50]);spawnParticles(m.o.pos.x,m.o.pos.y,3,[255,77,26]);
-    lungeIcon(pIcon,pIconBaseY);
+    chargeAttack(pIcon,pIconBaseX,pIconBaseY,m.o.pos.x,m.o.pos.y);
     m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
     // Toàn bộ trợ thủ còn sống trong đội đều ra đòn cùng lượt
     for(const s of squad){
       if(s.hp<=0||m.hp<=0) continue;
       const sd=Math.max(1,s.atk+Math.floor(Math.random()*3)-Math.floor(m.def*0.5));
       m.hp-=sd;showFloating(m.o.pos.x,m.o.pos.y+10,'-'+sd+s.icon,[232,161,64]);
-      lungeIcon(s.obj,s.baseY);
+      chargeAttack(s.obj,s.baseX,s.baseY,m.o.pos.x,m.o.pos.y);
       m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
     }
     if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);}catch(e){}}
@@ -5696,14 +5696,21 @@ k.scene("arena", ()=>{
   function enTurn(){
     const al=am.filter(m=>!m.dead);
     for(const m of al){
-      if(m.target==="p"&&php>0){const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));php=Math.max(0,php-ed);showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);lungeIcon(pIcon,pIconBaseY);}
-      else {
+      const mHomeX=m.o.pos.x, mHomeY=m.o.pos.y;
+      if(m.target==="p"&&php>0){
+        const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));
+        php=Math.max(0,php-ed);
+        showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);
+        chargeAttack(m.o,mHomeX,mHomeY,pIconBaseX,pIconBaseY);
+        lungeIcon(pIcon,pIconBaseY);
+      } else {
         const aliveSquad=squad.filter(s=>s.hp>0);
         if(aliveSquad.length>0){
           const s=aliveSquad[Math.floor(Math.random()*aliveSquad.length)];
           const ed=Math.max(1,m.atk-1+Math.floor(Math.random()*2));
           s.hp=Math.max(0,s.hp-ed);
           showFloating(s.baseX,AY+14*AT,'-'+ed,[232,100,50]);
+          chargeAttack(m.o,mHomeX,mHomeY,s.baseX,s.baseY);
           lungeIcon(s.obj,s.baseY);
         }
       }
@@ -5755,7 +5762,7 @@ k.scene("arena", ()=>{
     else showToast("❌ Hết bình máu! Vào Merchant House quay thưởng.",2000);
   });
   const pIcon=k.add([k.text("🧑",{size:AT*0.6}),k.pos(AX+2*AT,AY+15*AT),k.anchor("center"),k.z(7)]);
-  const pIconBaseY=pIcon.pos.y;
+  const pIconBaseX=pIcon.pos.x, pIconBaseY=pIcon.pos.y;
   // Không còn Pebble mặc định đồng hành — đội trợ thủ bắt đầu trống, gọi thêm qua nút 📣 Trợ Thủ (10 Pebble chuyên trách)
   // Gọi thêm 1 trong 10 Pebble chuyên trách (theo bộ luật gốc) ra tham chiến, tối đa MAX_SQUAD thành viên
   function addSquadMember(role){
@@ -5768,6 +5775,7 @@ k.scene("arena", ()=>{
   }
   // Hiệu ứng nhún nhẹ lên phía quái (hàng trên) khi tấn công — cho cảm giác 2 bên thực sự đang giao chiến
   function lungeIcon(icon, baseY){
+    if(!icon || icon._charging) return;
     let t=0;
     const h=icon.onUpdate(()=>{
       t+=k.dt();
@@ -5775,6 +5783,33 @@ k.scene("arena", ()=>{
       if(t<dur) icon.pos.y=baseY-(t/dur)*16;
       else if(t<dur*2) icon.pos.y=baseY-(1-(t-dur)/dur)*16;
       else { icon.pos.y=baseY; if(h&&h.cancel)h.cancel(); }
+    });
+  }
+  // Di chuyển thật sự sang vị trí đối phương để "tấn công" rồi quay về chỗ cũ —
+  // cho 2 phe thực sự giao tranh trên bàn đấu thay vì chỉ đứng yên nhún tại chỗ.
+  function chargeAttack(icon, homeX, homeY, tx, ty){
+    if(!icon || !icon.exists || !icon.exists() || icon._charging) return;
+    icon._charging = true;
+    const stopX = tx, stopY = ty + 16; // dừng ngay sát mục tiêu, không đè hẳn lên
+    const goDur = 0.16, holdDur = 0.08, backDur = 0.16;
+    let t = 0;
+    const h = icon.onUpdate(()=>{
+      t += k.dt();
+      if(t < goDur){
+        const p = t/goDur;
+        icon.pos.x = homeX + (stopX-homeX)*p;
+        icon.pos.y = homeY + (stopY-homeY)*p;
+      } else if(t < goDur+holdDur){
+        icon.pos.x = stopX; icon.pos.y = stopY;
+      } else if(t < goDur+holdDur+backDur){
+        const p = (t-goDur-holdDur)/backDur;
+        icon.pos.x = stopX + (homeX-stopX)*p;
+        icon.pos.y = stopY + (homeY-stopY)*p;
+      } else {
+        icon.pos.x = homeX; icon.pos.y = homeY;
+        icon._charging = false;
+        if(h && h.cancel) h.cancel();
+      }
     });
   }
   k.onUpdate(()=>{
