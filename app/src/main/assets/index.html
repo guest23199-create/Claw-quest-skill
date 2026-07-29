@@ -436,6 +436,13 @@ const H = Math.max((document.getElementById('game-wrap').clientHeight || window.
 // Logical world size (for tile grid placement)
 const WORLD_W = COLS * TILE, WORLD_H = ROWS * TILE;
 const TYPES = ["grass","sand","stone","water","tree","mountain","bush","beach","path","deep_water","grass_flower","dense_forest","cliff","tall_grass","farm_plot","palm","brick","wall"];
+// Nhận dạng tile tài nguyên (áp dụng kỹ năng "nhận diện đồ vật" từ bộ luật Pebble):
+// núi (5) cũng là nguồn đá như đá thường (2); rừng rậm (11) và cây cọ (15) cũng cho gỗ như cây (4).
+const WOOD_TILE_TYPES = [4, 11, 15];
+const STONE_TILE_TYPES = [2, 5];
+function isWoodTile(t){ return WOOD_TILE_TYPES.includes(t); }
+function isStoneTile(t){ return STONE_TILE_TYPES.includes(t); }
+function isGatherableTile(t){ return isWoodTile(t) || isStoneTile(t) || t===6; }
 const SOLID = {3:1,4:1,5:1,9:1,11:1,12:1,17:1};
 function isSolid(t){return SOLID[t]===1;}
 const GATHER = {2:"stone",4:"wood",6:"food",8:"food",13:"food"};
@@ -2399,12 +2406,12 @@ function findNearestResource() {
   const scanEndY = Math.min(ROWS, sy + scanRadius);
 
   // Priority order based on equipped weapon
-  // Tile types: 4=tree(wood), 2=stone, 6=bush(food), 8=tall_grass(food), 13=tall_grass_variant(food)
+  // Tile types: 4=tree,11=dense_forest,15=palm(wood); 2=stone,5=mountain(stone); 6=bush(food), 8=tall_grass(food), 13=tall_grass_variant(food)
   const weaponId = p.equipment.weapon ? p.equipment.weapon.id || p.equipment.weapon : null;
   let priorityTypes;
-  if (weaponId === 'pickaxe') priorityTypes = [2, 6, 4, 8, 13];   // stone > bush > tree > tall_grass
-  else if (weaponId === 'axe') priorityTypes = [4, 6, 2, 8, 13]; // tree > bush > stone > tall_grass
-  else priorityTypes = [6, 4, 2, 8, 13];                          // bush(food) > tree > stone > tall_grass
+  if (weaponId === 'pickaxe') priorityTypes = [2, 5, 6, 4, 11, 15, 8, 13];   // stone/mountain > bush > tree > tall_grass
+  else if (weaponId === 'axe') priorityTypes = [4, 11, 15, 6, 2, 5, 8, 13]; // tree/rừng/cọ > bush > stone > tall_grass
+  else priorityTypes = [6, 4, 11, 15, 2, 5, 8, 13];                          // bush(food) > tree > stone > tall_grass
 
   for (const type of priorityTypes) {
     const candidates = [];
@@ -3310,7 +3317,7 @@ console.log("🎮 Đang khởi tạo...");
             const tx=ptx+dx, ty=pty+dy;
             if(tx<0||tx>=COLS||ty<0||ty>=ROWS) continue;
             const t=getTile(ty,tx,map);
-            const isMatch = wantWood ? t===4 : (t===2||t===4);
+            const isMatch = wantWood ? isWoodTile(t) : isStoneTile(t);
             if(isMatch){ const d=dx*dx+dy*dy; if(d<bestD){bestD=d;best={tx,ty,t};} }
           }
           if(best){ pc.targetX=best.tx*TILE+TILE/2; pc.targetY=best.ty*TILE+TILE/2; pc._targetTile=best; }
@@ -3325,7 +3332,7 @@ console.log("🎮 Đang khởi tạo...");
           if(d<6){
             if(pc._targetTile){
               const tt=getTile(pc._targetTile.ty,pc._targetTile.tx,map);
-              if(tt===2||tt===4) gatherResource(pc._targetTile.tx,pc._targetTile.ty,tt);
+              if(isGatherableTile(tt)) gatherResource(pc._targetTile.tx,pc._targetTile.ty,tt);
             }
             pc.targetX=null; pc.targetY=null; pc._targetTile=null;
             pc.gatherCooldown = 1.2+Math.random();
@@ -3641,7 +3648,7 @@ console.log("🎮 Đang khởi tạo...");
       const d=Math.sqrt((playerObj.pos.x-pos.x)**2+(playerObj.pos.y-pos.y)**2);
       const tt=getTile(tiy, tix, map);
 
-      if(d<TILE*2.5&&(tt===4||tt===2||tt===6)){gatherResource(tix,tiy,tt);return;}
+      if(d<TILE*2.5&&isGatherableTile(tt)){gatherResource(tix,tiy,tt);return;}
       if(d<TILE*2.5&&tt===14){ // Click farm plot
         _currentFarmTile={tx:tix,ty:tiy};
         updateFarmButton();
@@ -3654,7 +3661,7 @@ console.log("🎮 Đang khởi tạo...");
       // Click dock to travel
       if(tix===DOCK_X&&tiy===DOCK_Y&&d<TILE*3){const conn=ISLAND_CONNECTIONS[islandId]||[];openTravelModal(conn);return;}
       // Resource gathering at distance (auto-farm style)
-      if(d<TILE*5&&(tt===4||tt===2||tt===6)){gatherResource(tix,tiy,tt);return;}
+      if(d<TILE*5&&isGatherableTile(tt)){gatherResource(tix,tiy,tt);return;}
       // Movement disabled - use D-Pad only
       showToast("🔄 Dùng D-Pad để di chuyển!",1000);
       return;
@@ -3685,6 +3692,22 @@ console.log("🎮 Đang khởi tạo...");
     let w=0,s=0,f=0,g=0;
     const eq=getEquipStats();
     if(type===4){w=2+p.woodBonus+eq.atk+Math.floor(Math.random()*2);GS.resources.wood+=w;if(Math.random()<0.3){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🍎`,[230,77,77]);}showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵`,[153,204,77]);}
+    else if(type===11){ // Rừng rậm — nhiều gỗ hơn cây thường
+      w=3+p.woodBonus+eq.atk+Math.floor(Math.random()*3);GS.resources.wood+=w;
+      if(Math.random()<0.35){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🍎`,[230,77,77]);}
+      showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵🌲`,[102,180,60]);
+    }
+    else if(type===15){ // Cây cọ — gỗ + có cơ hội ra dừa (food)
+      w=2+Math.floor(Math.random()*2);GS.resources.wood+=w;
+      showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵🌴`,[153,204,77]);
+      if(Math.random()<0.4){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🥥`,[230,180,77]);}
+    }
+    else if(type===5){ // Núi — khó nhất, cho nhiều đá hơn + cơ hội vàng cao hơn đá thường
+      const roll=Math.random();
+      if(roll<0.55){ s=3+Math.floor(Math.random()*4); GS.resources.stone+=s; showFloating(tx*TILE,ty*TILE-10,`+${s} 🪨⛰️`,[110,110,120]); }
+      else if(roll<0.75){ g=1+Math.floor(Math.random()*2); GS.resources.gold+=g; showFloating(tx*TILE,ty*TILE-10,`+${g} 🥇`,[255,215,0]); spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,6,[255,215,0]); }
+      else { s=5+Math.floor(Math.random()*4); GS.resources.stone+=s; showFloating(tx*TILE,ty*TILE-10,`+${s} 🪨✨ Quặng!`,[180,140,200]); spawnParticles(tx*TILE+TILE/2,ty*TILE+TILE/2,6,[180,140,200]); }
+    }
         else if(type===2){
       // Mine - improved drop rates
       const roll = Math.random();
@@ -4009,9 +4032,9 @@ console.log("🎮 Đang khởi tạo...");
         autoFarmNoResourceMsg = false;
         // Auto-equip tool for target type
         const p = GS.player;
-        if (autoFarmTarget.type === 2 && (!p.equipment.weapon || p.equipment.weapon.id !== 'pickaxe') && hasInvItem('pickaxe')) {
+        if (isStoneTile(autoFarmTarget.type) && (!p.equipment.weapon || p.equipment.weapon.id !== 'pickaxe') && hasInvItem('pickaxe')) {
           equipItem('pickaxe');
-        } else if (autoFarmTarget.type === 4 && (!p.equipment.weapon || p.equipment.weapon.id !== 'axe') && hasInvItem('axe')) {
+        } else if (isWoodTile(autoFarmTarget.type) && (!p.equipment.weapon || p.equipment.weapon.id !== 'axe') && hasInvItem('axe')) {
           equipItem('axe');
         }
         // BFS path from current tile
