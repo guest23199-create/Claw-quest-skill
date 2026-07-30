@@ -3225,12 +3225,20 @@ console.log("🎮 Đang khởi tạo...");
       k.pos(0, 0),
       k.rect(32, 32),
       k.color(bTy.c[0], bTy.c[1], bTy.c[2]),
-      k.outline(2, k.rgb(255, 215, 0)),
+      k.outline(3, k.rgb(255, 215, 0)),
       k.area(),
       k.z(5),
       "boss",
-      { hp: bTy.hp, maxHp: bTy.hp, dmg: bTy.dmg, xp: bTy.xp, spd: bTy.spd, drops: bTy.drops, name: bTy.name, islandId: islandId, invTimer: 0 }
+      { hp: bTy.hp, maxHp: bTy.hp, dmg: bTy.dmg, xp: bTy.xp, spd: bTy.spd, drops: bTy.drops, name: bTy.name, islandId: islandId, invTimer: 0, c: bTy.c }
     ]);
+    // Icon nổi trên boss + hiệu ứng nhấp nháy nhẹ để rõ đây là mục tiêu có thể chạm để tấn công
+    const bossIcon = k.add([k.text("💀",{size:16}),k.pos(boss.pos.x,boss.pos.y),k.anchor("center"),k.z(6)]);
+    boss._icon = bossIcon;
+    boss.onUpdate(()=>{
+      if(!boss.exists()) return;
+      bossIcon.pos = boss.pos;
+      boss.opacity = 0.85 + Math.sin(Date.now()*0.006)*0.15;
+    });
 
     let bx, by;
     do {
@@ -3241,6 +3249,33 @@ console.log("🎮 Đang khởi tạo...");
 
     activeBoss = boss;
     showToast(`👑 ${bTy.name} đã xuất hiện!`, 3000);
+  }
+
+  function attackBoss(boss){
+    if(!boss || !boss.exists || !boss.exists()) return;
+    movePlayerTo(boss.pos.x, boss.pos.y);
+    const atkPower = Math.max(1,(GS.player.attack||5)+getEquipStats().atk+Math.floor(Math.random()*4));
+    boss.hp -= atkPower;
+    showFloating(boss.pos.x, boss.pos.y-20, `-${atkPower}`, [255,51,51]);
+    spawnParticles(boss.pos.x, boss.pos.y, 4, [255,77,26]);
+    boss.color = k.rgb(255,255,255);
+    setTimeout(()=>{ if(boss.exists && boss.exists()) boss.color = k.rgb(boss.c[0]||0,boss.c[1]||0,boss.c[2]||0); }, 100);
+    if(boss.hp <= 0){
+      const b = boss;
+      if(b.drops){ for(const [res,amt] of Object.entries(b.drops)){ GS.resources[res]=(GS.resources[res]||0)+amt; } }
+      GS.player.xp = (GS.player.xp||0) + b.xp;
+      checkCấpUp();
+      const defeatedId = b.islandId;
+      if(!GS.defeatedBosses) GS.defeatedBosses=[];
+      GS.defeatedBosses.push(defeatedId);
+      const connections = ISLAND_CONNECTIONS[defeatedId] || [];
+      for(const connId of connections){ if(!GS.unlockedIslands.includes(connId)) unlockIsland(connId); }
+      if(defeatedId === GS.currentIsland) showToast(`👑 ${b.name} bị đánh bại! +${b.xp}XP! Mở khoá đảo mới!`,3500);
+      try{ if(b._icon) k.destroy(b._icon); }catch(e){}
+      k.destroy(b);
+      activeBoss = null;
+    }
+    updateHUD();
   }
 
   function attackEnemy(enemy){
@@ -3693,7 +3728,7 @@ console.log("🎮 Đang khởi tạo...");
     }
     if(activeBoss && activeBoss.exists && activeBoss.exists()){
       if(Math.hypot(pos.x-activeBoss.pos.x,pos.y-activeBoss.pos.y) < TILE*0.6){
-        window._clickConsumed=false; // để logic tự đánh boss theo khoảng cách (onUpdate) vẫn xử lý bình thường
+        attackBoss(activeBoss);
         return;
       }
     }
@@ -4653,6 +4688,7 @@ console.log("🎮 Đang khởi tạo...");
             showToast(`👑 ${b.name} defeated! +${b.xp}XP! Islands unlocked!`, 3500);
           }
 
+          try{ if(b._icon) k.destroy(b._icon); }catch(e){}
           k.destroy(b);
           activeBoss = null;
         }
