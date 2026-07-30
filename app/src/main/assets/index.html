@@ -193,6 +193,11 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
 
+  <!-- ─── Nút vào thẳng Đấu Trường — luôn hiện cố định ở đầu trang, không cần đi tìm nhà trên bản đồ ─── -->
+  <div id="arena-entry-btn" style="position:fixed;top:46px;left:8px;z-index:24;pointer-events:auto;">
+    <button onclick="window.enterArena && window.enterArena()" style="background:linear-gradient(180deg,#7a2020,#4a1010);border:2px solid #ff6b4a;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5);white-space:nowrap;">⚔️ Đấu Trường</button>
+  </div>
+
   <!-- ─── Thanh báo đang ở chế độ xây dựng — luôn hiện nút Huỷ để không bị kẹt trên di động ─── -->
   <div id="buildmode-banner" style="position:fixed;top:46px;left:50%;transform:translateX(-50%);z-index:25;pointer-events:auto;background:rgba(20,30,10,0.92);border:2px solid #5fe089;border-radius:10px;padding:6px 10px;display:none;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.5);">
     <span style="font-size:11px;color:#5fe089;">🏗️ Đang xây — chạm bản đồ để đặt</span>
@@ -1444,7 +1449,7 @@ window.closeModals = function(){
 // khi vào các mini-game riêng biệt (Đấu Trường, Vòng Quay May Mắn...) — tránh hiện joystick
 // vô dụng đè lên màn hình chiến đấu theo lượt khiến người chơi tưởng bấm không được.
 function setGameHUDVisible(visible){
-  const ids = ["top-bar","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad"];
+  const ids = ["top-bar","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
   ids.forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = visible ? "" : "none";
@@ -1454,6 +1459,13 @@ function setGameHUDVisible(visible){
     if(bmb) bmb.style.display = "none";
   }
 }
+
+// Vào thẳng Đấu Trường bất kể đang ở đâu trên bản đồ — không cần tìm và chạm đúng nhà Đấu Trường
+window.enterArena = function(){
+  if(typeof k === 'undefined' || !k){ showToast("⏳ Game đang tải, thử lại sau giây lát...",1500); return; }
+  showToast("⚔️ Vào đấu trường! Chuẩn bị chiến đấu!",1200);
+  k.go("arena");
+};
 
 window.cancelBuildMode = function() {
   GS.buildMode = null;
