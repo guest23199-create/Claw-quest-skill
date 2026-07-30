@@ -3229,7 +3229,7 @@ console.log("🎮 Đang khởi tạo...");
       k.area(),
       k.z(5),
       "boss",
-      { hp: bTy.hp, maxHp: bTy.hp, dmg: bTy.dmg, xp: bTy.xp, spd: bTy.spd, drops: bTy.drops, name: bTy.name, islandId: islandId, invTimer: 0, c: bTy.c }
+      { hp: bTy.hp, maxHp: bTy.hp, dmg: bTy.dmg, xp: bTy.xp, spd: bTy.spd, drops: bTy.drops, name: bTy.name, islandId: islandId, invTimer: 0, origColor: bTy.c }
     ]);
     // Icon nổi trên boss + hiệu ứng nhấp nháy nhẹ để rõ đây là mục tiêu có thể chạm để tấn công
     const bossIcon = k.add([k.text("💀",{size:16}),k.pos(boss.pos.x,boss.pos.y),k.anchor("center"),k.z(6)]);
@@ -3259,7 +3259,7 @@ console.log("🎮 Đang khởi tạo...");
     showFloating(boss.pos.x, boss.pos.y-20, `-${atkPower}`, [255,51,51]);
     spawnParticles(boss.pos.x, boss.pos.y, 4, [255,77,26]);
     boss.color = k.rgb(255,255,255);
-    setTimeout(()=>{ if(boss.exists && boss.exists()) boss.color = k.rgb(boss.c[0]||0,boss.c[1]||0,boss.c[2]||0); }, 100);
+    setTimeout(()=>{ if(boss.exists && boss.exists()) boss.color = k.rgb(boss.origColor[0]||0,boss.origColor[1]||0,boss.origColor[2]||0); }, 100);
     if(boss.hp <= 0){
       const b = boss;
       if(b.drops){ for(const [res,amt] of Object.entries(b.drops)){ GS.resources[res]=(GS.resources[res]||0)+amt; } }
@@ -4668,7 +4668,7 @@ console.log("🎮 Đang khởi tạo...");
         // Flash effect
         activeBoss.color = k.rgb(255, 255, 255);
         setTimeout(() => {
-          if (activeBoss.exists()) activeBoss.color = k.rgb(activeBoss.c[0]||0,activeBoss.c[1]||0,activeBoss.c[2]||0);
+          if (activeBoss.exists()) activeBoss.color = k.rgb(activeBoss.origColor[0]||0,activeBoss.origColor[1]||0,activeBoss.origColor[2]||0);
         }, 100);
 
         // Boss defeated
