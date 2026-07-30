@@ -3808,9 +3808,18 @@ console.log("🎮 Đang khởi tạo...");
         window.farmAction();
         return;
       }
-      // Click building to interact
+      // Click building to interact — vào ngay lập tức dù đang đứng xa, không cần đi bộ lại gần trước
       const ba=idata.buildings.find(b=>b.tileX===tix&&b.tileY===tiy);
-      if(ba&&d<TILE*2.5){interactWithBuilding(ba);return;}
+      if(ba){
+        if(d>=TILE*2.5 && playerObj){
+          // Đưa nhân vật đứng cạnh công trình cho hợp lý (không dùng movePlayerTo vì hàm đó tự vào công trình luôn, sẽ bị gọi 2 lần)
+          playerObj.pos.x = ba.tileX*TILE+TILE/2;
+          playerObj.pos.y = ba.tileY*TILE+TILE/2;
+          updatePlayerParts(playerObj.pos.x, playerObj.pos.y, false);
+        }
+        interactWithBuilding(ba);
+        return;
+      }
       // Click dock to travel
       if(tix===DOCK_X&&tiy===DOCK_Y&&d<TILE*3){const conn=ISLAND_CONNECTIONS[islandId]||[];openTravelModal(conn);return;}
       // Resource gathering at distance (auto-farm style)
