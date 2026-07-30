@@ -205,8 +205,25 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:2px;">
       <div id="minimap-pos" style="font-size:8px;color:#f0c060;background:rgba(0,0,0,0.65);border-radius:4px;padding:1px 5px;">📍 --,--</div>
       <button onclick="window.openMinimapZoom && window.openMinimapZoom()" title="Phóng to minimap để đặt công trình chính xác" style="font-size:11px;line-height:1;background:#1c2e4e;border:1px solid #3a5a8a;color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;">🔎</button>
+      <button onclick="window.toggleFPView && window.toggleFPView()" title="Góc Nhìn Thứ Nhất" style="font-size:11px;line-height:1;background:#2e1c4e;border:1px solid #7a5aca;color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;">👁️</button>
     </div>
     <div id="minimap-hint" style="font-size:8px;color:#5fe089;background:rgba(0,0,0,0.65);border-radius:4px;padding:1px 5px;margin-top:2px;display:none;">👆 Chạm để đặt tại đây</div>
+  </div>
+
+  <!-- ─── GÓC NHÌN THỨ NHẤT: canvas raycasting phủ toàn màn hình + điều khiển riêng ─── -->
+  <div id="fps-overlay" style="position:fixed;inset:0;z-index:80;display:none;pointer-events:auto;background:#000;">
+    <canvas id="fps-canvas" width="360" height="640" style="width:100%;height:100%;display:block;"></canvas>
+    <button onclick="window.toggleFPView && window.toggleFPView()" style="position:fixed;top:44px;right:10px;background:rgba(160,40,40,0.85);border:1px solid #ff8080;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">🔙 Thoát Góc Nhìn 1</button>
+    <div style="position:fixed;bottom:26px;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px;">
+      <div style="display:flex;gap:8px;">
+        <button id="fp-turn-left" style="width:52px;height:52px;border-radius:50%;background:rgba(20,20,30,0.7);border:2px solid rgba(255,255,255,0.35);color:#fff;font-size:20px;">◀︎</button>
+        <button id="fp-turn-right" style="width:52px;height:52px;border-radius:50%;background:rgba(20,20,30,0.7);border:2px solid rgba(255,255,255,0.35);color:#fff;font-size:20px;">▶︎</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+        <button id="fp-move-fwd" style="width:60px;height:52px;border-radius:12px;background:rgba(95,224,137,0.25);border:2px solid #5fe089;color:#fff;font-size:18px;">▲</button>
+        <button id="fp-move-back" style="width:60px;height:40px;border-radius:12px;background:rgba(20,20,30,0.6);border:2px solid rgba(255,255,255,0.3);color:#fff;font-size:16px;">▼</button>
+      </div>
+    </div>
   </div>
 
   <!-- ─── Island Label ─── -->
@@ -2651,6 +2668,7 @@ window.useHealItem = window.quickHeal;
 
 k.scene("game", ()=>{
   setGameHUDVisible(true);
+  { const ov = document.getElementById("fps-overlay"); if(ov) ov.style.display = "none"; }
 
 function digToFarm(tx,ty){
   const idata=getIslandData(GS.currentIsland);
@@ -2674,6 +2692,8 @@ function _notifyDigMode(){_digModeListeners.forEach(f=>f());}
     // ─── Hoisted variables (accessible to all scene functions) ───
   // Player, Pebble, and game objects
   let playerObj = null, isMoving = false, moveTarget = null;
+  let playerFacing = -Math.PI/2; // radian, hướng nhân vật đang nhìn (dùng cho chế độ Góc Nhìn Thứ Nhất). Mặc định hướng lên trên.
+  let fpMode = false; // đang ở chế độ góc nhìn thứ nhất hay không
   let pebbleObj = null;
   let pebCatParts = [];
   let enemyObjs = [];
@@ -2977,6 +2997,104 @@ console.log("🎮 Đang khởi tạo...");
       }
     };
   }
+
+  // ─── GÓC NHÌN THỨ NHẤT (raycasting, dùng lại đúng dữ liệu bản đồ hiện có) ───
+  // Màu "tường" theo từng loại tile chắn đường (khớp SOLID): 3=nước,4=cây,5=núi,9=nước sâu,11=rừng rậm,12=vách đá,17=tường xây
+  const FP_WALL_COLORS = {
+    3:[40,90,170], 4:[45,110,55], 5:[110,108,96], 9:[15,45,95], 11:[35,80,35], 12:[120,118,110], 17:[90,60,60]
+  };
+  const FP_FLOOR_COLOR = [58,90,45];   // màu nền đất/cỏ chung
+  const FP_SKY_TOP = [15,20,45], FP_SKY_BOT = [70,95,150];
+  const FP_RAYS = 90, FP_FOV = Math.PI/3, FP_MAX_DIST = 12*TILE;
+  const fpCv = document.getElementById("fps-canvas");
+  const fpCtx = fpCv ? fpCv.getContext("2d") : null;
+  function castRay(px, py, angle){
+    const dx = Math.cos(angle), dy = Math.sin(angle);
+    let dist = 0, tileType = -1;
+    const step = 4; // độ mịn dò tia — nhỏ hơn thì chính xác hơn nhưng tốn hơn
+    while(dist < FP_MAX_DIST){
+      dist += step;
+      const wx = px + dx*dist, wy = py + dy*dist;
+      const tx = Math.floor(wx/TILE), ty = Math.floor(wy/TILE);
+      if(tx<0||tx>=COLS||ty<0||ty>=ROWS) return {dist, type:17};
+      const t = getTile(ty, tx, map);
+      if(isSolid(t)){ tileType = t; return {dist, type:t}; }
+    }
+    return {dist:FP_MAX_DIST, type:-1};
+  }
+  function renderFPView(){
+    if(!fpCtx || !playerObj) return;
+    const W2 = fpCv.width, H2 = fpCv.height;
+    // Bầu trời (nửa trên) + nền đất (nửa dưới), tô gradient đơn giản
+    const skyGrad = fpCtx.createLinearGradient(0,0,0,H2/2);
+    skyGrad.addColorStop(0, `rgb(${FP_SKY_TOP.join(",")})`);
+    skyGrad.addColorStop(1, `rgb(${FP_SKY_BOT.join(",")})`);
+    fpCtx.fillStyle = skyGrad; fpCtx.fillRect(0,0,W2,H2/2);
+    fpCtx.fillStyle = `rgb(${FP_FLOOR_COLOR.join(",")})`; fpCtx.fillRect(0,H2/2,W2,H2/2);
+    const px=playerObj.pos.x, py=playerObj.pos.y;
+    const colW = W2/FP_RAYS;
+    for(let i=0;i<FP_RAYS;i++){
+      const rayAngle = playerFacing - FP_FOV/2 + (i/FP_RAYS)*FP_FOV;
+      const r = castRay(px,py,rayAngle);
+      // Khử méo góc (fish-eye) bằng cách chiếu khoảng cách lên trục nhìn thẳng
+      const corrected = r.dist * Math.cos(rayAngle-playerFacing);
+      const wallH = Math.min(H2, (TILE*H2*0.7)/Math.max(1,corrected));
+      const shade = Math.max(0.25, 1 - corrected/FP_MAX_DIST);
+      const baseColor = FP_WALL_COLORS[r.type] || [90,90,90];
+      const col = baseColor.map(c=>Math.floor(c*shade));
+      fpCtx.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+      fpCtx.fillRect(i*colW, (H2-wallH)/2, colW+1, wallH);
+    }
+    // La bàn góc nhìn nhỏ ở trên cùng
+    fpCtx.fillStyle = "rgba(0,0,0,0.4)";
+    fpCtx.fillRect(W2/2-40,6,80,14);
+    fpCtx.fillStyle = "#fff"; fpCtx.font="10px monospace"; fpCtx.textAlign="center";
+    const deg = Math.round(((playerFacing*180/Math.PI)+360)%360);
+    fpCtx.fillText(deg+"°", W2/2, 16);
+  }
+  // Điều khiển xoay/di chuyển riêng cho chế độ Góc Nhìn Thứ Nhất
+  // Dùng window._fpCtl để bền vững qua các lần đổi đảo (scene "game" chạy lại nhiều lần)
+  if(!window._fpCtl) window._fpCtl = {turnL:false, turnR:false, fwd:false, back:false};
+  const fpCtl = window._fpCtl;
+  function bindHold(id, key){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const on=()=>fpCtl[key]=true, off=()=>fpCtl[key]=false;
+    el.addEventListener("touchstart",e=>{e.preventDefault();on();},{passive:false});
+    el.addEventListener("touchend",e=>{e.preventDefault();off();},{passive:false});
+    el.addEventListener("mousedown",on); el.addEventListener("mouseup",off); el.addEventListener("mouseleave",off);
+  }
+  if(!window._fpControlsBound){
+    window._fpControlsBound = true;
+    bindHold("fp-turn-left","turnL"); bindHold("fp-turn-right","turnR");
+    bindHold("fp-move-fwd","fwd"); bindHold("fp-move-back","back");
+  }
+  function updateFPControls(dt){
+    if(!fpMode || !playerObj) return;
+    const turnSpeed = 2.2;
+    if(fpCtl.turnL) playerFacing -= turnSpeed*dt;
+    if(fpCtl.turnR) playerFacing += turnSpeed*dt;
+    if(fpCtl.fwd || fpCtl.back){
+      const dir = fpCtl.fwd ? 1 : -1;
+      const spd = 90;
+      const nx = playerObj.pos.x + Math.cos(playerFacing)*spd*dir*dt;
+      const ny = playerObj.pos.y + Math.sin(playerFacing)*spd*dir*dt;
+      const margin=10;
+      if(!isSolid(getTile(Math.floor(playerObj.pos.y/TILE), Math.floor(nx/TILE), map)))
+        playerObj.pos.x = Math.max(margin, Math.min(WORLD_W-margin, nx));
+      if(!isSolid(getTile(Math.floor(ny/TILE), Math.floor(playerObj.pos.x/TILE), map)))
+        playerObj.pos.y = Math.max(margin, Math.min(WORLD_H-margin, ny));
+      try{ updatePlayerParts(playerObj.pos.x, playerObj.pos.y, true); }catch(e){}
+    }
+    renderFPView();
+  }
+  window.toggleFPView = function(){
+    fpMode = !fpMode;
+    const ov = document.getElementById("fps-overlay");
+    if(ov) ov.style.display = fpMode ? "block" : "none";
+    setGameHUDVisible(!fpMode);
+    if(fpMode) showToast("👁️ Góc Nhìn Thứ Nhất — dùng nút xoay/tiến để di chuyển",2200);
+  };
 
   // ─── ENEMIES ─────────────────────────────────────────────────
   const enemyObjs=[];
@@ -4251,6 +4369,7 @@ console.log("🎮 Đang khởi tạo...");
   // ─── UPDATE LOOP ─────────────────────────────────────────────
   k.onUpdate(()=>{
     GS.gameTicks = (GS.gameTicks||0) + 1;
+    updateFPControls(k.dt());
     // Đói system (player)
     // Run every ~30 frames to reduce CPU
     if (GS.gameTicks % 30 === 0) updateĐói(k.dt());
@@ -4273,6 +4392,7 @@ console.log("🎮 Đang khởi tạo...");
       }
       const len = Math.sqrt(mx * mx + my * my);
       if (len > 0) {
+        playerFacing = Math.atan2(my, mx);
         const dx = (mx / len) * SPEED * speedScale * k.dt();
         const dy = (my / len) * SPEED * speedScale * k.dt();
         const margin = 10;
@@ -4293,6 +4413,7 @@ console.log("🎮 Đang khởi tạo...");
     } else if(isMoving&&moveTarget&&playerObj){
       const dx=moveTarget.x-playerObj.pos.x,dy=moveTarget.y-playerObj.pos.y;
       const d=Math.sqrt(dx*dx+dy*dy),spd=120;
+      if(d>2) playerFacing = Math.atan2(dy,dx);
       if(d<spd*k.dt()){playerObj.pos.x=moveTarget.x;playerObj.pos.y=moveTarget.y;isMoving=false;playerObj.moving=false;}
       else{playerObj.pos.x+=(dx/d)*spd*k.dt();playerObj.pos.y+=(dy/d)*spd*k.dt();}
       updatePlayerParts(playerObj.pos.x, playerObj.pos.y, playerObj.moving);
