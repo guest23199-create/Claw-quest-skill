@@ -5851,31 +5851,71 @@ k.scene("arena", ()=>{
   }
   aB.onClick(()=>{ if(autoBattle) stopAutoBattle(); else startAutoBattle(); });
   eB.onClick(()=>{stopAutoBattle();GS.player.hp=php;k.go("game");});
+  const BREACH_ROW = 14; // hàng gần phe người chơi — quái chạm tới đây coi như "lọt phòng tuyến"
   function spw(w){
-    for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}}
+    for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}if(m.numLbl)try{k.destroy(m.numLbl);}catch(e){}if(m.starLbl)try{k.destroy(m.starLbl);}catch(e){}}
     am=[];
     const sr=Math.min(w,5),bh=10+w*8,ba=3+Math.floor(w*1.5),bd=1+Math.floor(w*0.8);
-    const pos=[];
-    const monCount = Math.min(3 + (w - 1), 10); // Wave1=3, Wave2=4, ..., max10
-    for(let i=0;i<monCount;i++){let rx,ry,a2=0;do{rx=3+Math.floor(Math.random()*14);ry=1+Math.floor(Math.random()*9);a2++;}while(pos.some(p=>Math.abs(p.x-rx)+Math.abs(p.y-ry)<3)&&a2<30);pos.push({x:rx,y:ry});}
+    const monCount = Math.min(3 + (w - 1), 10);
     const cl=[[100,200,100],[150,180,80],[200,150,60],[200,80,80],[180,60,180]];
     const co=cl[sr-1]||cl[4];
+    const usedX=[];
     for(let i=0;i<monCount;i++){
       const hp=bh+Math.floor(Math.random()*10),at=ba+Math.floor(Math.random()*3),df=bd;
-      const px=AX+pos[i].x*AT+AT/2,py=AY+pos[i].y*AT+AT/2;
+      let rx,att=0; do{rx=2+Math.floor(Math.random()*(AW-4));att++;}while(usedX.some(x=>Math.abs(x-rx)<2)&&att<20); usedX.push(rx);
+      const px=AX+rx*AT+AT/2, py=AY+AT*0.6; // xuất hiện ở hàng trên cùng, tràn xuống dần
+      const spd=(9+Math.random()*4+w*1.1)*AT/10; // px/giây lao xuống — tăng theo wave
       const o=k.add([k.rect(AT-8,AT-8),k.pos(px,py),k.anchor("center"),k.color(co[0],co[1],co[2]),k.outline(2,k.rgb(255,255,255)),k.z(5),k.area()]);
-      const hb=k.add([k.rect(AT-4,4),k.pos(AX+pos[i].x*AT+2,py-AT/2+2),k.color(51,51,51),k.z(6)]);
-      const hf=k.add([k.rect(AT-4,4),k.pos(AX+pos[i].x*AT+2,py-AT/2+2),k.color(230,51,51),k.z(7)]);
-      k.add([k.text(""+(i+1),{size:11}),k.pos(px,py),k.anchor("center"),k.color(255,255,255),k.z(8)]);
-      k.add([k.text("⭐"+sr,{size:8}),k.pos(AX+pos[i].x*AT+AT/2,py-AT/2-6),k.anchor("center"),k.color(255,215,0),k.z(7)]);
-      const squadHp=squad.reduce((a,s)=>a+s.hp,0);
-      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,target:(php>squadHp||squadHp<=0)?"p":"pe",dead:false});
+      const hb=k.add([k.rect(AT-4,4),k.pos(px-(AT-4)/2,py-AT/2+2),k.color(51,51,51),k.z(6)]);
+      const hf=k.add([k.rect(AT-4,4),k.pos(px-(AT-4)/2,py-AT/2+2),k.color(230,51,51),k.z(7)]);
+      const numLbl=k.add([k.text("👾",{size:12}),k.pos(px,py),k.anchor("center"),k.color(255,255,255),k.z(8)]);
+      const starLbl=k.add([k.text("⭐"+sr,{size:8}),k.pos(px,py-AT/2-6),k.anchor("center"),k.color(255,215,0),k.z(7)]);
+      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,numLbl,starLbl,dead:false,spd});
+    }
+  }
+  // Quái tự động lao xuống mỗi khung hình — chạm hàng phòng tuyến sẽ gây sát thương rồi biến mất (lọt phòng tuyến)
+  function updateArenaWave(dt){
+    if(ago||avic) return;
+    let breached=false;
+    for(const m of am){
+      if(m.dead) continue;
+      m.o.pos.y += m.spd*dt;
+      m.hb.pos.y = m.o.pos.y-AT/2+2; m.hf.pos.y = m.o.pos.y-AT/2+2;
+      m.numLbl.pos = m.o.pos; m.starLbl.pos.x = m.o.pos.x; m.starLbl.pos.y = m.o.pos.y-AT/2-6;
+      if(m.o.pos.y >= AY+BREACH_ROW*AT){
+        // Lọt phòng tuyến — gây sát thương cho người chơi hoặc 1 trợ thủ ngẫu nhiên rồi biến mất khỏi bàn
+        const aliveSquad=squad.filter(s=>s.hp>0);
+        if(aliveSquad.length>0 && (php<=0 || Math.random()<0.6)){
+          const s=aliveSquad[Math.floor(Math.random()*aliveSquad.length)];
+          s.hp=Math.max(0,s.hp-m.atk);
+          showFloating(s.baseX,AY+14*AT,'-'+m.atk,[232,100,50]);
+          chargeAttack(s.obj,s.baseX,s.baseY,m.o.pos.x,AY+13*AT);
+        } else if(php>0){
+          php=Math.max(0,php-m.atk);
+          showFloating(AX+2*AT,AY+14*AT,'-'+m.atk,[255,50,50]);
+          chargeAttack(pIcon,pIconBaseX,pIconBaseY,m.o.pos.x,AY+13*AT);
+        }
+        showToast("👾 Quái lọt phòng tuyến!",900);
+        m.dead=true;
+        try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);k.destroy(m.numLbl);k.destroy(m.starLbl);}catch(e){}
+        breached=true;
+      }
+    }
+    updUI();
+    if(php<=0 && squad.every(s=>s.hp<=0)){ago=true;onDef();return;}
+    if(breached){
+      const rm=am.filter(m=>!m.dead);
+      if(!rm.length){avic=true;onVic();}
     }
   }
   function patk(idx){
     if(ago||avic)return;
     const al=am.filter(m=>!m.dead);if(!al.length)return;
-    if(idx<0||idx>=am.length)idx=am.indexOf(al[0]);
+    if(idx<0||idx>=am.length){
+      // Mặc định nhắm vào con quái gần lọt phòng tuyến nhất (nguy hiểm nhất) thay vì con đầu tiên trong danh sách
+      const closest = al.reduce((a,b)=> (b.o.pos.y>a.o.pos.y ? b : a));
+      idx = am.indexOf(closest);
+    }
     const m=am[idx];if(!m||m.dead)return;
     const d=Math.max(1,GS.player.attack+getEquipStats().atk+abf.pa+Math.floor(Math.random()*4)-m.def);
     m.hp-=d;showFloating(m.o.pos.x,m.o.pos.y-15,'-'+d,[255,50,50]);spawnParticles(m.o.pos.x,m.o.pos.y,3,[255,77,26]);
@@ -5889,35 +5929,10 @@ k.scene("arena", ()=>{
       chargeAttack(s.obj,s.baseX,s.baseY,m.o.pos.x,m.o.pos.y);
       m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
     }
-    if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);}catch(e){}}
+    if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);k.destroy(m.numLbl);k.destroy(m.starLbl);}catch(e){}}
     const rm=am.filter(m=>!m.dead);
     if(!rm.length){avic=true;onVic();return;}
-    enTurn();
-  }
-  function enTurn(){
-    const al=am.filter(m=>!m.dead);
-    for(const m of al){
-      const mHomeX=m.o.pos.x, mHomeY=m.o.pos.y;
-      if(m.target==="p"&&php>0){
-        const ed=Math.max(1,m.atk-(GS.player.defense+getEquipStats().def)+Math.floor(Math.random()*2));
-        php=Math.max(0,php-ed);
-        showFloating(AX+2*AT,AY+14*AT,'-'+ed,[255,50,50]);
-        chargeAttack(m.o,mHomeX,mHomeY,pIconBaseX,pIconBaseY);
-        lungeIcon(pIcon,pIconBaseY);
-      } else {
-        const aliveSquad=squad.filter(s=>s.hp>0);
-        if(aliveSquad.length>0){
-          const s=aliveSquad[Math.floor(Math.random()*aliveSquad.length)];
-          const ed=Math.max(1,m.atk-1+Math.floor(Math.random()*2));
-          s.hp=Math.max(0,s.hp-ed);
-          showFloating(s.baseX,AY+14*AT,'-'+ed,[232,100,50]);
-          chargeAttack(m.o,mHomeX,mHomeY,s.baseX,s.baseY);
-          lungeIcon(s.obj,s.baseY);
-        }
-      }
-    }
     updUI();
-    if(php<=0 && squad.every(s=>s.hp<=0)){ago=true;onDef();}
   }
   function updUI(){
     uHP.text="🧑 HP: "+php+"/"+pmhp;
@@ -5946,7 +5961,7 @@ k.scene("arena", ()=>{
   }
   function onDef(){ek++;uK.text="🧑"+pk+" - "+ek+"👹";if(ek>=2){stopAutoBattle();showToast("💀 Đối thủ thắng 2 kill! Thua trận!",2000);GS.resources.wood+=3;GS.resources.stone+=2;GS.resources.food+=2;GS.player.hp=Math.floor(GS.player.maxHp*0.5);updateHUD();setTimeout(()=>{k.go("game");},2000);return;}showToast("💀 Mất mạng!👹 "+ek+"/2 kills",1500);php=Math.min(pmhp,php+15);for(const s of squad){s.hp=Math.min(s.maxHp,s.hp+15);}GS.player.hp=php;updUI();resetRoundTimer();ago=false;}
   fB.onClick(()=>{if(ago||avic)return;resetRoundTimer();patk(-1);});
-  dB.onClick(()=>{if(ago||avic)return;resetRoundTimer();showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);enTurn();});
+  dB.onClick(()=>{if(ago||avic)return;resetRoundTimer();showToast("🛡️ Phòng thủ! Giảm sát thương.",1000);GS.player.defense+=5;setTimeout(()=>{GS.player.defense-=5;},500);});
   hB.onClick(()=>{
     if(ago||avic)return;
     resetRoundTimer();
@@ -5958,7 +5973,7 @@ k.scene("arena", ()=>{
       for(const s of squad){ const pct=s.maxHp>0?s.hp/s.maxHp:1; if(pct<lowest.pct) lowest={kind:"s",s,pct}; }
       if(lowest.kind==="p"){ php=Math.min(pmhp,php+ha); showFloating(AX+2*AT,AY+14*AT,'+'+ha,[46,204,113]); }
       else { lowest.s.hp=Math.min(lowest.s.maxHp,lowest.s.hp+ha); showFloating(lowest.s.baseX,AY+14*AT,'+'+ha,[232,161,64]); }
-      updUI();const al=am.filter(m=>!m.dead);if(al.length>0)enTurn();
+      updUI();
     }
     else showToast("❌ Hết bình máu! Vào Merchant House quay thưởng.",2000);
   });
@@ -6014,6 +6029,7 @@ k.scene("arena", ()=>{
     });
   }
   k.onUpdate(()=>{
+    updateArenaWave(k.dt());
     if(ago||avic||autoBattle){
       uTimer.text = autoBattle ? "🔥 Auto" : "⏳ --";
       uTimer.color = autoBattle ? k.rgb(230,160,40) : k.rgb(100,100,120);
