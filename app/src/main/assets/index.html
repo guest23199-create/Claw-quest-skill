@@ -5851,10 +5851,13 @@ k.scene("arena", ()=>{
   }
   aB.onClick(()=>{ if(autoBattle) stopAutoBattle(); else startAutoBattle(); });
   eB.onClick(()=>{stopAutoBattle();GS.player.hp=php;k.go("game");});
-  const BREACH_ROW = 14; // hàng gần phe người chơi — quái chạm tới đây coi như "lọt phòng tuyến"
+  const FRONT_ROW = 11; // đúng hàng có vạch vàng ngăn cách — quái tiến tới đây thì dừng lại giao tranh
+  const PREP_TIME = 30; // giây chuẩn bị đầu mỗi wave — quái đứng yên, người chơi sắp xếp/gọi trợ thủ
+  let prepPhase = true, prepTimer = PREP_TIME;
   function spw(w){
     for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}if(m.numLbl)try{k.destroy(m.numLbl);}catch(e){}if(m.starLbl)try{k.destroy(m.starLbl);}catch(e){}}
     am=[];
+    prepPhase = true; prepTimer = PREP_TIME;
     const sr=Math.min(w,5),bh=10+w*8,ba=3+Math.floor(w*1.5),bd=1+Math.floor(w*0.8);
     const monCount = Math.min(3 + (w - 1), 10);
     const cl=[[100,200,100],[150,180,80],[200,150,60],[200,80,80],[180,60,180]];
@@ -5863,53 +5866,56 @@ k.scene("arena", ()=>{
     for(let i=0;i<monCount;i++){
       const hp=bh+Math.floor(Math.random()*10),at=ba+Math.floor(Math.random()*3),df=bd;
       let rx,att=0; do{rx=2+Math.floor(Math.random()*(AW-4));att++;}while(usedX.some(x=>Math.abs(x-rx)<2)&&att<20); usedX.push(rx);
-      const px=AX+rx*AT+AT/2, py=AY+AT*0.6; // xuất hiện ở hàng trên cùng, tràn xuống dần
-      const spd=(9+Math.random()*4+w*1.1)*AT/10; // px/giây lao xuống — tăng theo wave
+      const px=AX+rx*AT+AT/2, py=AY+AT*0.6; // xuất hiện ở hàng trên cùng, tiến tới hàng ranh giới rồi dừng
+      const spd=(9+Math.random()*4+w*1.1)*AT/10; // px/giây tiến quân — tăng theo wave
       const o=k.add([k.rect(AT-8,AT-8),k.pos(px,py),k.anchor("center"),k.color(co[0],co[1],co[2]),k.outline(2,k.rgb(255,255,255)),k.z(5),k.area()]);
       const hb=k.add([k.rect(AT-4,4),k.pos(px-(AT-4)/2,py-AT/2+2),k.color(51,51,51),k.z(6)]);
       const hf=k.add([k.rect(AT-4,4),k.pos(px-(AT-4)/2,py-AT/2+2),k.color(230,51,51),k.z(7)]);
       const numLbl=k.add([k.text("👾",{size:12}),k.pos(px,py),k.anchor("center"),k.color(255,255,255),k.z(8)]);
       const starLbl=k.add([k.text("⭐"+sr,{size:8}),k.pos(px,py-AT/2-6),k.anchor("center"),k.color(255,215,0),k.z(7)]);
-      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,numLbl,starLbl,dead:false,spd});
+      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,numLbl,starLbl,dead:false,spd,atFront:false,atkCd:1+Math.random()});
     }
   }
-  // Quái tự động lao xuống mỗi khung hình — chạm hàng phòng tuyến sẽ gây sát thương rồi biến mất (lọt phòng tuyến)
+  // Quái tiến quân tới đúng hàng ranh giới rồi dừng lại — 2 phe giao tranh liên tục tại đó cho tới khi 1 bên gục
   function updateArenaWave(dt){
     if(ago||avic) return;
-    let breached=false;
+    // Pha chuẩn bị đầu wave: quái đứng yên, cho người chơi thời gian sắp xếp/gọi trợ thủ
+    if(prepPhase){
+      prepTimer -= dt;
+      if(prepTimer<=0){ prepPhase=false; showToast("⚔️ Giao tranh bắt đầu!",1500); }
+      return;
+    }
     for(const m of am){
       if(m.dead) continue;
-      m.o.pos.y += m.spd*dt;
+      if(!m.atFront){
+        m.o.pos.y += m.spd*dt;
+        if(m.o.pos.y >= AY+FRONT_ROW*AT){ m.o.pos.y = AY+FRONT_ROW*AT; m.atFront = true; }
+      } else {
+        // Đã tới hàng ranh giới — đứng tại chỗ giao tranh, định kỳ gây sát thương cho phe người chơi
+        m.atkCd -= dt;
+        if(m.atkCd <= 0){
+          m.atkCd = 1.6 + Math.random()*0.6;
+          const aliveSquad=squad.filter(s=>s.hp>0);
+          if(aliveSquad.length>0 && (php<=0 || Math.random()<0.6)){
+            const s=aliveSquad[Math.floor(Math.random()*aliveSquad.length)];
+            s.hp=Math.max(0,s.hp-m.atk);
+            showFloating(s.baseX,AY+14*AT,'-'+m.atk,[232,100,50]);
+            chargeAttack(m.o,m.o.pos.x,m.o.pos.y,s.baseX,s.baseY);
+          } else if(php>0){
+            php=Math.max(0,php-m.atk);
+            showFloating(AX+2*AT,AY+14*AT,'-'+m.atk,[255,50,50]);
+            chargeAttack(m.o,m.o.pos.x,m.o.pos.y,pIconBaseX,pIconBaseY);
+          }
+          updUI();
+        }
+      }
       m.hb.pos.y = m.o.pos.y-AT/2+2; m.hf.pos.y = m.o.pos.y-AT/2+2;
       m.numLbl.pos = m.o.pos; m.starLbl.pos.x = m.o.pos.x; m.starLbl.pos.y = m.o.pos.y-AT/2-6;
-      if(m.o.pos.y >= AY+BREACH_ROW*AT){
-        // Lọt phòng tuyến — gây sát thương cho người chơi hoặc 1 trợ thủ ngẫu nhiên rồi biến mất khỏi bàn
-        const aliveSquad=squad.filter(s=>s.hp>0);
-        if(aliveSquad.length>0 && (php<=0 || Math.random()<0.6)){
-          const s=aliveSquad[Math.floor(Math.random()*aliveSquad.length)];
-          s.hp=Math.max(0,s.hp-m.atk);
-          showFloating(s.baseX,AY+14*AT,'-'+m.atk,[232,100,50]);
-          chargeAttack(s.obj,s.baseX,s.baseY,m.o.pos.x,AY+13*AT);
-        } else if(php>0){
-          php=Math.max(0,php-m.atk);
-          showFloating(AX+2*AT,AY+14*AT,'-'+m.atk,[255,50,50]);
-          chargeAttack(pIcon,pIconBaseX,pIconBaseY,m.o.pos.x,AY+13*AT);
-        }
-        showToast("👾 Quái lọt phòng tuyến!",900);
-        m.dead=true;
-        try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);k.destroy(m.numLbl);k.destroy(m.starLbl);}catch(e){}
-        breached=true;
-      }
     }
-    updUI();
     if(php<=0 && squad.every(s=>s.hp<=0)){ago=true;onDef();return;}
-    if(breached){
-      const rm=am.filter(m=>!m.dead);
-      if(!rm.length){avic=true;onVic();}
-    }
   }
   function patk(idx){
-    if(ago||avic)return;
+    if(ago||avic||prepPhase)return;
     const al=am.filter(m=>!m.dead);if(!al.length)return;
     if(idx<0||idx>=am.length){
       // Mặc định nhắm vào con quái gần lọt phòng tuyến nhất (nguy hiểm nhất) thay vì con đầu tiên trong danh sách
@@ -6030,6 +6036,11 @@ k.scene("arena", ()=>{
   }
   k.onUpdate(()=>{
     updateArenaWave(k.dt());
+    if(prepPhase){
+      uTimer.text = "🛡️ Chuẩn bị: "+Math.ceil(Math.max(0,prepTimer))+"s";
+      uTimer.color = k.rgb(95,224,137);
+      return;
+    }
     if(ago||avic||autoBattle){
       uTimer.text = autoBattle ? "🔥 Auto" : "⏳ --";
       uTimer.color = autoBattle ? k.rgb(230,160,40) : k.rgb(100,100,120);
