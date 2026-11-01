@@ -22,7 +22,8 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        // Everything is bundled in assets; do not attempt network requests.
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient());

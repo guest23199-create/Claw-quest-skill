@@ -1673,14 +1673,17 @@ function invItemClick(id){
   if(!id) return;
   const info=ITEMS[id];
   if(!info) return;
-  // Seed: enter planting mode
-  if(id === "seed"){
-    if(!hasInvItem("seed",1)){showToast("❌ No seeds!",1000);return;}
+  // Any seed bag: enter planting mode and remember the selected seed type.
+  // Older saves may still contain the generic `seed` item, so keep supporting it.
+  if(info.type === "seed"){
+    if(!hasInvItem(id,1)){showToast("❌ Không còn hạt giống này!",1000);return;}
     // Clear any existing modes
     GS.buildMode = null;
+    GS.digMode = false;
+    GS.activeSeedType = id;
     GS.plantMode = !GS.plantMode;
     if(GS.plantMode){
-      showToast("🌱 Plant mode ON — click a farm plot (brown tilled soil) to plant seed!",2500);
+      showToast(`🌱 Đã chọn ${info.name||"hạt giống"} — bấm vào ô đất nâu để gieo!`,2500);
     }else{
       showToast("🌱 Plant mode OFF",1000);
     }
@@ -1774,6 +1777,7 @@ function equipItem(id){
     showToast("❌ Item not found!");
   }
   renderInvGrid(); renderEquipPanel(); renderStatsDisplay(); updateHUD();
+  window.renderPlayerEquipment?.();
 }
 
 function unequipItem(slotKey){
@@ -1785,6 +1789,7 @@ function unequipItem(slotKey){
   const info=ITEMS[item.id||item];
   showToast(`🔙 Unequipped ${info?.icon||""} ${info?.name||item}`);
   renderInvGrid(); renderEquipPanel(); renderStatsDisplay(); updateHUD();
+  window.renderPlayerEquipment?.();
 }
 
 function renderEquipPanel(){
@@ -2561,6 +2566,7 @@ window.quickPlant = function(){
   } catch(e){}
 
   const seedDefs = [
+    {id:"seed",        icon:"🌰", label:"Hạt Giống 🌱", sub:"Hạt mặc định"},
     {id:"seed_orange", icon:"🟠", label:"Hạt Cam 🍊",  sub:"3🍎 | ~45 giây"},
     {id:"seed_melon",  icon:"🔵", label:"Hạt Dưa 🍈",  sub:"4🍎 | ~60 giây"},
     {id:"seed_veggie", icon:"🟢", label:"Hạt Rau 🥬",  sub:"2🍎 | ~30 giây (nhanh nhất)"},
@@ -3346,61 +3352,63 @@ console.log("🎮 Đang khởi tạo...");
     ft.onUpdate(()=>{life+=k.dt();ft.pos.y-=30*k.dt();ft.opacity=Math.max(0,1-life/0.8);if(life>0.8)k.destroy(ft);});
   }
 
-  // ─═══ PLAYER — Humanoid/Cat with Green Hat (main character) ═══──
+  // ─═══ PLAYER — Yellow avatar inspired by the supplied reference ─══──
   const sx=Math.floor(COLS/2)*TILE+TILE/2,sy=Math.floor(ROWS/2)*TILE+TILE/2;
 
   function getPlayer(){return playerObj;}
 
-  // Colors
-  const SKIN_COLOR=k.color(255,220,180);
-  const SHIRT_COLOR=k.color(200,50,50);
-  const PANTS_COLOR=k.color(50,80,180);
-  const HAT_COLOR=k.color(139,90,43);
-  const HAT_DARK=k.color(100,60,30);
-  const DARK_OUTLINE=k.color(0,0,0);
+  const AVATAR_YELLOW=k.color(238,195,0);
+  const AVATAR_LIGHT=k.color(255,218,20);
+  const AVATAR_DARK=k.color(176,126,0);
+  const DARK_OUTLINE=k.color(52,42,12);
 
-  // Body — Red shirt (top half)
+  // Tall yellow body, matching the rectangular avatar silhouette.
   playerObj=k.add([
-    k.rect(18,14),k.pos(sx-9,sy+4),SHIRT_COLOR,
+    k.rect(18,28),k.pos(sx-9,sy+4),AVATAR_YELLOW,
     k.outline(2,DARK_OUTLINE),k.z(10),k.area(),"player",
     {moving:false},
   ]);
 
-  // Pants — Blue (bottom half)
+  // Legs and arms use darker yellow facets so the avatar remains readable while moving.
   const pPants=k.add([
-    k.rect(18,10),k.pos(sx-9,sy+16),PANTS_COLOR,
+    k.rect(18,8),k.pos(sx-9,sy+30),AVATAR_DARK,
     k.outline(2,DARK_OUTLINE),k.z(9),
   ]);
+  const pArmL=k.add([k.rect(6,22),k.pos(sx-14,sy+9),AVATAR_YELLOW,k.outline(2,DARK_OUTLINE),k.z(10)]);
+  const pArmR=k.add([k.rect(6,22),k.pos(sx+8,sy+9),AVATAR_YELLOW,k.outline(2,DARK_OUTLINE),k.z(10)]);
 
-  // Đầu (circle)
-  const pĐầu=k.add([k.circle(10),k.pos(sx,sy-8),SKIN_COLOR,k.outline(2,DARK_OUTLINE),k.z(11)]);
+  // Head is a slightly rounded-looking pixel rectangle, not a human face.
+  const pĐầu=k.add([k.rect(18,20),k.pos(sx,sy-8),AVATAR_YELLOW,k.outline(2,DARK_OUTLINE),k.z(11)]);
 
-  // Cowboy hat (brown, wide brim)
-  // Hat crown (triangle)
-  const pHat=k.add([k.polygon([k.vec2(sx-12,sy-14),k.vec2(sx+12,sy-14),k.vec2(sx,sy-32)]),HAT_COLOR,k.outline(2,HAT_DARK),k.z(13)]);
-  // Hat brim (wide rectangle)
-  const pHatBrim=k.add([k.rect(30,4),k.pos(sx-15,sy-14),HAT_COLOR,k.outline(1,HAT_DARK),k.z(14)]);
-  // Hat band (red)
-  const pHatBand=k.add([k.rect(18,3),k.pos(sx-9,sy-18),k.color(200,50,50),k.z(14)]);
+  // Default headwear is hidden; it becomes visible as a helmet/hat when equipped.
+  const pHat=k.add([k.rect(20,5),k.pos(sx,sy-19),AVATAR_DARK,k.outline(1,DARK_OUTLINE),k.z(13),k.opacity(0)]);
+  const pHatBrim=k.add([k.rect(26,3),k.pos(sx,sy-16),AVATAR_DARK,k.z(14),k.opacity(0)]);
+  const pHatBand=k.add([k.rect(14,2),k.pos(sx,sy-14),AVATAR_LIGHT,k.z(14),k.opacity(0)]);
 
   // Eyes (white with black pupils)
-  const pEyeL=k.add([k.circle(3),k.pos(sx-5,sy-10),k.color(255,255,255),k.outline(1,k.color(160,160,160)),k.z(12)]);
-  const pEyeR=k.add([k.circle(3),k.pos(sx+5,sy-10),k.color(255,255,255),k.outline(1,k.color(160,160,160)),k.z(12)]);
-  const pPupilL=k.add([k.circle(1.5),k.pos(sx-4,sy-9),k.color(0,0,0),k.z(13)]);
-  const pPupilR=k.add([k.circle(1.5),k.pos(sx+6,sy-9),k.color(0,0,0),k.z(13)]);
+  const pEyeL=k.add([k.rect(3,3),k.pos(sx-5,sy-10),k.color(35,28,0),k.z(12)]);
+  const pEyeR=k.add([k.rect(3,3),k.pos(sx+5,sy-10),k.color(35,28,0),k.z(12)]);
+  const pPupilL=k.add([k.rect(1,1),k.pos(sx-4,sy-9),k.color(0,0,0),k.z(13)]);
+  const pPupilR=k.add([k.rect(1,1),k.pos(sx+6,sy-9),k.color(0,0,0),k.z(13)]);
 
   // Nose (small pink)
-  const pNose=k.add([k.circle(1.5),k.pos(sx,sy-6),k.color(255,128,153),k.z(12)]);
+  const pNose=k.add([k.rect(2,2),k.pos(sx,sy-6),AVATAR_DARK,k.z(12)]);
 
   // Mouth (tiny curve)
-  const pMouth=k.add([k.rect(6,1),k.pos(sx-3,sy-4),k.color(180,80,80),k.opacity(0.6),k.z(12)]);
+  const pMouth=k.add([k.rect(7,3),k.pos(sx,sy-3),k.color(248,248,220),k.outline(1,k.color(110,90,0)),k.z(12)]);
+
+  // Equipment overlays. They are hidden until the corresponding slot is equipped.
+  const pArmor=k.add([k.rect(14,12),k.pos(sx,sy+8),k.color(120,150,180),k.outline(1,DARK_OUTLINE),k.z(12),k.opacity(0)]);
+  const pCape=k.add([k.polygon([k.vec2(sx-10,sy+3),k.vec2(sx+10,sy+3),k.vec2(sx+13,sy+30),k.vec2(sx-13,sy+30)]),k.color(80,40,150),k.outline(1,DARK_OUTLINE),k.z(8),k.opacity(0)]);
+  const pWeapon=k.add([k.text("",{size:15}),k.pos(sx+14,sy+10),k.z(15),k.opacity(0)]);
+  const pShield=k.add([k.text("",{size:14}),k.pos(sx-18,sy+12),k.z(15),k.opacity(0)]);
 
   // ─═══ PLAYER HP BAR (below player character) ═══──
   const pHpBg=k.add([k.rect(22,4),k.pos(sx-11,sy+24),k.color(51,51,51),k.z(10)]);
   const pHpFill=k.add([k.rect(22,4),k.pos(sx-11,sy+24),k.color(46,204,113),k.z(11)]);
 
   // Player parts list for updating positions
-  const playerParts=[pĐầu,pHat,pHatBrim,pHatBand,pEyeL,pEyeR,pPupilL,pPupilR,pNose,pMouth,pPants];
+  const playerParts=[pĐầu,pHat,pHatBrim,pHatBand,pEyeL,pEyeR,pPupilL,pPupilR,pNose,pMouth,pPants,pArmL,pArmR,pArmor,pCape,pWeapon,pShield];
   // Set initial camera to follow player
   k.camPos(playerObj.pos.x, playerObj.pos.y);
 
@@ -3597,7 +3605,10 @@ console.log("🎮 Đang khởi tạo...");
     pĐầu.pos = k.vec2(px, bobY);
     pHat.pos = k.vec2(px, bobY - 2); pHatBrim.pos = k.vec2(px - 15, bobY - 8);
     pHatBand.pos = k.vec2(px - 9, bobY - 12);
-    pPants.pos = k.vec2(px - 9, py + 16);
+    pPants.pos = k.vec2(px - 9, py + 30);
+    pArmL.pos = k.vec2(px - 14, py + 9); pArmR.pos = k.vec2(px + 8, py + 9);
+    pArmor.pos = k.vec2(px, py + 12); pCape.pos = k.vec2(px, py + 18);
+    pWeapon.pos = k.vec2(px + 14, py + 10); pShield.pos = k.vec2(px - 18, py + 12);
     pEyeL.pos = k.vec2(px - 5, bobY - 2); pEyeR.pos = k.vec2(px + 5, bobY - 2);
     pPupilL.pos = k.vec2(px - 4, bobY - 1); pPupilR.pos = k.vec2(px + 6, bobY - 1);
     pNose.pos = k.vec2(px, bobY + 2);
@@ -3616,7 +3627,24 @@ console.log("🎮 Đang khởi tạo...");
     pEyeL.z = baseZ + 3; pEyeR.z = baseZ + 3; pNose.z = baseZ + 3; pMouth.z = baseZ + 3;
     pHat.z = baseZ + 4; pPupilL.z = baseZ + 4; pPupilR.z = baseZ + 4;
     pHatBrim.z = baseZ + 5; pHatBand.z = baseZ + 5;
+    pArmL.z = baseZ + 1; pArmR.z = baseZ + 1;
+    pCape.z = baseZ - 1; pArmor.z = baseZ + 3;
+    pWeapon.z = baseZ + 6; pShield.z = baseZ + 6;
   }
+
+  function renderPlayerEquipment(){
+    const eq=GS.player.equipment||{};
+    const itemOf=(slot)=>{const v=eq[slot];return v?ITEMS[v.id||v]:null;};
+    const head=itemOf("head"), chest=itemOf("chest"), weapon=itemOf("weapon"), offhand=itemOf("offhand"), accessory=itemOf("accessory");
+    pHat.opacity=head?1:0; pHatBrim.opacity=head?1:0; pHatBand.opacity=head?1:0;
+    if(head){pHat.color=head.id==="helmet"?k.rgb(115,135,155):k.rgb(139,90,43);pHatBrim.color=pHat.color;}
+    pArmor.opacity=chest?0.9:0; pArmor.color=chest?.id==="chestplate"?k.rgb(125,145,170):k.rgb(200,70,70);
+    pCape.opacity=accessory?.id==="cape"?0.9:0;
+    pWeapon.text=weapon?weapon.icon:""; pWeapon.opacity=weapon?1:0;
+    pShield.text=offhand?offhand.icon:""; pShield.opacity=offhand?1:0;
+  }
+  window.renderPlayerEquipment=renderPlayerEquipment;
+  renderPlayerEquipment();
 
   // ─── CONTINUOUS MOVEMENT (Keyboard + D-pad) ────────
   const SPEED = 150; // pixels per second
@@ -3717,6 +3745,7 @@ console.log("🎮 Đang khởi tạo...");
   // Click handler
   k.onMousePress(()=>{
     const pos = k.mousePos();
+    setTargetTile(pos);
     if(window._clickConsumed){window._clickConsumed=false;return;}
     // ─── ƯU TIÊN CHẠM PEBBLE CREW ─────────────────────────────────
     // Chạm trúng 1 Pebble trợ thủ trên bản đồ → mở menu giao việc ngay, không rơi xuống xây/đào
@@ -3787,7 +3816,11 @@ console.log("🎮 Đang khởi tạo...");
       }
       const tt=getTile(tiy, tix, map);
       if(tt===14){
-        const seedId = GS.activeSeedType||"seed_orange";
+        // If the previously selected seed was consumed or is unavailable,
+        // automatically use the first seed still present in the inventory.
+        const seedIds = [GS.activeSeedType,"seed_orange","seed_melon","seed_veggie","seed"];
+        const seedId = seedIds.find(s=>s && hasInvItem(s,1));
+        if(!seedId){showToast("❌ Bạn không còn hạt giống nào.",1500);GS.plantMode=false;return;}
         if(!hasInvItem(seedId,1)){showToast("❌ Hết hạt! Chế tạo thêm.");GS.plantMode=false;return;}
         const fp=getFarmPlot(tix,tiy);
         if(fp.planted){showToast("❌ Ô này đã có cây rồi!",1000);return;}
@@ -3843,6 +3876,7 @@ console.log("🎮 Đang khởi tạo...");
   });
 
   k.onMouseMove((pos)=>{
+    setTargetTile(pos);
     if(GS.buildMode) updateGhost(pos);
   });
   // Escape key or long-press cancels build/dig/plant mode
@@ -3853,9 +3887,11 @@ console.log("🎮 Đang khởi tạo...");
       showToast("✅ Đã hủy xây dựng", 800);
     } else if (GS.digMode) {
       GS.digMode = false;
+      _targetTile=null;
       showToast("🪓 Đã hủy đào đất", 800);
     } else if (GS.plantMode) {
       GS.plantMode = false;
+      _targetTile=null;
       showToast("🌱 Đã hủy trồng cây", 800);
     }
   });
@@ -3956,6 +3992,22 @@ console.log("🎮 Đang khởi tạo...");
   const _farmPlots = idata.farmPlots;
   let _cropVisuals = {}; // "x,y" → array of kaboom objs
   let _currentFarmTile = null;
+  let _targetTile = null;
+
+  function setTargetTile(pos){
+    if(!pos || (!GS.digMode && !GS.plantMode)){ _targetTile=null; return; }
+    const tx=Math.floor(pos.x/TILE), ty=Math.floor(pos.y/TILE);
+    _targetTile=(tx>=0&&tx<COLS&&ty>=0&&ty<ROWS)?{tx,ty}:null;
+  }
+
+  function targetTileIsValid(){
+    if(!_targetTile) return false;
+    const {tx,ty}=_targetTile;
+    const tt=getTile(ty,tx,map);
+    if(GS.digMode) return [0,1,8,10,13].includes(tt) && !idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty);
+    if(GS.plantMode) return tt===14 && !getFarmPlot(tx,ty).planted;
+    return false;
+  }
 
   function getFarmPlot(tx,ty){
     const k=tx+","+ty;
@@ -4871,6 +4923,13 @@ console.log("🎮 Đang khởi tạo...");
                 }
               }
             }
+            // Low-poly terrain facets add the angular earth look from the reference.
+            const grassSeed=(x*29+y*47)%9;
+            const grassFacet=(pts,col,op)=>k.drawPolygon({pts:pts.map(p=>k.vec2(px+p[0],py+p[1])),color:k.rgb(col[0],col[1],col[2]),opacity:op,z:3.2});
+            grassFacet([[0,18],[14,4],[s-3,9],[s,25],[20,30]],[98,126,45],0.28);
+            grassFacet([[0,31],[20,26],[s,20],[s,s],[8,s]],[35,75,27],0.3);
+            grassFacet([[s-18,2],[s,8],[s-8,18],[s-25,13]],[145,157,65],0.2);
+            if(grassSeed%3===0) grassFacet([[5,8],[12,5],[18,10],[12,15]],[178,174,72],0.25);
             // Per-tile block edge shading (bottom-right darker, top-left lighter) — mimics stacked/offset block look
             k.drawRect({ pos: k.vec2(px, py + s - 3), width: s, height: 3, color: k.rgb(20, 60, 12), opacity: 0.35 });
             k.drawRect({ pos: k.vec2(px + s - 3, py), width: 3, height: s, color: k.rgb(20, 60, 12), opacity: 0.25 });
@@ -5016,6 +5075,24 @@ console.log("🎮 Đang khởi tạo...");
             k.drawRect({ pos: k.vec2(px, py), width: s, height: s/2, color: k.rgb(58, 114, 30), opacity: 0.3 });
             break;
 
+          case 14: // Farm plot — clearly visible brown tilled soil
+            // Low-poly soil: layered irregular planes, inspired by the reference image.
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(105, 78, 39), z: 3 });
+            const soilSeed=(x*37+y*61)%11;
+            const soilPoly=(pts,col,op=0.7)=>k.drawPolygon({pts:pts.map(p=>k.vec2(px+p[0],py+p[1])),color:k.rgb(col[0],col[1],col[2]),opacity:op,z:3});
+            soilPoly([[0,10],[18,2],[s-4,7],[s,25],[s-18,31],[5,27]],[137,101,54],0.72);
+            soilPoly([[0,31],[s-18,25],[s,38],[s-7,s],[16,s-4]],[78,58,31],0.72);
+            soilPoly([[7,18],[28,12],[45,17],[37,27],[15,29]],[157,119,63],0.5);
+            soilPoly([[s-23,5],[s-2,12],[s-8,23],[s-28,17]],[86,65,35],0.55);
+            // Soft angular furrows retain the clear planting-grid identity.
+            for (let furrow=1;furrow<=3;furrow++) {
+              const fy=py+furrow*(s/4)+(soilSeed%3-1);
+              k.drawLine({p1:k.vec2(px+4,fy),p2:k.vec2(px+s-4,fy-2),width:2,color:k.rgb(68,45,24),opacity:0.7,z:4});
+            }
+            k.drawLine({p1:k.vec2(px+2,py+2),p2:k.vec2(px+s-3,py+2),width:2,color:k.rgb(188,143,76),opacity:0.65,z:4});
+            k.drawLine({p1:k.vec2(px+2,py+s-2),p2:k.vec2(px+s-2,py+s-2),width:3,color:k.rgb(55,38,22),opacity:0.8,z:4});
+            break;
+
           case 15: // Palm tree
             k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(50, 120, 28), z: 3 });
             try { k.drawSprite({ sprite: "palm_tree_sprite", pos: k.vec2(px, py), width: s, height: s, z: 4 }); }
@@ -5078,7 +5155,7 @@ console.log("🎮 Đang khởi tạo...");
           0: [12, 46, 9], 1: [129, 118, 81], 2: [34, 77, 19], 3: [12, 53, 92],
           4: [30, 40, 20], 5: [71, 71, 77], 6: [137, 115, 76], 7: [75, 48, 22],
           8: [29, 69, 15], 9: [6, 24, 54], 10: [34, 77, 19], 11: [9, 36, 6],
-          12: [36, 32, 36], 13: [38, 70, 22], 15: [34, 77, 19], 16: [95, 50, 36], 17: [60, 46, 32]
+          12: [36, 32, 36], 13: [38, 70, 22], 14: [72, 42, 21], 15: [34, 77, 19], 16: [95, 50, 36], 17: [60, 46, 32]
         };
         // Only check up-neighbor (simplified)
         if (y > 0 && getTile(y - 1, x, map) !== t) {
@@ -5086,6 +5163,19 @@ console.log("🎮 Đang khởi tạo...");
           k.drawRect({ pos: k.vec2(px, py), width: s, height: 1.5, color: k.rgb(ec[0], ec[1], ec[2]), opacity: 0.4 });
         }
       }
+    }
+
+    // Direction cursor: green = valid target, red = invalid target.
+    if(_targetTile && (GS.digMode || GS.plantMode)){
+      const tx=_targetTile.tx, ty=_targetTile.ty;
+      const valid=targetTileIsValid();
+      const c=valid ? k.rgb(70,220,100) : k.rgb(240,70,70);
+      const qx=tx*TILE, qy=ty*TILE;
+      k.drawRect({pos:k.vec2(qx+2,qy+2),width:TILE-4,height:TILE-4,color:c,opacity:0.22,z:30});
+      k.drawLine({p1:k.vec2(qx+2,qy+2),p2:k.vec2(qx+TILE-2,qy+2),width:3,color:c,opacity:0.95,z:31});
+      k.drawLine({p1:k.vec2(qx+2,qy+TILE-2),p2:k.vec2(qx+TILE-2,qy+TILE-2),width:3,color:c,opacity:0.95,z:31});
+      k.drawLine({p1:k.vec2(qx+2,qy+2),p2:k.vec2(qx+2,qy+TILE-2),width:3,color:c,opacity:0.95,z:31});
+      k.drawLine({p1:k.vec2(qx+TILE-2,qy+2),p2:k.vec2(qx+TILE-2,qy+TILE-2),width:3,color:c,opacity:0.95,z:31});
     }
   });
 
@@ -5855,7 +5945,7 @@ k.scene("arena", ()=>{
   const PREP_TIME = 30; // giây chuẩn bị đầu mỗi wave — quái đứng yên, người chơi sắp xếp/gọi trợ thủ
   let prepPhase = true, prepTimer = PREP_TIME;
   function spw(w){
-    for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}if(m.numLbl)try{k.destroy(m.numLbl);}catch(e){}if(m.starLbl)try{k.destroy(m.starLbl);}catch(e){}}
+    for(const m of am){try{k.destroy(m.o);}catch(e){}if(m.hb)try{k.destroy(m.hb);}catch(e){}if(m.hf)try{k.destroy(m.hf);}catch(e){}if(m.hpLbl)try{k.destroy(m.hpLbl);}catch(e){}if(m.numLbl)try{k.destroy(m.numLbl);}catch(e){}if(m.starLbl)try{k.destroy(m.starLbl);}catch(e){}}
     am=[];
     prepPhase = true; prepTimer = PREP_TIME;
     const sr=Math.min(w,5),bh=10+w*8,ba=3+Math.floor(w*1.5),bd=1+Math.floor(w*0.8);
@@ -5871,9 +5961,10 @@ k.scene("arena", ()=>{
       const o=k.add([k.rect(AT-8,AT-8),k.pos(px,py),k.anchor("center"),k.color(co[0],co[1],co[2]),k.outline(2,k.rgb(255,255,255)),k.z(5),k.area()]);
       const hb=k.add([k.rect(AT-4,4),k.pos(px-(AT-4)/2,py-AT/2+2),k.color(51,51,51),k.z(6)]);
       const hf=k.add([k.rect(AT-4,4),k.pos(px-(AT-4)/2,py-AT/2+2),k.color(230,51,51),k.z(7)]);
+      const hpLbl=k.add([k.text(hp+"/"+hp,{size:7}),k.pos(px,py-AT/2-15),k.anchor("center"),k.color(255,220,220),k.z(9)]);
       const numLbl=k.add([k.text("👾",{size:12}),k.pos(px,py),k.anchor("center"),k.color(255,255,255),k.z(8)]);
       const starLbl=k.add([k.text("⭐"+sr,{size:8}),k.pos(px,py-AT/2-6),k.anchor("center"),k.color(255,215,0),k.z(7)]);
-      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,numLbl,starLbl,dead:false,spd,atFront:false,atkCd:1+Math.random()});
+      am.push({o,hp,maxHp:hp,atk:at,def:df,star:sr,hb,hf,hpLbl,numLbl,starLbl,dead:false,spd,atFront:false,atkCd:1+Math.random()});
     }
   }
   // Quái tiến quân tới đúng hàng ranh giới rồi dừng lại — 2 phe giao tranh liên tục tại đó cho tới khi 1 bên gục
@@ -5910,6 +6001,7 @@ k.scene("arena", ()=>{
         }
       }
       m.hb.pos.y = m.o.pos.y-AT/2+2; m.hf.pos.y = m.o.pos.y-AT/2+2;
+      m.hpLbl.pos.x=m.o.pos.x; m.hpLbl.pos.y=m.o.pos.y-AT/2-15;
       m.numLbl.pos = m.o.pos; m.starLbl.pos.x = m.o.pos.x; m.starLbl.pos.y = m.o.pos.y-AT/2-6;
     }
     if(php<=0 && squad.every(s=>s.hp<=0)){ago=true;onDef();return;}
@@ -5925,6 +6017,8 @@ k.scene("arena", ()=>{
     const m=am[idx];if(!m||m.dead)return;
     const d=Math.max(1,GS.player.attack+getEquipStats().atk+abf.pa+Math.floor(Math.random()*4)-m.def);
     m.hp-=d;showFloating(m.o.pos.x,m.o.pos.y-15,'-'+d,[255,50,50]);spawnParticles(m.o.pos.x,m.o.pos.y,3,[255,77,26]);
+    m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4)); m.hpLbl.text=Math.max(0,m.hp)+"/"+m.maxHp;
+    m.o.color=k.rgb(255,255,255); setTimeout(()=>{if(m.o.exists()&&!m.dead)m.o.color=k.rgb(100,200,100);},100);
     chargeAttack(pIcon,pIconBaseX,pIconBaseY,m.o.pos.x,m.o.pos.y);
     m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
     // Toàn bộ trợ thủ còn sống trong đội đều ra đòn cùng lượt
@@ -5933,9 +6027,9 @@ k.scene("arena", ()=>{
       const sd=Math.max(1,s.atk+Math.floor(Math.random()*3)-Math.floor(m.def*0.5));
       m.hp-=sd;showFloating(m.o.pos.x,m.o.pos.y+10,'-'+sd+s.icon,[232,161,64]);
       chargeAttack(s.obj,s.baseX,s.baseY,m.o.pos.x,m.o.pos.y);
-      m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4));
+      m.hf.width=Math.max(0,(m.hp/m.maxHp)*(AT-4)); m.hpLbl.text=Math.max(0,m.hp)+"/"+m.maxHp;
     }
-    if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);k.destroy(m.numLbl);k.destroy(m.starLbl);}catch(e){}}
+    if(m.hp<=0){m.dead=true;spawnParticles(m.o.pos.x,m.o.pos.y,8,[255,200,50]);try{k.destroy(m.o);k.destroy(m.hb);k.destroy(m.hf);k.destroy(m.hpLbl);k.destroy(m.numLbl);k.destroy(m.starLbl);}catch(e){}}
     const rm=am.filter(m=>!m.dead);
     if(!rm.length){avic=true;onVic();return;}
     updUI();
