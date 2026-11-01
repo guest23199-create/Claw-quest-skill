@@ -606,6 +606,10 @@ const ENEMY_TYPES = {
   sunken_temple: {name:"Coral Horror", hp:38,c:[64,200,180],  spd:22, dmg:7, xp:16, drops:{wood:0,stone:2,food:1,gold:3}},
   golden_plains: {name:"Savannah Lion",hp:32,c:[230,180,51],  spd:30, dmg:6, xp:14, drops:{wood:1,stone:1,food:2,gold:2}},
 };
+const SPECIAL_CREATURES = [
+  {name:"Nhánh Chuột sóc", hp:22, c:[139,118,103], spd:23, dmg:3, xp:9, drops:{wood:1,stone:0,food:2,gold:1}, sprite:"creature_squirrel_rat"},
+  {name:"Chuột lang nước", hp:30, c:[168,100,56], spd:17, dmg:4, xp:12, drops:{wood:1,stone:1,food:3,gold:1}, sprite:"creature_capybara"},
+];
 const BOSS_TYPES = {
   starter_isle:  {name:"Slime King",        hp:50, c:[0,204,51],   spd:12, dmg:5,  xp:20, drops:{wood:5,stone:3,food:3,gold:2}},
   ember_isle:    {name:"Fire Spirit King",  hp:80, c:[255,51,0],   spd:18, dmg:8,  xp:35, drops:{wood:3,stone:5,food:2,gold:4}},
@@ -859,6 +863,8 @@ loadSpriteSafe("crop_mature",   `${IMG_BASE}/1000180183.png`);   // cây trưở
 loadSpriteSafe("tile_grass_iso", `${IMG_BASE}/1000180089.png`);  // khối cỏ xếp so le 128x128
 loadSpriteSafe("item_shovel",    `${IMG_BASE}/1000180124.png`);  // icon xẻng 18x18
 loadSpriteSafe("ui_spritesheet", `${IMG_BASE}/1000180197.png`);  // bảng sprite UI 256x256 (icon vật phẩm)
+loadSpriteSafe("creature_squirrel_rat", `${IMG_BASE}/squirrel_rat.svg`, {width:96,height:96});
+loadSpriteSafe("creature_capybara", `${IMG_BASE}/capybara.svg`, {width:96,height:96});
 
 // ═══════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════
@@ -3129,23 +3135,27 @@ console.log("🎮 Đang khởi tạo...");
     const pObj=getPlayer();
     if(pObj&&Math.sqrt((ex*TILE-pObj.pos.x)**2+(ey*TILE-pObj.pos.y)**2)<TILE*4) return;
     if(enemyObjs.length>=6) return;
-    const maxHp=eTy.hp+GS.player.level*2;
+    const spawnType=Math.random()<0.12?SPECIAL_CREATURES[Math.floor(Math.random()*SPECIAL_CREATURES.length)]:eTy;
+    const maxHp=spawnType.hp+GS.player.level*2;
     const px=ex*TILE+TILE/2,py=ey*TILE+TILE/2;
     const enemy=k.add([
       k.circle(TILE/2-6),k.pos(ex*TILE+TILE/2,ey*TILE+TILE/2),
-      k.color(eTy.c[0],eTy.c[1],eTy.c[2]),k.outline(2,k.rgb(0,0,0)),k.opacity(0.95),k.z(6),k.area(),"enemy",
-      {hp:maxHp,maxHp,pcX:px,pcY:py,pR:60+Math.random()*60,pA:Math.random()*Math.PI*2,spd:eTy.spd,eTy,wT:0,dead:false,targetX:void 0,targetY:void 0},
+      k.color(spawnType.c[0],spawnType.c[1],spawnType.c[2]),k.outline(2,k.rgb(0,0,0)),k.opacity(0.95),k.z(6),k.area(),"enemy",
+      {hp:maxHp,maxHp,pcX:px,pcY:py,pR:60+Math.random()*60,pA:Math.random()*Math.PI*2,spd:spawnType.spd,eTy:spawnType,wT:0,dead:false,targetX:void 0,targetY:void 0},
     ]);
+    if(spawnType.sprite){
+      enemy._creatureSprite=k.add([k.sprite(spawnType.sprite),k.pos(px,py),k.anchor("center"),k.scale(0.62),k.z(7)]);
+    }
     // Enemy eyes (small white dots)
-    const eEye1=k.add([k.circle(2),k.pos(px-4,py-2),k.color(255,255,255),k.z(7)]);
-    const eEye2=k.add([k.circle(2),k.pos(px+4,py-2),k.color(255,255,255),k.z(7)]);
-    const ePup1=k.add([k.circle(1),k.pos(px-3,py-1),k.color(0,0,0),k.z(8)]);
-    const ePup2=k.add([k.circle(1),k.pos(px+5,py-1),k.color(0,0,0),k.z(8)]);
-    eEye1._follow=enemy;eEye2._follow=enemy;ePup1._follow=enemy;ePup2._follow=enemy;
+    const eEye1=spawnType.sprite?null:k.add([k.circle(2),k.pos(px-4,py-2),k.color(255,255,255),k.z(7)]);
+    const eEye2=spawnType.sprite?null:k.add([k.circle(2),k.pos(px+4,py-2),k.color(255,255,255),k.z(7)]);
+    const ePup1=spawnType.sprite?null:k.add([k.circle(1),k.pos(px-3,py-1),k.color(0,0,0),k.z(8)]);
+    const ePup2=spawnType.sprite?null:k.add([k.circle(1),k.pos(px+5,py-1),k.color(0,0,0),k.z(8)]);
+    if(!spawnType.sprite){eEye1._follow=enemy;eEye2._follow=enemy;ePup1._follow=enemy;ePup2._follow=enemy;}
     const hpBg=k.add([k.rect(TILE-4,4),k.pos(ex*TILE+2,ey*TILE-4),k.color(51,51,51),k.z(7)]);
     const hpFill=k.add([k.rect(TILE-4,4),k.pos(ex*TILE+2,ey*TILE-4),k.color(230,51,51),k.z(8)]);
     enemy._hpBg=hpBg;enemy._hpFill=hpFill;
-    enemy._eyes=[eEye1,eEye2,ePup1,ePup2];
+    enemy._eyes=[eEye1,eEye2,ePup1,ePup2].filter(Boolean);
     enemy.onUpdate(()=>{
       enemy._tick = (enemy._tick || 0) + 1;
       if (enemy._tick % 3 !== 0) return;
@@ -3219,6 +3229,7 @@ console.log("🎮 Đang khởi tạo...");
         enemy._eyes[2].pos=k.vec2(enemy.pos.x-3,enemy.pos.y-1);
         enemy._eyes[3].pos=k.vec2(enemy.pos.x+5,enemy.pos.y-1);
       }
+      if(enemy._creatureSprite&&enemy._creatureSprite.exists()) enemy._creatureSprite.pos=enemy.pos;
       if(enemy._hpBg&&enemy._hpFill){
         enemy._hpBg.pos=k.vec2(enemy.pos.x-((TILE-4)/2),enemy.pos.y-14);
         enemy._hpFill.pos=k.vec2(enemy.pos.x-((TILE-4)/2),enemy.pos.y-14);
@@ -3317,6 +3328,7 @@ console.log("🎮 Đang khởi tạo...");
       showFloating(enemy.pos.x,enemy.pos.y-34,`+${enemy.eTy.xp}XP`,[230,230,51]);
       try{k.destroy(enemy._hpBg);k.destroy(enemy._hpFill);}catch(e){}
       for(const eo of enemy._eyes||[]) try{k.destroy(eo)}catch(e){}
+      try{k.destroy(enemy._creatureSprite)}catch(e){}
       try{k.destroy(enemy);}catch(e){}
       const idx=enemyObjs.indexOf(enemy);if(idx>=0)enemyObjs.splice(idx,1);
       updateHUD();
