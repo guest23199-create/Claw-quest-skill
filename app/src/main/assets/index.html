@@ -5507,7 +5507,7 @@ k.scene("slot_machine", ()=>{
   let grid=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill("🍬"));
   let spinning=false,spinCount=0,firstFree=true,spinComplete=true;
   let resultMsg="",winType="";
-  let uiObjs=[],slotCells=[];
+  let uiObjs=[],slotCells=[],rowLabels=[];
   let jackpotActive=false,jackpotTimer=0,jackpotParticles=[];
   let autoSpinning=false,autoSpinTimer=null,autoSpinCount=0;
 
@@ -5533,17 +5533,20 @@ k.scene("slot_machine", ()=>{
       finalGrid[r][c]=Math.random()<0.15?["🍜","🍺","☕","🍬"][Math.floor(Math.random()*4)]:SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
 
     const settled=Array(SLOT_N).fill(false);
+    updateRowLabels(settled);
     let elapsed=0;
     const updater=k.onUpdate(()=>{
       elapsed+=k.dt();
       for(let r=0;r<SLOT_N;r++){
-        if(elapsed>=0.6+r*0.22&&!settled[r]){
+        // Dừng chậm tuần tự từ dòng 1 đến dòng 5 để người chơi dễ theo dõi.
+        if(elapsed>=1.1+r*0.42&&!settled[r]){
           for(let c=0;c<SLOT_N;c++){grid[r][c]=finalGrid[r][c];if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=grid[r][c];}
           settled[r]=true;
-        }else if(!settled[r]&&Math.floor(elapsed/0.05)!==Math.floor((elapsed-k.dt())/0.05)){
+        }else if(!settled[r]&&Math.floor(elapsed/0.1)!==Math.floor((elapsed-k.dt())/0.1)){
           for(let c=0;c<SLOT_N;c++) if(slotCells[r]&&slotCells[r][c]) slotCells[r][c].text=SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)];
         }
       }
+      updateRowLabels(settled);
       if(settled.every(s=>s)){
         updater.cancel();spinning=false;spinComplete=true;
         evaluatePrizes();updateDisplay();updateHUD();
@@ -5667,12 +5670,16 @@ k.scene("slot_machine", ()=>{
     if(firstFree&&spinCount===0) uiObjs.push(k.add([k.text("✦ Lần quay đầu MIỄN PHÍ! ✦",{size:12}),k.pos(W/2,44),k.anchor("center"),k.color(77,255,77),k.z(10)]));
     const cs=44,gap=4,gridW=SLOT_N*cs+(SLOT_N-1)*gap;
     const gx=W/2-gridW/2,gy=68;
-    k.add([k.rect(gridW+10,gridW+10),k.pos(gx-5,gy-5),k.color(30,25,45),k.outline(2,k.rgb(210,170,50)),k.z(5)]);
+    uiObjs.push(k.add([k.rect(gridW+10,gridW+10),k.pos(gx-5,gy-5),k.color(30,25,45),k.outline(2,k.rgb(210,170,50)),k.z(5)]));
+    uiObjs.push(k.add([k.text("DÒNG",{size:9}),k.pos(gx-18,gy-14),k.anchor("center"),k.color(210,170,50),k.z(8)]));
     slotCells=Array(SLOT_N).fill(null).map(()=>Array(SLOT_N).fill(null));
+    rowLabels=Array(SLOT_N).fill(null);
     for(let r=0;r<SLOT_N;r++) for(let c=0;c<SLOT_N;c++){
       const cx=gx+c*(cs+gap),cy=gy+r*(cs+gap);
-      k.add([k.rect(cs,cs),k.pos(cx,cy),k.color(20,15,35),k.outline(1,k.rgb(255,255,255,0.1)),k.z(6)]);
+      if(c===0){const label=k.add([k.text(String(r+1),{size:12}),k.pos(gx-18,cy+cs/2),k.anchor("center"),k.color(230,230,240),k.z(8)]);uiObjs.push(label);rowLabels[r]=label;}
+      uiObjs.push(k.add([k.rect(cs,cs),k.pos(cx,cy),k.color(20,15,35),k.outline(1,k.rgb(255,255,255,0.1)),k.z(6)]));
       const ct=k.add([k.text(grid[r][c],{size:22}),k.pos(cx+cs/2,cy+cs/2),k.anchor("center"),k.color(255,255,255),k.z(7)]);
+      uiObjs.push(ct);
       slotCells[r][c]=ct;
     }
     const ry=gy+gridW+25;
@@ -5712,6 +5719,14 @@ k.scene("slot_machine", ()=>{
     uiObjs.push(eb);
     uiObjs.push(k.add([k.text("← Thoát",{size:14}),k.pos(W/2,ex+15),k.anchor("center"),k.color(200,200,220),k.z(11)]));
     eb.onClick(()=>{k.go("game");});
+  }
+
+  function updateRowLabels(settled){
+    const active=settled.findIndex(v=>!v);
+    for(let r=0;r<SLOT_N;r++) if(rowLabels[r]){
+      rowLabels[r].text=settled[r]?"✓ "+(r+1):(r===active?"▶ "+(r+1):String(r+1));
+      rowLabels[r].color=settled[r]?k.rgb(77,255,77):(r===active?k.rgb(255,215,0):k.rgb(230,230,240));
+    }
   }
 
   updateDisplay();
