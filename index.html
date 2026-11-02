@@ -194,12 +194,13 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #ui-layout-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #071c35}
 #quest-btn{position:fixed;top:44px;right:49px;z-index:31;width:34px;height:34px;background:#5b4215;border:2px solid #ffe066;border-radius:7px;color:#fff;font-size:17px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #241708,inset 0 0 0 1px rgba(255,255,255,.18)}
 #farm-action-btn{position:fixed;right:12px;bottom:260px;z-index:22;display:none;background:#2e9d59;border:3px solid #9affbd;color:#fff;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow:0 3px 0 #123d25,0 4px 12px rgba(0,0,0,.45)}
+#build-nearest-btn{position:fixed;right:12px;bottom:260px;z-index:22;display:none;background:#9a6a28;border:3px solid #ffe08a;color:#fff;border-radius:7px;padding:8px 14px;font-size:11px;font-weight:bold;cursor:pointer;box-shadow:0 3px 0 #40290d,0 4px 12px rgba(0,0,0,.45)}
 .layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{outline:2px dashed #ffe066;outline-offset:4px;cursor:move}
 .layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{touch-action:none}
 .layout-editing #dpad{pointer-events:auto}
 .layout-editing #bottom-actions:before,.layout-editing #dpad:before,.layout-editing #resources:before,.layout-editing #minimap-wrap:before,.layout-editing #arena-entry-btn:before{content:'✋ Kéo';position:absolute;top:-17px;left:0;background:#5b4215;color:#ffe066;border:1px solid #ffe066;border-radius:3px;padding:1px 4px;font-size:8px;z-index:3;pointer-events:none;white-space:nowrap}
 #layout-status{min-height:18px;text-align:center;color:#ffe066;font-size:10px;margin-top:8px}
-@media(max-width:500px){#ui-layout-btn{top:44px;right:5px;width:32px;height:32px;font-size:16px}#quest-btn{top:44px;right:42px;width:32px;height:32px;font-size:15px}#farm-action-btn{right:12px;bottom:285px;padding:8px 14px;font-size:11px}.ba-row{gap:6px;margin:3px 0}#bottom-actions{gap:6px;padding:6px 7px}.bot-btn{margin:0 1px}}
+@media(max-width:500px){#ui-layout-btn{top:44px;right:5px;width:32px;height:32px;font-size:16px}#quest-btn{top:44px;right:42px;width:32px;height:32px;font-size:15px}#farm-action-btn,#build-nearest-btn{right:12px;bottom:285px;padding:8px 14px;font-size:11px}.ba-row{gap:6px;margin:3px 0}#bottom-actions{gap:6px;padding:6px 7px}.bot-btn{margin:0 1px}}
 </style>
 </head>
 <body>
@@ -309,6 +310,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     </div>
   </div>
   <button id="farm-action-btn" onclick="window.confirmFarmAction && window.confirmFarmAction()">🌱 Gieo hạt</button>
+  <button id="build-nearest-btn" onclick="window.placeNearestBuilding && window.placeNearestBuilding()">🔎 Đặt gần nhất</button>
 
   <!-- ─── Quick-Action Popup (shared) ─── -->
   <div id="quick-popup" style="display:none;position:fixed;bottom:230px;right:8px;z-index:200;background:#16243e;border:2px solid #0a1424;box-shadow:inset 0 0 0 1px #4a7fc9,0 4px 16px rgba(0,0,0,0.6);border-radius:8px;padding:10px;min-width:200px;max-width:260px;">
@@ -1717,7 +1719,7 @@ window.addEventListener("resize",()=>{ if(uiLayoutLoaded) { applyUILayout(); sav
 // khi vào các mini-game riêng biệt (Đấu Trường, Vòng Quay May Mắn...) — tránh hiện joystick
 // vô dụng đè lên màn hình chiến đấu theo lượt khiến người chơi tưởng bấm không được.
 function setGameHUDVisible(visible){
-  const ids = ["top-bar","ui-layout-btn","quest-btn","farm-action-btn","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
+  const ids = ["top-bar","ui-layout-btn","quest-btn","farm-action-btn","build-nearest-btn","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
   ids.forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = visible ? "" : "none";
@@ -3229,6 +3231,24 @@ console.log("🎮 Đang khởi tạo...");
     }
   }
   renderBuildings();
+  window.placeNearestBuilding=function(){
+    if(!GS.buildMode||!playerObj){showToast("🏗️ Hãy chọn công trình trước.",1200);return;}
+    const ptx=Math.floor(playerObj.pos.x/TILE),pty=Math.floor(playerObj.pos.y/TILE),candidates=[];
+    for(let radius=1;radius<=6;radius++){
+      for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
+        const tx=ptx+dx,ty=pty+dy;
+        if(tx<0||tx>=COLS||ty<0||ty>=ROWS||(dx===0&&dy===0))continue;
+        if(idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty))continue;
+        candidates.push({tx,ty,d:Math.max(Math.abs(dx),Math.abs(dy)),man:Math.abs(dx)+Math.abs(dy)});
+      }
+      if(candidates.length)break;
+    }
+    candidates.sort((a,b)=>a.d-b.d||a.man-b.man);
+    const spot=candidates[0];
+    if(!spot){showToast("❌ Không tìm thấy ô trống gần đây.",1400);return;}
+    const type=GS.buildMode,bi=BUILDINGS[type];
+    if(placeBuilding(spot.tx,spot.ty,type)){renderBuildings();drawMinimapStatic();refreshMinimap();showToast(`${bi?.icon||"🏗️"} Đã đặt gần nhân vật`,1200);}
+  };
 
   // ─── MINI-MAP ──────────────────────────────────────────────────
   const mmCanvas = document.getElementById("minimap");
@@ -3254,6 +3274,20 @@ console.log("🎮 Đang khởi tạo...");
     if(Date.now() - mmLastRebuild > 2000){ drawMinimapStatic(); mmLastRebuild = Date.now(); }
     mmCtx.clearRect(0,0,COLS,ROWS);
     mmCtx.drawImage(mmStatic, 0, 0);
+    // Đánh dấu tài nguyên/sinh vật đã phát hiện trong bán kính trinh sát.
+    if(playerObj&&playerObj.pos){
+      const ptx=Math.floor(playerObj.pos.x/TILE),pty=Math.floor(playerObj.pos.y/TILE),scan=8;
+      for(let dy=-scan;dy<=scan;dy++)for(let dx=-scan;dx<=scan;dx++){
+        const tx=ptx+dx,ty=pty+dy;if(tx<0||tx>=COLS||ty<0||ty>=ROWS)continue;
+        const t=getTile(ty,tx,map);let color=null;
+        if(t===4||t===11||t===15)color="#39a852";
+        else if(t===2||t===5)color="#d0d0d0";
+        else if(t===6||t===8||t===13)color="#c7e34b";
+        else if(t===14)color="#a66b3f";
+        if(color){mmCtx.fillStyle=color;mmCtx.fillRect(tx,ty,1,1);}
+      }
+      for(const en of enemyObjs||[]){if(!en||en.dead||!en.pos)continue;const ex=Math.floor(en.pos.x/TILE),ey=Math.floor(en.pos.y/TILE);if(Math.abs(ex-ptx)<=scan&&Math.abs(ey-pty)<=scan){mmCtx.fillStyle="#ff4f9a";mmCtx.fillRect(ex,ey,2,2);}}
+    }
     // Chấm công trình đã xây (tháp phòng thủ/súng nổi bật màu đỏ, còn lại màu vàng nhạt)
     for(const b of idata.buildings){
       mmCtx.fillStyle = (b.type === "defense_tower") ? "#ff4444" : "#ffe066";
@@ -3271,6 +3305,10 @@ console.log("🎮 Đang khởi tạo...");
     if(hintEl) hintEl.style.display = GS.buildMode ? "inline-block" : "none";
     const bmb = document.getElementById("buildmode-banner");
     if(bmb) bmb.style.display = GS.buildMode ? "flex" : "none";
+    const nearBtn=document.getElementById("build-nearest-btn");
+    if(nearBtn) nearBtn.style.display=GS.buildMode?"block":"none";
+    const farmBtn=document.getElementById("farm-action-btn");
+    if(farmBtn&&!GS.buildMode&&typeof updateFarmActionButton==="function") updateFarmActionButton();
   }
   if(mmCanvas){
     mmCanvas.onclick = (evt)=>{
