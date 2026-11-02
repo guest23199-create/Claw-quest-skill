@@ -192,12 +192,13 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 .bot-btn{margin:0 1px}
 #ui-layout-btn{position:fixed;top:44px;right:8px;z-index:31;width:34px;height:34px;background:#173b5d;border:2px solid #7ec8ff;border-radius:7px;color:#fff;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #071c35,inset 0 0 0 1px rgba(255,255,255,.18)}
 #ui-layout-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #071c35}
+#quest-btn{position:fixed;top:44px;right:49px;z-index:31;width:34px;height:34px;background:#5b4215;border:2px solid #ffe066;border-radius:7px;color:#fff;font-size:17px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #241708,inset 0 0 0 1px rgba(255,255,255,.18)}
 .layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{outline:2px dashed #ffe066;outline-offset:4px;cursor:move}
 .layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{touch-action:none}
 .layout-editing #dpad{pointer-events:auto}
 .layout-editing #bottom-actions:before,.layout-editing #dpad:before,.layout-editing #resources:before,.layout-editing #minimap-wrap:before,.layout-editing #arena-entry-btn:before{content:'✋ Kéo';position:absolute;top:-17px;left:0;background:#5b4215;color:#ffe066;border:1px solid #ffe066;border-radius:3px;padding:1px 4px;font-size:8px;z-index:3;pointer-events:none;white-space:nowrap}
 #layout-status{min-height:18px;text-align:center;color:#ffe066;font-size:10px;margin-top:8px}
-@media(max-width:500px){#ui-layout-btn{top:44px;right:5px;width:32px;height:32px;font-size:16px}.ba-row{gap:6px;margin:3px 0}#bottom-actions{gap:6px;padding:6px 7px}.bot-btn{margin:0 1px}}
+@media(max-width:500px){#ui-layout-btn{top:44px;right:5px;width:32px;height:32px;font-size:16px}#quest-btn{top:44px;right:42px;width:32px;height:32px;font-size:15px}.ba-row{gap:6px;margin:3px 0}#bottom-actions{gap:6px;padding:6px 7px}.bot-btn{margin:0 1px}}
 </style>
 </head>
 <body>
@@ -229,6 +230,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
       <div class="tb-bar-wrap"><div class="tb-bar-fill" id="hud-hunger-fill" style="width:80%;background:linear-gradient(180deg,#ffb066,#e67e22)"></div></div>
     </div>
   </div>
+  <button id="quest-btn" onclick="window.openQuestLog()" title="Nhiệm vụ khám phá">📜</button>
   <button id="ui-layout-btn" onclick="window.openLayoutSettings()" title="Cài đặt vị trí giao diện">⚙️</button>
 
   <!-- ─── Nút vào thẳng Đấu Trường — luôn hiện cố định ở đầu trang, không cần đi tìm nhà trên bản đồ ─── -->
@@ -406,6 +408,14 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <button onclick="window.resetLayout()" style="width:100%;margin-top:7px;background:#8b4e29;border:2px solid #f0c060;color:#fff;border-radius:5px;padding:8px;font-size:11px;cursor:pointer;">↺ Đặt lại vị trí mặc định</button>
   <div id="layout-status">Vị trí được lưu riêng trên thiết bị này.</div>
   <button onclick="window.closeLayoutSettings()" style="width:100%;margin-top:3px;background:#315b83;border:1px solid #74b9ff;color:#fff;border-radius:5px;padding:7px;font-size:11px;cursor:pointer;">Đóng</button>
+</div></div>
+
+<!-- ─── QUEST LOG ─── -->
+<div class="modal-overlay" id="modal-quests"><div class="modal-box" style="max-width:420px">
+  <span class="modal-close" onclick="window.closeModals()">&times;</span>
+  <h2>📜 Nhiệm Vụ Khám Phá</h2>
+  <div class="modal-sub">Mục tiêu sắp tới sẽ mở thêm khi bạn thêm sinh vật mới.</div>
+  <div id="quest-list"></div>
 </div></div>
 
 <!-- ─── PEBBLE CHAT ─── -->
@@ -673,6 +683,14 @@ const ENEMY_TYPES = {
 const SPECIAL_CREATURES = [
   {name:"Nhánh Chuột sóc", hp:22, c:[139,118,103], spd:23, dmg:3, xp:9, drops:{wood:1,stone:0,food:2,gold:1}, sprite:"creature_squirrel_rat"},
   {name:"Chuột lang nước", hp:30, c:[168,100,56], spd:17, dmg:4, xp:12, drops:{wood:1,stone:1,food:3,gold:1}, sprite:"creature_capybara"},
+];
+// Nhiệm vụ khám phá: có thể thêm sinh vật mới vào ENEMY_TYPES/SPECIAL_CREATURES
+// mà không phải viết lại hệ thống nhiệm vụ.
+const QUEST_DEFS = [
+  {id:"first_expedition",title:"Bước chân đầu tiên",icon:"🗺️",desc:"Khám phá 3 hòn đảo khác nhau.",goal:3,unit:"đảo",type:"island",reward:{wood:12,food:8}},
+  {id:"creature_notebook",title:"Sổ tay sinh vật",icon:"📖",desc:"Phát hiện 4 loài sinh vật trong chuyến đi.",goal:4,unit:"loài",type:"creature",reward:{stone:15,gold:5}},
+  {id:"wild_hunter",title:"Thợ săn vùng hoang dã",icon:"⚔️",desc:"Đánh bại 5 sinh vật.",goal:5,unit:"sinh vật",type:"defeat",reward:{wood:15,stone:15,food:10}},
+  {id:"pebble_scout",title:"Pebble lên đường",icon:"🐾",desc:"Giao một Pebble nhiệm vụ Khám phá xa.",goal:1,unit:"lần",type:"pebble",reward:{food:12,gold:8}},
 ];
 const BOSS_TYPES = {
   starter_isle:  {name:"Slime King",        hp:50, c:[0,204,51],   spd:12, dmg:5,  xp:20, drops:{wood:5,stone:3,food:3,gold:2}},
@@ -970,10 +988,60 @@ const GS = {
   plantMode:false,
   activeSeedType:"seed_orange", // which seed type is selected for planting
   digMode:false,
+  quests:{completed:[],progress:{visitedIslands:["starter_isle"],creatures:[],defeats:0,pebbleExplores:0}},
   gameTicks:0,
   arenaKillBuff:0,
   };
 window.GS = GS;
+function ensureQuestState(){
+  if(!GS.quests) GS.quests={completed:[],progress:{}};
+  if(!Array.isArray(GS.quests.completed)) GS.quests.completed=[];
+  const p=GS.quests.progress||{};
+  if(!Array.isArray(p.visitedIslands)) p.visitedIslands=[GS.currentIsland||"starter_isle"];
+  if(!Array.isArray(p.creatures)) p.creatures=[];
+  if(typeof p.defeats!=="number") p.defeats=0;
+  if(typeof p.pebbleExplores!=="number") p.pebbleExplores=0;
+  GS.quests.progress=p;
+}
+function questValue(q){
+  const p=GS.quests.progress;
+  if(q.type==="island") return p.visitedIslands.length;
+  if(q.type==="creature") return p.creatures.length;
+  if(q.type==="defeat") return p.defeats;
+  if(q.type==="pebble") return p.pebbleExplores;
+  return 0;
+}
+function registerQuestEvent(type,value){
+  ensureQuestState();
+  const p=GS.quests.progress;
+  if(type==="island" && value && !p.visitedIslands.includes(value)) p.visitedIslands.push(value);
+  if(type==="creature" && value && !p.creatures.includes(value)) p.creatures.push(value);
+  if(type==="defeat") p.defeats++;
+  if(type==="pebble") p.pebbleExplores++;
+  for(const q of QUEST_DEFS){
+    if(questValue(q)<q.goal || GS.quests.completed.includes(q.id)) continue;
+    GS.quests.completed.push(q.id);
+    for(const [key,amount] of Object.entries(q.reward||{})) GS.resources[key]=(GS.resources[key]||0)+amount;
+    showToast(`🎉 Nhiệm vụ hoàn thành: ${q.title}!`,2600);
+  }
+  renderQuestList();
+}
+function renderQuestList(){
+  const list=document.getElementById("quest-list");
+  if(!list) return;
+  ensureQuestState();
+  list.innerHTML=QUEST_DEFS.map(q=>{
+    const value=Math.min(q.goal,questValue(q)), done=GS.quests.completed.includes(q.id);
+    const reward=Object.entries(q.reward||{}).map(([k,v])=>({wood:"🪵",stone:"🪨",food:"🍎",gold:"🪙"}[k]||k)+v).join(" ");
+    return `<div style="background:${done?"rgba(46,160,90,.28)":"rgba(255,255,255,.06)"};border:2px solid ${done?"#5fe089":"#3a5a8a"};border-radius:6px;padding:8px;margin:5px 0;">
+      <div style="display:flex;justify-content:space-between;gap:6px"><b style="color:${done?"#8dffad":"#ffe066"}">${q.icon} ${q.title}</b><span>${done?"✅":""} ${value}/${q.goal}</span></div>
+      <div style="font-size:10px;color:#cfe0ff;margin-top:4px">${q.desc}</div>
+      <div style="font-size:9px;color:#9fb8d8;margin-top:4px">Thưởng: ${reward}</div>
+      <div style="height:5px;background:#0b1628;margin-top:6px;border-radius:4px;overflow:hidden"><div style="height:100%;width:${value/q.goal*100}%;background:${done?"#5fe089":"#f0c060"}"></div></div>
+    </div>`;
+  }).join("");
+}
+window.openQuestLog=function(){window.closeModals();ensureQuestState();renderQuestList();document.getElementById("modal-quests")?.classList.add("show");};
 function getIslandData(id) {
   if (!GS.islands[id]) GS.islands[id] = {buildings:[],map:null,enemies:[],enemyTimer:0,farmPlots:{}};
   return GS.islands[id];
@@ -1646,7 +1714,7 @@ window.addEventListener("resize",()=>{ if(uiLayoutLoaded) { applyUILayout(); sav
 // khi vào các mini-game riêng biệt (Đấu Trường, Vòng Quay May Mắn...) — tránh hiện joystick
 // vô dụng đè lên màn hình chiến đấu theo lượt khiến người chơi tưởng bấm không được.
 function setGameHUDVisible(visible){
-  const ids = ["top-bar","ui-layout-btn","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
+  const ids = ["top-bar","ui-layout-btn","quest-btn","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
   ids.forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = visible ? "" : "none";
@@ -2285,7 +2353,7 @@ window.quickTravel = function(){
 function travelToIsland(id){
   if(id===GS.currentIsland) return;
   if(!GS.unlockedIslands.includes(id)){showToast("🔒 Not unlocked!");return;}
-  GS.currentIsland=id;getIslandData(id);k.go("game");
+  GS.currentIsland=id;getIslandData(id);registerQuestEvent("island",id);k.go("game");
 }
 function unlockIsland(id){
   if(!GS.unlockedIslands.includes(id)){GS.unlockedIslands.push(id);showToast(`🗺️ New island unlocked: ${ISLAND_DEFS[id].name}!`,2500);}
@@ -3391,6 +3459,7 @@ console.log("🎮 Đang khởi tạo...");
       k.color(spawnType.c[0],spawnType.c[1],spawnType.c[2]),k.outline(2,k.rgb(0,0,0)),k.opacity(0.95),k.z(6),k.area(),"enemy",
       {hp:maxHp,maxHp,pcX:px,pcY:py,pR:60+Math.random()*60,pA:Math.random()*Math.PI*2,spd:spawnType.spd,eTy:spawnType,wT:0,dead:false,targetX:void 0,targetY:void 0},
     ]);
+    registerQuestEvent("creature",spawnType.name);
     if(spawnType.sprite){
       // Asset có thể chưa tải xong hoặc WebView không hỗ trợ SVG: không để lỗi này làm dừng game.
       try{
@@ -3578,6 +3647,7 @@ console.log("🎮 Đang khởi tạo...");
       GS.resources.stone+=(dr.stone||0)+Math.floor(Math.random()*2);
       GS.resources.food+=(dr.food||0);GS.resources.gold+=(dr.gold||0);
       GS.player.xp+=enemy.eTy.xp;checkCấpUp();GS.player.enemiesKilled++;if(GS.pebble)GS.pebble.kills=(GS.pebble.kills||0)+1;
+      registerQuestEvent("defeat",enemy.eTy.name);
       spawnParticles(enemy.pos.x,enemy.pos.y,6,[230,230,51]);
       showFloating(enemy.pos.x,enemy.pos.y-34,`+${enemy.eTy.xp}XP`,[230,230,51]);
       try{k.destroy(enemy._hpBg);k.destroy(enemy._hpFill);}catch(e){}
@@ -3747,7 +3817,7 @@ console.log("🎮 Đang khởi tạo...");
       {icon:"⛏️", label:"Tự động khai thác", sublabel:"Tự tìm gỗ/đá gần đó để đào", enabled:true,
         action(){window.closeQuickPopup();pc.mode="mine";pc.targetX=null;showToast(pc.role.icon+" "+pc.role.name+": Bắt đầu khai thác!",1500);}},
       {icon:"🗺️", label:"Khám phá xa", sublabel:"Đi xa hơn quanh đảo", enabled:true,
-        action(){window.closeQuickPopup();pc.mode="explore";pc.targetX=null;showToast(pc.role.icon+" "+pc.role.name+": Đi khám phá!",1500);}},
+        action(){window.closeQuickPopup();pc.mode="explore";pc.targetX=null;registerQuestEvent("pebble");showToast(pc.role.icon+" "+pc.role.name+": Đi khám phá!",1500);}},
       {icon:"📍", label:"Đứng yên tại chỗ", sublabel:"", enabled:true,
         action(){window.closeQuickPopup();pc.mode="stay";pc.targetX=null;showToast(pc.role.icon+" "+pc.role.name+": Đứng yên",1500);}},
     ];
