@@ -3216,7 +3216,13 @@ console.log("🎮 Đang khởi tạo...");
       {hp:maxHp,maxHp,pcX:px,pcY:py,pR:60+Math.random()*60,pA:Math.random()*Math.PI*2,spd:spawnType.spd,eTy:spawnType,wT:0,dead:false,targetX:void 0,targetY:void 0},
     ]);
     if(spawnType.sprite){
-      enemy._creatureSprite=k.add([k.sprite(spawnType.sprite),k.pos(px,py),k.anchor("center"),k.scale(0.62),k.z(7)]);
+      // Asset có thể chưa tải xong hoặc WebView không hỗ trợ SVG: không để lỗi này làm dừng game.
+      try{
+        enemy._creatureSprite=k.add([k.sprite(spawnType.sprite),k.pos(px,py),k.anchor("center"),k.scale(0.62),k.z(7)]);
+      }catch(e){
+        console.warn("Creature sprite fallback:",spawnType.name,e);
+        enemy._creatureSprite=k.add([k.circle(TILE/3),k.pos(px,py),k.color(spawnType.c[0],spawnType.c[1],spawnType.c[2]),k.outline(2,k.rgb(55,35,25)),k.z(7)]);
+      }
     }
     // Enemy eyes (small white dots)
     const eEye1=spawnType.sprite?null:k.add([k.circle(2),k.pos(px-4,py-2),k.color(255,255,255),k.z(7)]);
@@ -5547,8 +5553,8 @@ k.scene("title", ()=>{
         if (document.getElementById("sprite-loader")) {
           document.getElementById("sprite-loader").style.display = "block";
         }
-        // Wait a moment for sprites to load then enter game
-        setTimeout(() => k.go("game"), 300);
+        // Chờ các sprite đã đăng ký tải xong trước khi tạo quái vật.
+        Promise.all(spritePromises).finally(() => setTimeout(() => k.go("game"), 150));
       }
       else k.go(btns[i].scene);
     });
