@@ -3892,6 +3892,9 @@ console.log("🎮 Đang khởi tạo...");
     setTargetTile(pos);
     if(GS.buildMode) updateGhost(pos);
   });
+  // Giữ con trỏ khi kéo trên bản đồ.
+  k.onMouseDown((pos)=>{_cursorDragging=true;setTargetTile(pos);});
+  k.onMouseRelease(()=>{_cursorDragging=false;});
   // Escape key or long-press cancels build/dig/plant mode
   k.onKeyPress("escape", ()=>{
     if (GS.buildMode) {
@@ -4006,11 +4009,15 @@ console.log("🎮 Đang khởi tạo...");
   let _cropVisuals = {}; // "x,y" → array of kaboom objs
   let _currentFarmTile = null;
   let _targetTile = null;
+  let _cursorDragging = false;
 
   function setTargetTile(pos){
-    if(!pos || (!GS.digMode && !GS.plantMode)){ _targetTile=null; return; }
+    if(!pos || (!GS.digMode && !GS.plantMode && !_cursorDragging)){ _targetTile=null; return; }
     const tx=Math.floor(pos.x/TILE), ty=Math.floor(pos.y/TILE);
-    _targetTile=(tx>=0&&tx<COLS&&ty>=0&&ty<ROWS)?{tx,ty}:null;
+    if(tx<0||tx>=COLS||ty<0||ty>=ROWS){_targetTile=null;return;}
+    const ptx=playerObj?Math.floor(playerObj.pos.x/TILE):tx;
+    const pty=playerObj?Math.floor(playerObj.pos.y/TILE):ty;
+    _targetTile={tx,ty,nearDistance:Math.max(Math.abs(tx-ptx),Math.abs(ty-pty))};
   }
 
   function targetTileIsValid(){
@@ -5179,9 +5186,9 @@ console.log("🎮 Đang khởi tạo...");
     }
 
     // Direction cursor: green = valid target, red = invalid target.
-    if(_targetTile && (GS.digMode || GS.plantMode)){
+    if(_targetTile && (GS.digMode || GS.plantMode || _cursorDragging)){
       const tx=_targetTile.tx, ty=_targetTile.ty;
-      const valid=targetTileIsValid();
+      const valid=(GS.digMode||GS.plantMode)?targetTileIsValid():true;
       const c=valid ? k.rgb(70,220,100) : k.rgb(240,70,70);
       const qx=tx*TILE, qy=ty*TILE;
       k.drawRect({pos:k.vec2(qx+2,qy+2),width:TILE-4,height:TILE-4,color:c,opacity:0.22,z:30});
@@ -5189,6 +5196,8 @@ console.log("🎮 Đang khởi tạo...");
       k.drawLine({p1:k.vec2(qx+2,qy+TILE-2),p2:k.vec2(qx+TILE-2,qy+TILE-2),width:3,color:c,opacity:0.95,z:31});
       k.drawLine({p1:k.vec2(qx+2,qy+2),p2:k.vec2(qx+2,qy+TILE-2),width:3,color:c,opacity:0.95,z:31});
       k.drawLine({p1:k.vec2(qx+TILE-2,qy+2),p2:k.vec2(qx+TILE-2,qy+TILE-2),width:3,color:c,opacity:0.95,z:31});
+      if(playerObj&&_cursorDragging) k.drawLine({p1:playerObj.pos,p2:k.vec2(qx+TILE/2,qy+TILE/2),width:2,color:k.rgb(255,215,0),opacity:0.7,z:30});
+      k.drawText({text:`Ô ${tx+1},${ty+1}${_targetTile.nearDistance!==undefined?` • ${_targetTile.nearDistance} ô`:""}`,pos:k.vec2(qx+TILE/2,qy-7),size:9,color:k.rgb(255,245,180),anchor:"center",z:32});
     }
   });
 
