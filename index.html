@@ -4250,14 +4250,14 @@ console.log("🎮 Đang khởi tạo...");
     const p=GS.player;
     let w=0,s=0,f=0,g=0;
     const eq=getEquipStats();
-    if(type===4){w=2+p.woodBonus+eq.atk+Math.floor(Math.random()*2);GS.resources.wood+=w;if(Math.random()<0.3){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🍎`,[230,77,77]);}showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵`,[153,204,77]);}
+    if(type===4){w=1+Math.floor(Math.random()*10);GS.resources.wood+=w;if(Math.random()<0.3){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🍎`,[230,77,77]);}showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵`,[153,204,77]);}
     else if(type===11){ // Rừng rậm — nhiều gỗ hơn cây thường
-      w=3+p.woodBonus+eq.atk+Math.floor(Math.random()*3);GS.resources.wood+=w;
+      w=1+Math.floor(Math.random()*10);GS.resources.wood+=w;
       if(Math.random()<0.35){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🍎`,[230,77,77]);}
       showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵🌲`,[102,180,60]);
     }
     else if(type===15){ // Cây cọ — gỗ + có cơ hội ra dừa (food)
-      w=2+Math.floor(Math.random()*2);GS.resources.wood+=w;
+      w=1+Math.floor(Math.random()*10);GS.resources.wood+=w;
       showFloating(tx*TILE,ty*TILE-10,`+${w} 🪵🌴`,[153,204,77]);
       if(Math.random()<0.4){f=1+Math.floor(Math.random()*2);GS.resources.food+=f;showFloating(tx*TILE,ty*TILE-26,`+${f} 🥥`,[230,180,77]);}
     }
@@ -4310,6 +4310,8 @@ console.log("🎮 Đang khởi tạo...");
       } else if(Math.random()<0.1){
         setTile(ty, tx, 0, map);
       }
+      // Cây chỉ cho gỗ một lần: 1–10 gỗ là giới hạn tối đa cho mỗi cây.
+      if((type===4||type===11||type===15)&&w>0) setTile(ty,tx,0,map);
       updateHUD();
     }
   }
