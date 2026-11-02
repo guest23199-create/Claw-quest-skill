@@ -122,6 +122,32 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #craft-list{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 /* ─── Build List ─── */
 #build-list{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+/* ─── Pixel-island presentation ─── */
+#top-bar{background:#0b3e62;border-bottom:3px solid #1a7891;box-shadow:0 3px 0 #06233d,inset 0 -2px 0 rgba(91,221,225,.25)}
+#top-bar .tb-name,#top-bar .tb-level{font-family:'Press Start 2P',monospace;text-shadow:2px 2px 0 #173047}
+#resources .rpill{background:#123f60;border-color:#071e35;border-radius:3px;box-shadow:inset 0 0 0 1px #4e9eae,0 3px 0 #06172b}
+#resources .ricon{border-radius:2px;background:#2b6980;border-color:#8ed3cf}
+#bottom-actions{background:#12365a;border:3px solid #071c35;border-radius:2px;box-shadow:inset 0 0 0 2px #3d7eaa,0 4px 0 #06172b}
+.bot-btn{background:#25537c;border-color:#6ba4c0;border-radius:2px;font-family:'Press Start 2P',monospace;font-size:8px;box-shadow:inset 0 0 0 1px rgba(190,240,235,.25),0 2px 0 #0b223d}
+#joystick-base{border-radius:4px;background:#12385d;border-color:#071c35;box-shadow:inset 0 0 0 3px #3f83a9,0 4px 0 #06172b}
+#joystick-knob{border-radius:3px;background:#5fa7d0;border-color:#a5e4ee}
+#modal-inv .modal-box{background:linear-gradient(135deg,#2b8998,#75c7bd 55%,#3c98a4);border:4px solid #164e67;box-shadow:inset 0 0 0 2px #9ce2d3,inset 0 0 0 5px #1b6074,0 8px 0 #082c43;border-radius:2px;image-rendering:pixelated}
+#modal-inv .modal-box h2{color:#ffe59a;text-shadow:2px 2px 0 #633820;font-family:'Press Start 2P',monospace;font-size:13px}
+#modal-inv .modal-sub{color:#e5fff0}
+#modal-inv .tab-bar{background:rgba(19,76,93,.7);border:2px solid #24717e;border-radius:0}
+#modal-inv .tab-btn{border-radius:0;color:#d5fff4;font-family:'Press Start 2P',monospace;font-size:8px}
+#modal-inv .tab-btn.active{background:#f2c65e;color:#402b1d;border:2px solid #8b4e29}
+#modal-inv .inv-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;background:rgba(19,80,91,.35);border:3px solid #236c79;padding:5px}
+#modal-inv .inv-cell{min-height:58px;background:rgba(123,205,191,.38);border:2px solid #b6e7d0;border-radius:0;box-shadow:inset 0 0 0 1px #438e96,2px 2px 0 rgba(26,75,79,.45)}
+#modal-inv .inv-cell.filled{border-color:#ffe08a;background:rgba(94,173,170,.7)}
+#modal-inv .inv-cell.empty{opacity:.5;background:rgba(74,145,151,.35)}
+#modal-inv .inv-cell .cell-name{font-family:'Press Start 2P',monospace;color:#fff3c4;font-size:6px;text-shadow:1px 1px 0 #24505c}
+#modal-inv .inv-cell .cell-count{color:#fff3a0;font-family:'Press Start 2P',monospace}
+#modal-inv .equip-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:rgba(19,80,91,.35);padding:5px;border:3px solid #236c79}
+#modal-inv .equip-slot{min-height:66px;margin:0;padding:4px;background:rgba(123,205,191,.38);border:2px solid #b6e7d0;border-radius:0;display:flex;flex-direction:column;justify-content:center;text-align:center}
+#modal-inv .equip-slot.filled{border-color:#ffe08a;background:rgba(94,173,170,.7)}
+#modal-inv .equip-slot .slot-item{font-size:22px}.modal-box{image-rendering:pixelated}
+@media(max-width:500px){#modal-inv .inv-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:4px}#modal-inv .inv-cell{min-height:52px}#modal-inv .equip-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 /* ─── Toast ─── */
 .toast{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);border:1px solid rgba(255,215,0,0.3);border-radius:10px;padding:6px 16px;z-index:200;display:none;color:#fff;font-size:12px;text-align:center;white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .toast.show{display:block;animation:toastIn 0.3s}
@@ -887,7 +913,7 @@ loadSpriteSafe("creature_capybara", `${IMG_BASE}/capybara.svg`, {width:96,height
 // SECTION 2c: ISLAND THEMES & PROCEDURAL BACKGROUND
 // ═══════════════════════════════════════════════════════════════════
 const ISLAND_THEMES = {
-  starter_isle:  {sky:[100,180,220], land:[45,105,50], water:[20,89,153], accent:[60,140,60]},
+  starter_isle:  {sky:[35,155,225], land:[82,155,58], water:[12,116,196], accent:[92,185,64]},
   ember_isle:    {sky:[180,80,30],   land:[90,35,20],  water:[60,20,10],  accent:[200,70,30]},
   crystal_atoll: {sky:[120,150,220], land:[25,90,100], water:[30,60,120], accent:[160,120,200]},
   stormpeak:     {sky:[100,100,130], land:[50,50,65],  water:[30,30,60],  accent:[120,120,160]},
@@ -2859,11 +2885,12 @@ console.log("🎮 Đang khởi tạo...");
       switch(b.type){
         case"shelter":{
           // House walls (warm brown wood)
-          buildingObjs.push(k.add([k.rect(TILE-2,TILE-10),k.pos(bx+1,by+TILE/2+4),k.color(160,100,45),k.opacity(0.9),k.z(bz(44)),k.area(),"building"]));
+          buildingObjs.push(k.add([k.rect(TILE-2,TILE-10),k.pos(bx+1,by+TILE/2+4),k.color(126,76,38),k.opacity(0.95),k.z(bz(44)),k.area(),"building"]));
           // Bigger red roof (triangle)
-          buildingObjs.push(k.add([k.polygon([k.vec2(bx-3,by+TILE/2+2),k.vec2(bx+TILE/2,by),k.vec2(bx+TILE+3,by+TILE/2+2)]),k.color(200,40,20),k.opacity(0.95),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx-3,by+TILE/2+2),k.vec2(bx+TILE/2,by),k.vec2(bx+TILE+3,by+TILE/2+2)]),k.color(183,105,35),k.opacity(0.98),k.z(bz(44))]));
           // Roof highlight
-          buildingObjs.push(k.add([k.polygon([k.vec2(bx+TILE/2,by+2),k.vec2(bx+4,by+TILE/2),k.vec2(bx+TILE/2,by+TILE/2-4)]),k.color(220,60,40),k.opacity(0.7),k.z(bz(44))]));
+          buildingObjs.push(k.add([k.polygon([k.vec2(bx+TILE/2,by+2),k.vec2(bx+4,by+TILE/2),k.vec2(bx+TILE/2,by+TILE/2-4)]),k.color(235,166,62),k.opacity(0.8),k.z(bz(44))]));
+          for(let roofLine=0;roofLine<3;roofLine++) buildingObjs.push(k.add([k.rect(TILE-16-roofLine*5,2),k.pos(bx+8+roofLine*2,by+12+roofLine*6),k.color(125,70,28),k.opacity(0.55),k.z(bz(45))]));
           // Door
           buildingObjs.push(k.add([k.rect(8,12),k.pos(bx+TILE/2-4,by+TILE/2+4),k.color(80,40,15),k.opacity(0.9),k.z(bz(45))]));
           // Windows (lit yellow)
@@ -5020,7 +5047,7 @@ console.log("🎮 Đang khởi tạo...");
 
         switch (t) {
           case 0: // Grass — isometric block style with per-tile edge shading (ref: layered grass blocks)
-            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(46, 112, 26), z: 3 });
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(78, 157, 48), z: 3 });
             // Try new isometric-block grass texture (user uploaded, layered look)
             try { k.drawSprite({ sprite:"tile_grass_iso", pos:k.vec2(px,py), width:s, height:s, z:3, opacity:0.9 }); }
             catch(e1){
@@ -5050,8 +5077,8 @@ console.log("🎮 Đang khởi tạo...");
             break;
 
           case 1: // Sand — base + speckled grains + subtle dune ripples
-            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(199, 182, 130), z: 3 });
-            k.drawRect({ pos: k.vec2(px, py), width: s, height: s/3, color: k.rgb(210, 195, 145), opacity: 0.4 });
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(232, 205, 132), z: 3 });
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s/3, color: k.rgb(255, 226, 155), opacity: 0.45 });
             for (let gi = 0; gi < 4; gi++) {
               const seed = (x * 23 + y * 41 + gi * 19);
               const gx = px + (seed % s);
@@ -5076,7 +5103,7 @@ console.log("🎮 Đang khởi tạo...");
             break;
 
           case 3: // Water — gradient + animated ripple lines + glints
-            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(20, 88, 154), z: 3 });
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(23, 139, 207), z: 3 });
             // Try water texture (hexagon pattern)
             try { k.drawSprite({ sprite:"tile_water", pos:k.vec2(px,py), width:s, height:s, z:3, opacity:0.7 }); }
             catch(e){
@@ -5144,8 +5171,8 @@ console.log("🎮 Đang khởi tạo...");
             break;
 
           case 9: // Deep water — darker gradient + slow ripples
-            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(8, 36, 85), z: 3 });
-            k.drawRect({ pos: k.vec2(px, py), width: s, height: s*0.4, color: k.rgb(14, 50, 105), opacity: 0.3 });
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s, color: k.rgb(8, 67, 137), z: 3 });
+            k.drawRect({ pos: k.vec2(px, py), width: s, height: s*0.4, color: k.rgb(18, 91, 168), opacity: 0.35 });
             {
               const d1 = Math.sin(waveTime * 0.0010 + x * 0.5 + y * 0.9);
               k.drawLine({ p1: k.vec2(px + 5, py + 10 + d1 * 2), p2: k.vec2(px + s - 5, py + 10 + d1 * 2), width: 2, color: k.rgb(15, 55, 115), opacity: 0.3 });
