@@ -193,12 +193,13 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 #ui-layout-btn{position:fixed;top:44px;right:8px;z-index:31;width:34px;height:34px;background:#173b5d;border:2px solid #7ec8ff;border-radius:7px;color:#fff;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #071c35,inset 0 0 0 1px rgba(255,255,255,.18)}
 #ui-layout-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #071c35}
 #quest-btn{position:fixed;top:44px;right:49px;z-index:31;width:34px;height:34px;background:#5b4215;border:2px solid #ffe066;border-radius:7px;color:#fff;font-size:17px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #241708,inset 0 0 0 1px rgba(255,255,255,.18)}
+#farm-action-btn{position:fixed;right:12px;bottom:260px;z-index:22;display:none;background:#2e9d59;border:3px solid #9affbd;color:#fff;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow:0 3px 0 #123d25,0 4px 12px rgba(0,0,0,.45)}
 .layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{outline:2px dashed #ffe066;outline-offset:4px;cursor:move}
 .layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{touch-action:none}
 .layout-editing #dpad{pointer-events:auto}
 .layout-editing #bottom-actions:before,.layout-editing #dpad:before,.layout-editing #resources:before,.layout-editing #minimap-wrap:before,.layout-editing #arena-entry-btn:before{content:'✋ Kéo';position:absolute;top:-17px;left:0;background:#5b4215;color:#ffe066;border:1px solid #ffe066;border-radius:3px;padding:1px 4px;font-size:8px;z-index:3;pointer-events:none;white-space:nowrap}
 #layout-status{min-height:18px;text-align:center;color:#ffe066;font-size:10px;margin-top:8px}
-@media(max-width:500px){#ui-layout-btn{top:44px;right:5px;width:32px;height:32px;font-size:16px}#quest-btn{top:44px;right:42px;width:32px;height:32px;font-size:15px}.ba-row{gap:6px;margin:3px 0}#bottom-actions{gap:6px;padding:6px 7px}.bot-btn{margin:0 1px}}
+@media(max-width:500px){#ui-layout-btn{top:44px;right:5px;width:32px;height:32px;font-size:16px}#quest-btn{top:44px;right:42px;width:32px;height:32px;font-size:15px}#farm-action-btn{right:12px;bottom:285px;padding:8px 14px;font-size:11px}.ba-row{gap:6px;margin:3px 0}#bottom-actions{gap:6px;padding:6px 7px}.bot-btn{margin:0 1px}}
 </style>
 </head>
 <body>
@@ -212,6 +213,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
     <div style="color:#e8a140;font-size:12px;margin-top:4px">Sinh Tồn Trên Đảo</div>
     <div style="color:#8899bb;font-size:10px;margin-top:10px">⏳ Đang tải...</div>
   </div>
+  <button id="farm-action-btn" onclick="window.confirmFarmAction && window.confirmFarmAction()">🌱 Gieo hạt</button>
 
   <!-- ─── Top Status Bar (pixel-style, ref: HP/HUNGER icon bars) ─── -->
   <div id="top-bar">
@@ -1690,7 +1692,7 @@ window.addEventListener("resize",()=>{ if(uiLayoutLoaded) { applyUILayout(); sav
 // khi vào các mini-game riêng biệt (Đấu Trường, Vòng Quay May Mắn...) — tránh hiện joystick
 // vô dụng đè lên màn hình chiến đấu theo lượt khiến người chơi tưởng bấm không được.
 function setGameHUDVisible(visible){
-  const ids = ["top-bar","ui-layout-btn","quest-btn","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
+  const ids = ["top-bar","ui-layout-btn","quest-btn","farm-action-btn","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
   ids.forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = visible ? "" : "none";
@@ -4156,34 +4158,7 @@ console.log("🎮 Đang khởi tạo...");
     }
     // Plant mode: click a farm plot to plant a seed
     if(GS.plantMode){
-      const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
-      if(tix<0||tix>=COLS||tiy<0||tiy>=ROWS){
-        GS.plantMode=false; showToast("🌱 Đã hủy trồng",1000); return;
-      }
-      const tt=getTile(tiy, tix, map);
-      if(tt===14){
-        // If the previously selected seed was consumed or is unavailable,
-        // automatically use the first seed still present in the inventory.
-        const seedIds = [GS.activeSeedType,"seed_orange","seed_melon","seed_veggie","seed"];
-        const seedId = seedIds.find(s=>s && hasInvItem(s,1));
-        if(!seedId){showToast("❌ Bạn không còn hạt giống nào.",1500);GS.plantMode=false;return;}
-        if(!hasInvItem(seedId,1)){showToast("❌ Hết hạt! Chế tạo thêm.");GS.plantMode=false;return;}
-        const fp=getFarmPlot(tix,tiy);
-        if(fp.planted){showToast("❌ Ô này đã có cây rồi!",1000);return;}
-        removeInvItem(seedId,1);
-        const seedInfo = ITEMS[seedId]||{};
-        fp.planted=true;
-        fp.seedType=seedId;
-        fp.crop=seedInfo.cropIcon||"🌾";
-        fp.cropSprite=seedInfo.cropSprite||"crop_sprout";
-        fp.growTime=seedInfo.growTime||45;
-        fp.plantedAt=Date.now(); fp.watered=false; fp.stage=0;
-        showToast(`🌱 Đã gieo ${seedInfo.icon||"🌱"} ${seedInfo.name||seedId}! Chờ ${fp.growTime}s để thu hoạch.`);
-        renderCropVisuals(); updateFarmButton(); updateHUD();
-        // Keep plant mode on so player can plant more
-      }else{
-        showToast("🌱 Click ô đất nâu đã đào để gieo hạt!",1500);
-      }
+      setTargetTile(pos); performFarmAction();
       return;
     }
     const tix=Math.floor(pos.x/TILE),tiy=Math.floor(pos.y/TILE);
@@ -4353,6 +4328,7 @@ console.log("🎮 Đang khởi tạo...");
     const pty=playerObj?Math.floor(playerObj.pos.y/TILE):ty;
     _targetTile={tx,ty,nearDistance:Math.max(Math.abs(tx-ptx),Math.abs(ty-pty))};
     if(GS.digMode || GS.plantMode) _cursorManualTile = true;
+    updateFarmActionButton();
   }
 
   function targetTileIsValid(){
@@ -4363,6 +4339,34 @@ console.log("🎮 Đang khởi tạo...");
     if(GS.plantMode) return tt===14 && !getFarmPlot(tx,ty).planted;
     return false;
   }
+
+  function updateFarmActionButton(){
+    const btn=document.getElementById("farm-action-btn");
+    if(!btn)return;
+    const active=!!_targetTile&&(GS.digMode||GS.plantMode);
+    btn.style.display=active?"block":"none";
+    if(active){btn.textContent=GS.plantMode?"🌱 Gieo hạt":"🪓 Đào đất";btn.style.background=GS.plantMode?"#2e9d59":"#9a6a28";}
+  }
+  function performFarmAction(){
+    if(!_targetTile){showToast("👆 Hãy chọn một ô đất trước.",1200);return;}
+    const tix=_targetTile.tx,tiy=_targetTile.ty;
+    if(GS.digMode){
+      if(!hasInvItem("shovel",1)){showToast("❌ Hết xẻng!",1200);return;}
+      if(digToFarm(tix,tiy)){removeInvItem("shovel",1);GS.digMode=false;_targetTile=null;_cursorManualTile=false;document.getElementById("btn-dig")?.classList.remove("dig-active");}
+      updateFarmActionButton();updateHUD();return;
+    }
+    if(!GS.plantMode)return;
+    if(getTile(tiy,tix,map)!==14){showToast("🌱 Hãy chọn ô đất màu nâu đã đào.",1500);return;}
+    const seedIds=[GS.activeSeedType,"seed_orange","seed_melon","seed_veggie","seed"],seedId=seedIds.find(s=>s&&hasInvItem(s,1));
+    if(!seedId){showToast("❌ Bạn chưa có túi hạt giống. Hãy chế tạo hạt trước.",1800);return;}
+    const fp=getFarmPlot(tix,tiy);
+    if(fp.planted){showToast("❌ Ô này đã có cây rồi!",1000);return;}
+    removeInvItem(seedId,1);const seedInfo=ITEMS[seedId]||{};
+    fp.planted=true;fp.seedType=seedId;fp.crop=seedInfo.cropIcon||"🌾";fp.cropSprite=seedInfo.cropSprite||"crop_sprout";fp.growTime=seedInfo.growTime||45;fp.plantedAt=Date.now();fp.watered=false;fp.stage=0;
+    showToast(`🌱 Đã gieo ${seedInfo.icon||"🌱"} ${seedInfo.name||seedId}!`,1600);
+    renderCropVisuals();updateFarmButton();updateHUD();_targetTile=null;_cursorManualTile=false;setNearestActionTile();updateFarmActionButton();
+  }
+  window.confirmFarmAction=performFarmAction;
 
   // Trên điện thoại thường không có sự kiện rê chuột, nên tạo sẵn con trỏ
   // ở ô hợp lệ gần nhân vật khi bật Đào/Trồng.
@@ -4393,7 +4397,7 @@ console.log("🎮 Đang khởi tạo...");
     const chosen=candidates[0];
     _targetTile={tx:chosen.tx,ty:chosen.ty,nearDistance:chosen.distance};
   }
-  window.refreshActionCursor = function(){ _cursorManualTile=false; setNearestActionTile(); };
+  window.refreshActionCursor = function(){ _cursorManualTile=false; setNearestActionTile(); updateFarmActionButton(); };
 
   function getFarmPlot(tx,ty){
     const k=tx+","+ty;
