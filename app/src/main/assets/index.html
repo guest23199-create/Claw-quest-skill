@@ -2792,9 +2792,11 @@ window.quickDig = function(){
     if(GS.digMode){
       showToast("🪓 Chế độ Đào — click ô cỏ/cát để đào đất trồng!",2500);
       btn?.classList.add("dig-active");
+      window.refreshActionCursor?.();
     } else {
       showToast("🪓 Tắt đào",1000);
       btn?.classList.remove("dig-active");
+      window.refreshActionCursor?.();
     }
     return;
   }
@@ -2842,6 +2844,7 @@ window.quickPlant = function(){
         window.closeQuickPopup();
         GS.activeSeedType = seedId;
         GS.plantMode = true; GS.digMode = false;
+        window.refreshActionCursor?.();
         document.getElementById("btn-plant")?.classList.add("plant-active");
         showToast("🌱 Đang gieo " + seedLabel + " — click ô đất nâu!", 2500);
       }
@@ -4275,6 +4278,7 @@ console.log("🎮 Đang khởi tạo...");
   let _currentFarmTile = null;
   let _targetTile = null;
   let _cursorDragging = false;
+  let _cursorManualTile = false;
 
   function setTargetTile(pos){
     if(!pos || (!GS.digMode && !GS.plantMode && !_cursorDragging)){ _targetTile=null; return; }
@@ -4283,6 +4287,7 @@ console.log("🎮 Đang khởi tạo...");
     const ptx=playerObj?Math.floor(playerObj.pos.x/TILE):tx;
     const pty=playerObj?Math.floor(playerObj.pos.y/TILE):ty;
     _targetTile={tx,ty,nearDistance:Math.max(Math.abs(tx-ptx),Math.abs(ty-pty))};
+    if(GS.digMode || GS.plantMode) _cursorManualTile = true;
   }
 
   function targetTileIsValid(){
@@ -4293,6 +4298,37 @@ console.log("🎮 Đang khởi tạo...");
     if(GS.plantMode) return tt===14 && !getFarmPlot(tx,ty).planted;
     return false;
   }
+
+  // Trên điện thoại thường không có sự kiện rê chuột, nên tạo sẵn con trỏ
+  // ở ô hợp lệ gần nhân vật khi bật Đào/Trồng.
+  function setNearestActionTile(){
+    if(!playerObj || (!GS.digMode && !GS.plantMode)) return;
+    const ptx=Math.floor(playerObj.pos.x/TILE), pty=Math.floor(playerObj.pos.y/TILE);
+    const candidates=[];
+    for(let radius=1;radius<=5;radius++){
+      for(let dy=-radius;dy<=radius;dy++) for(let dx=-radius;dx<=radius;dx++){
+        const tx=ptx+dx, ty=pty+dy;
+        if(tx<0||tx>=COLS||ty<0||ty>=ROWS||(dx===0&&dy===0)) continue;
+        const tt=getTile(ty,tx,map);
+        const occupied=idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty);
+        const valid=GS.digMode
+          ? [0,1,8,10,13].includes(tt)&&!occupied
+          : tt===14&&!getFarmPlot(tx,ty).planted;
+        if(valid) candidates.push({tx,ty,distance:Math.max(Math.abs(dx),Math.abs(dy)),order:Math.abs(dx)+Math.abs(dy)});
+      }
+      if(candidates.length) break;
+    }
+    if(!candidates.length){
+      const tx=Math.max(0,Math.min(COLS-1,ptx+1));
+      const ty=Math.max(0,Math.min(ROWS-1,pty));
+      _targetTile={tx,ty,nearDistance:Math.max(Math.abs(tx-ptx),Math.abs(ty-pty))};
+      return;
+    }
+    candidates.sort((a,b)=>a.distance-b.distance||a.order-b.order);
+    const chosen=candidates[0];
+    _targetTile={tx:chosen.tx,ty:chosen.ty,nearDistance:chosen.distance};
+  }
+  window.refreshActionCursor = function(){ _cursorManualTile=false; setNearestActionTile(); };
 
   function getFarmPlot(tx,ty){
     const k=tx+","+ty;
@@ -5083,6 +5119,7 @@ console.log("🎮 Đang khởi tạo...");
       k.camPos(playerObj.pos.x,playerObj.pos.y);
       k.camScale(Math.min(window.innerWidth, window.innerHeight) / (currentVisibleTiles() * TILE));
     }
+    if((GS.digMode || GS.plantMode) && !_cursorManualTile) setNearestActionTile();
     refreshMinimap();
 
     updateHUD();
