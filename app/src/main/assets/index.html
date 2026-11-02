@@ -3445,7 +3445,21 @@ console.log("🎮 Đang khởi tạo...");
   }
 
   // ─═══ PLAYER — Yellow avatar inspired by the supplied reference ─══──
-  const sx=Math.floor(COLS/2)*TILE+TILE/2,sy=Math.floor(ROWS/2)*TILE+TILE/2;
+  // Một số đảo có biển ở đúng tâm bản đồ. Không đặt nhân vật giữa biển,
+  // nếu không va chạm sẽ khóa gần hết các hướng di chuyển.
+  function findWalkableSpawn(tileMap){
+    const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);
+    for(let radius=0;radius<Math.max(COLS,ROWS);radius++){
+      for(let dy=-radius;dy<=radius;dy++) for(let dx=-radius;dx<=radius;dx++){
+        if(Math.max(Math.abs(dx),Math.abs(dy))!==radius) continue;
+        const tx=cx+dx,ty=cy+dy;
+        if(tx>=0&&tx<COLS&&ty>=0&&ty<ROWS&&!isSolid(getTile(ty,tx,tileMap))) return {tx,ty};
+      }
+    }
+    return {tx:cx,ty:cy};
+  }
+  const spawnTile=findWalkableSpawn(map);
+  const sx=spawnTile.tx*TILE+TILE/2,sy=spawnTile.ty*TILE+TILE/2;
 
   function getPlayer(){return playerObj;}
 
