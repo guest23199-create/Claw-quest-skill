@@ -396,6 +396,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <span class="modal-close" onclick="window.closeModals()">&times;</span>
   <h2>🐾 Quản Lý 10 Pebble</h2>
   <div class="modal-sub">Chạm vào 1 Pebble để giao việc</div>
+  <button onclick="window.openPebbleChat()" style="width:100%;background:#315b83;border:1px solid #74b9ff;color:#fff;border-radius:5px;padding:7px;font-size:11px;cursor:pointer;margin-bottom:6px;">💬 Chat với 10 Pebble</button>
   <div id="pebble-manager-list" style="max-height:60vh;overflow-y:auto;"></div>
 </div></div>
 
@@ -421,7 +422,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 <!-- ─── PEBBLE CHAT ─── -->
 <div class="modal-overlay" id="modal-pebble-chat"><div class="modal-box" style="max-width:430px;padding:12px;background:linear-gradient(180deg,#172943,#101b2f);">
   <span class="modal-close" onclick="window.closePebbleChat()">&times;</span>
-  <h2 style="color:#f0c060;margin-bottom:2px">🐾 Chat với Pebble</h2>
+  <h2 style="color:#f0c060;margin-bottom:2px">🐾 Chat với 10 Pebble</h2>
   <div class="modal-sub">Hỏi đáp, ra lệnh hoặc nói để Pebble học thêm</div>
   <div id="pebble-chat-messages" style="height:260px;overflow-y:auto;background:rgba(0,0,0,.25);border:1px solid #355276;border-radius:8px;padding:8px;margin:8px 0;display:flex;flex-direction:column;gap:6px;"></div>
   <div id="pebble-chat-status" style="font-size:10px;color:#8fb4d8;min-height:15px;text-align:center;margin-bottom:4px"></div>
@@ -2650,9 +2651,28 @@ function addPebbleChatBubble(who,text){
   box.appendChild(el);
 }
 function sendPebbleChat(){
-  const input=document.getElementById("pebble-chat-input"),text=(input?.value||"").trim();if(!text)return;
-  const answer=pebbleChatAnswer(text);pebbleMemory.conversationHistory=pebbleMemory.conversationHistory||[];pebbleMemory.conversationHistory.push({who:"player",text,time:Date.now()},{who:"pebble",text:answer,time:Date.now()});pebbleMemory.conversationHistory=pebbleMemory.conversationHistory.slice(-80);renderPebbleChat();input.value="";saveGame();
+  const input=document.getElementById("pebble-chat-input"),send=document.getElementById("pebble-chat-send"),status=document.getElementById("pebble-chat-status"),text=(input?.value||"").trim();
+  if(!text || send?.dataset.waiting==="1") return;
+  pebbleMemory.conversationHistory=pebbleMemory.conversationHistory||[];
+  pebbleMemory.conversationHistory.push({who:"player",text,time:Date.now()});
+  pebbleMemory.conversationHistory=pebbleMemory.conversationHistory.slice(-80);
+  renderPebbleChat(); input.value="";
+  if(send){send.dataset.waiting="1";send.disabled=true;send.style.opacity=".6";}
+  if(status) status.textContent="🐾 Pebble đang suy nghĩ…";
+  setTimeout(()=>{
+    let answer;
+    try{ answer=pebbleChatAnswer(text); }
+    catch(err){ console.error("Pebble chat error",err); answer="Mình bị gián đoạn một chút. Bạn thử hỏi lại nhé."; }
+    pebbleMemory.conversationHistory.push({who:"pebble",text:answer,time:Date.now()});
+    pebbleMemory.conversationHistory=pebbleMemory.conversationHistory.slice(-80);
+    renderPebbleChat();
+    if(status) status.textContent="✅ Pebble đã trả lời";
+    if(send){send.dataset.waiting="0";send.disabled=false;send.style.opacity="1";}
+    saveGame();
+    setTimeout(()=>{if(status)status.textContent="";},1800);
+  },220);
 }
+window.sendPebbleChat=sendPebbleChat;
 function bindPebbleChat(){
   if(pebbleChatBound)return;pebbleChatBound=true;
   document.getElementById("pebble-chat-send")?.addEventListener("click",sendPebbleChat);
