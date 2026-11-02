@@ -187,6 +187,17 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
 .modal-box{padding:10px;max-width:98%}
 #craft-list{grid-template-columns:1fr}
 #build-list{grid-template-columns:1fr}
+.ba-row{gap:6px;margin:3px 0}
+#bottom-actions{gap:6px;padding:7px}
+.bot-btn{margin:0 1px}
+#ui-layout-btn{position:fixed;top:44px;right:8px;z-index:31;width:34px;height:34px;background:#173b5d;border:2px solid #7ec8ff;border-radius:7px;color:#fff;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #071c35,inset 0 0 0 1px rgba(255,255,255,.18)}
+#ui-layout-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #071c35}
+.layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{outline:2px dashed #ffe066;outline-offset:4px;cursor:move}
+.layout-editing #bottom-actions,.layout-editing #dpad,.layout-editing #resources,.layout-editing #minimap-wrap,.layout-editing #arena-entry-btn{touch-action:none}
+.layout-editing #dpad{pointer-events:auto}
+.layout-editing #bottom-actions:before,.layout-editing #dpad:before,.layout-editing #resources:before,.layout-editing #minimap-wrap:before,.layout-editing #arena-entry-btn:before{content:'✋ Kéo';position:absolute;top:-17px;left:0;background:#5b4215;color:#ffe066;border:1px solid #ffe066;border-radius:3px;padding:1px 4px;font-size:8px;z-index:3;pointer-events:none;white-space:nowrap}
+#layout-status{min-height:18px;text-align:center;color:#ffe066;font-size:10px;margin-top:8px}
+@media(max-width:500px){#ui-layout-btn{top:44px;right:5px;width:32px;height:32px;font-size:16px}.ba-row{gap:6px;margin:3px 0}#bottom-actions{gap:6px;padding:6px 7px}.bot-btn{margin:0 1px}}
 </style>
 </head>
 <body>
@@ -218,6 +229,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
       <div class="tb-bar-wrap"><div class="tb-bar-fill" id="hud-hunger-fill" style="width:80%;background:linear-gradient(180deg,#ffb066,#e67e22)"></div></div>
     </div>
   </div>
+  <button id="ui-layout-btn" onclick="window.openLayoutSettings()" title="Cài đặt vị trí giao diện">⚙️</button>
 
   <!-- ─── Nút vào thẳng Đấu Trường — luôn hiện cố định ở đầu trang, không cần đi tìm nhà trên bản đồ ─── -->
   <div id="arena-entry-btn" style="position:fixed;top:46px;left:8px;z-index:24;pointer-events:auto;">
@@ -383,6 +395,17 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <h2>🐾 Quản Lý 10 Pebble</h2>
   <div class="modal-sub">Chạm vào 1 Pebble để giao việc</div>
   <div id="pebble-manager-list" style="max-height:60vh;overflow-y:auto;"></div>
+</div></div>
+
+<!-- ─── UI LAYOUT SETTINGS ─── -->
+<div class="modal-overlay" id="modal-layout-settings"><div class="modal-box" style="max-width:390px">
+  <span class="modal-close" onclick="window.closeLayoutSettings()">&times;</span>
+  <h2>⚙️ Cài Đặt Giao Diện</h2>
+  <div class="modal-sub">Tách các khung đang dính nhau bằng cách kéo trực tiếp trên màn hình.</div>
+  <button id="layout-edit-toggle" onclick="window.toggleLayoutEdit()" style="width:100%;background:#2e9d59;border:2px solid #75e6a0;color:#fff;border-radius:5px;padding:8px;font-size:11px;cursor:pointer;">✋ Bật kéo thả</button>
+  <button onclick="window.resetLayout()" style="width:100%;margin-top:7px;background:#8b4e29;border:2px solid #f0c060;color:#fff;border-radius:5px;padding:8px;font-size:11px;cursor:pointer;">↺ Đặt lại vị trí mặc định</button>
+  <div id="layout-status">Vị trí được lưu riêng trên thiết bị này.</div>
+  <button onclick="window.closeLayoutSettings()" style="width:100%;margin-top:3px;background:#315b83;border:1px solid #74b9ff;color:#fff;border-radius:5px;padding:7px;font-size:11px;cursor:pointer;">Đóng</button>
 </div></div>
 
 <!-- ─── PEBBLE CHAT ─── -->
@@ -1496,11 +1519,134 @@ window.closeModals = function(){
   document.querySelectorAll(".modal-overlay").forEach(m=>m.classList.remove("show"));
 }
 
+// ─── Kéo thả bố cục HUD: lưu vị trí riêng trên thiết bị ───
+const UI_LAYOUT_KEY = "clawquest_ui_layout_v1";
+const UI_LAYOUT_ITEMS = ["bottom-actions","dpad","resources","minimap-wrap","arena-entry-btn"];
+let uiLayoutEditMode = false;
+let uiLayoutDrag = null;
+let uiLayoutLoaded = false;
+
+function readUILayout(){
+  try { return JSON.parse(localStorage.getItem(UI_LAYOUT_KEY) || "{}"); }
+  catch(e) { return {}; }
+}
+function saveUILayout(){
+  const data = {};
+  UI_LAYOUT_ITEMS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cs = getComputedStyle(el);
+    const hasCustom = el.style.left || el.style.top || el.style.right === "auto" || el.style.bottom === "auto";
+    if(hasCustom) data[id] = {left: parseFloat(cs.left), top: parseFloat(cs.top)};
+  });
+  localStorage.setItem(UI_LAYOUT_KEY, JSON.stringify(data));
+}
+function applyUILayout(){
+  const data = readUILayout();
+  UI_LAYOUT_ITEMS.forEach(id=>{
+    const el = document.getElementById(id), pos = data[id];
+    if(!el || !pos || !Number.isFinite(pos.left) || !Number.isFinite(pos.top)) return;
+    const maxLeft = Math.max(0, window.innerWidth - el.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - el.offsetHeight);
+    el.style.left = Math.max(0, Math.min(maxLeft, pos.left)) + "px";
+    el.style.top = Math.max(0, Math.min(maxTop, pos.top)) + "px";
+    el.style.right = "auto";
+    el.style.bottom = "auto";
+  });
+  uiLayoutLoaded = true;
+}
+function clearUILayoutStyles(){
+  UI_LAYOUT_ITEMS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.left = ""; el.style.top = ""; el.style.right = ""; el.style.bottom = "";
+  });
+}
+function clampLayoutPosition(el,left,top){
+  return {
+    left: Math.max(0, Math.min(window.innerWidth - el.offsetWidth, left)),
+    top: Math.max(0, Math.min(window.innerHeight - el.offsetHeight, top))
+  };
+}
+function startUILayoutDrag(e){
+  if(!uiLayoutEditMode) return;
+  const el = e.currentTarget;
+  if(e.pointerType === "mouse" && e.button !== 0) return;
+  e.preventDefault(); e.stopPropagation();
+  const rect = el.getBoundingClientRect();
+  uiLayoutDrag = {el, id:el.id, dx:e.clientX-rect.left, dy:e.clientY-rect.top, moved:false};
+  try { el.setPointerCapture(e.pointerId); } catch(err) {}
+}
+function moveUILayoutDrag(e){
+  if(!uiLayoutDrag) return;
+  const p = clampLayoutPosition(uiLayoutDrag.el,e.clientX-uiLayoutDrag.dx,e.clientY-uiLayoutDrag.dy);
+  if(Math.abs(p.left - parseFloat(uiLayoutDrag.el.style.left || "-999")) > 1 || Math.abs(p.top - parseFloat(uiLayoutDrag.el.style.top || "-999")) > 1) uiLayoutDrag.moved=true;
+  uiLayoutDrag.el.style.left = p.left + "px";
+  uiLayoutDrag.el.style.top = p.top + "px";
+  uiLayoutDrag.el.style.right = "auto";
+  uiLayoutDrag.el.style.bottom = "auto";
+}
+function endUILayoutDrag(){
+  if(!uiLayoutDrag) return;
+  if(uiLayoutDrag.moved) saveUILayout();
+  uiLayoutDrag = null;
+  const status = document.getElementById("layout-status");
+  if(status) status.textContent = "Đã lưu vị trí khung giao diện.";
+}
+function bindUILayoutDrag(){
+  UI_LAYOUT_ITEMS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && !el.dataset.layoutDragBound){
+      el.addEventListener("pointerdown",startUILayoutDrag,{passive:false});
+      el.dataset.layoutDragBound = "1";
+    }
+  });
+}
+window.openLayoutSettings = function(){
+  window.closeModals();
+  const modal = document.getElementById("modal-layout-settings");
+  if(modal) modal.classList.add("show");
+  const button = document.getElementById("layout-edit-toggle");
+  if(button) button.textContent = uiLayoutEditMode ? "🛑 Tắt kéo thả" : "✋ Bật kéo thả";
+};
+window.closeLayoutSettings = function(){
+  document.getElementById("modal-layout-settings")?.classList.remove("show");
+};
+window.toggleLayoutEdit = function(){
+  uiLayoutEditMode = !uiLayoutEditMode;
+  document.body.classList.toggle("layout-editing",uiLayoutEditMode);
+  const button = document.getElementById("layout-edit-toggle");
+  if(button) button.textContent = uiLayoutEditMode ? "🛑 Tắt kéo thả" : "✋ Bật kéo thả";
+  if(uiLayoutEditMode){
+    window.closeLayoutSettings();
+    showToast("✋ Chạm và kéo khung để sắp xếp lại",2200);
+  } else showToast("✅ Đã lưu bố cục nút",1200);
+};
+window.resetLayout = function(){
+  localStorage.removeItem(UI_LAYOUT_KEY);
+  clearUILayoutStyles();
+  const status = document.getElementById("layout-status");
+  if(status) status.textContent = "Đã khôi phục vị trí mặc định.";
+  showToast("↺ Đã đặt lại giao diện",1200);
+};
+window.addEventListener("pointermove",moveUILayoutDrag,{passive:false});
+window.addEventListener("pointerup",endUILayoutDrag,{passive:true});
+window.addEventListener("pointercancel",endUILayoutDrag,{passive:true});
+// Khi đang chỉnh sửa, chạm nút con chỉ để kéo khung, tránh vô tình kích hoạt lệnh.
+document.addEventListener("click",e=>{
+  if(uiLayoutEditMode && e.target.closest(UI_LAYOUT_ITEMS.map(id=>"#"+id).join(","))){
+    e.preventDefault(); e.stopPropagation();
+  }
+},true);
+bindUILayoutDrag();
+applyUILayout();
+window.addEventListener("resize",()=>{ if(uiLayoutLoaded) { applyUILayout(); saveUILayout(); } });
+
 // Ẩn/hiện các HUD của màn chơi chính (joystick di chuyển, thanh hub, tài nguyên, minimap...)
 // khi vào các mini-game riêng biệt (Đấu Trường, Vòng Quay May Mắn...) — tránh hiện joystick
 // vô dụng đè lên màn hình chiến đấu theo lượt khiến người chơi tưởng bấm không được.
 function setGameHUDVisible(visible){
-  const ids = ["top-bar","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
+  const ids = ["top-bar","ui-layout-btn","island-label","resources","bottom-actions","minimap-wrap","scan-status","dpad","arena-entry-btn"];
   ids.forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = visible ? "" : "none";
