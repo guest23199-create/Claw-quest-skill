@@ -1024,7 +1024,9 @@ function renderQuestList(){
 }
 window.openQuestLog=function(){window.closeModals();ensureQuestState();renderQuestList();document.getElementById("modal-quests")?.classList.add("show");};
 function getIslandData(id) {
-  if (!GS.islands[id]) GS.islands[id] = {buildings:[],map:null,enemies:[],enemyTimer:0,farmPlots:{}};
+  if (!GS.islands[id]) GS.islands[id] = {buildings:[],map:null,enemies:[],enemyTimer:0,farmPlots:{},palmRegrowth:[],coconutDrops:[]};
+  if (!Array.isArray(GS.islands[id].palmRegrowth)) GS.islands[id].palmRegrowth=[];
+  if (!Array.isArray(GS.islands[id].coconutDrops)) GS.islands[id].coconutDrops=[];
   return GS.islands[id];
 }
 
@@ -3206,6 +3208,12 @@ console.log("🎮 Đang khởi tạo...");
     }
   }
   renderBuildings();
+  // ─── Vòng đời cây dừa: rụng trái và tự mọc lại ───
+  const palmDropObjects=[];
+  function renderCoconutDrops(){while(palmDropObjects.length){try{k.destroy(palmDropObjects.pop())}catch(e){}}for(const drop of (idata.coconutDrops||[])){const o=k.add([k.text("🥥",{size:13}),k.pos(drop.tx*TILE+TILE/2,drop.ty*TILE+TILE/2-6),k.anchor("center"),k.z(25)]);palmDropObjects.push(o);}}
+  function schedulePalmRegrowth(tx,ty){idata.palmRegrowth=idata.palmRegrowth||[];if(idata.palmRegrowth.some(p=>p.tx===tx&&p.ty===ty))return;const now=Date.now();idata.palmRegrowth.push({tx,ty,fruitAt:now+20000,regrowAt:now+50000,fruitDropped:false});showToast("🌴 Cây dừa sẽ rụng trái rồi mọc lại sau một lúc.",1800);}
+  function updatePalmLifecycle(){const now=Date.now();let changed=false;idata.palmRegrowth=idata.palmRegrowth||[];idata.coconutDrops=idata.coconutDrops||[];for(let i=idata.palmRegrowth.length-1;i>=0;i--){const p=idata.palmRegrowth[i];if(!p.fruitDropped&&now>=p.fruitAt){p.fruitDropped=true;if(!idata.coconutDrops.some(d=>d.tx===p.tx&&d.ty===p.ty))idata.coconutDrops.push({tx:p.tx,ty:p.ty});changed=true;}if(now>=p.regrowAt){setTile(p.ty,p.tx,15,map);idata.palmRegrowth.splice(i,1);changed=true;}}if(changed){renderCoconutDrops();drawMinimapStatic();showToast("🌴 Một cây dừa đã mọc lại!",1200);}}
+  renderCoconutDrops();
   window.placeNearestBuilding=function(){
     if(!GS.buildMode||!playerObj){showToast("🏗️ Hãy chọn công trình trước.",1200);return;}
     const ptx=Math.floor(playerObj.pos.x/TILE),pty=Math.floor(playerObj.pos.y/TILE),candidates=[];
@@ -4130,6 +4138,8 @@ console.log("🎮 Đang khởi tạo...");
     const pos = k.mousePos();
     setTargetTile(pos);
     if(window._clickConsumed){window._clickConsumed=false;return;}
+    const coconutDrop=(idata.coconutDrops||[]).find(d=>d.tx===Math.floor(pos.x/TILE)&&d.ty===Math.floor(pos.y/TILE));
+    if(coconutDrop){addInvItem("coconut",1);idata.coconutDrops=idata.coconutDrops.filter(d=>d!==coconutDrop);renderCoconutDrops();showToast("🥥 Đã nhặt một trái dừa!",1200);updateHUD();return;}
     // ─── ƯU TIÊN CHẠM PEBBLE CREW ─────────────────────────────────
     // Chạm trúng 1 Pebble trợ thủ trên bản đồ → mở menu giao việc ngay, không rơi xuống xây/đào
     for(const pc of pebbleCrew){
@@ -4322,6 +4332,7 @@ console.log("🎮 Đang khởi tạo...");
       }
       // Cây chỉ cho gỗ một lần: 1–10 gỗ là giới hạn tối đa cho mỗi cây.
       if((type===4||type===11||type===15)&&w>0) setTile(ty,tx,0,map);
+      if(type===15&&w>0) schedulePalmRegrowth(tx,ty);
       updateHUD();
     }
   }
@@ -5227,6 +5238,7 @@ console.log("🎮 Đang khởi tạo...");
     }
     if((GS.digMode || GS.plantMode) && !_cursorManualTile) setNearestActionTile();
     refreshMinimap();
+    updatePalmLifecycle();
 
     updateHUD();
 
