@@ -3125,6 +3125,40 @@ console.log("🎮 Đang khởi tạo...");
   // thay vì nhà luôn đè lên nhân vật như trước.
   function depthZ(y){ return 40 + y/8; }
 
+  // Tạo sẵn một góc làng nhỏ cho mỗi đảo để bản đồ luôn có điểm nhấn.
+  // Đây là cảnh quan khởi đầu, không trừ tài nguyên và chỉ tạo một lần trong save.
+  function ensureScenicVillage(){
+    if(idata.scenicVillageSeeded) return;
+    const walkable=[0,1,8,10,13];
+    const occupied=(tx,ty)=>idata.buildings.some(b=>b.tileX===tx&&b.tileY===ty);
+    const findTile=(ox,oy)=>{
+      const candidates=[];
+      for(let r=0;r<18;r++) for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){
+        const tx=Math.max(2,Math.min(COLS-3,Math.round(ox+dx))),ty=Math.max(2,Math.min(ROWS-3,Math.round(oy+dy)));
+        if(!walkable.includes(getTile(ty,tx,map))||occupied(tx,ty)) continue;
+        if(!candidates.some(p=>p.tx===tx&&p.ty===ty)) candidates.push({tx,ty});
+      }
+      return candidates[0]||{tx:Math.floor(COLS/2),ty:Math.floor(ROWS/2)};
+    };
+    const home=findTile(COLS*0.35,ROWS*0.38);
+    idata.buildings.push({tileX:home.tx,tileY:home.ty,type:"shelter",scenic:true});
+    const fire=findTile(home.tx+2,home.ty+1);
+    idata.buildings.push({tileX:fire.tx,tileY:fire.ty,type:"campfire",scenic:true});
+    // Vườn nhỏ cạnh nhà: 2x3 ô đất màu nâu để có thể gieo hạt ngay.
+    let gardenCount=0;
+    for(let dy=1;dy<=2;dy++) for(let dx=-2;dx<=0;dx++){
+      const tx=home.tx+dx,ty=home.ty+dy;
+      if(tx<1||ty<1||tx>=COLS-1||ty>=ROWS-1||!walkable.includes(getTile(ty,tx,map))||occupied(tx,ty)) continue;
+      setTile(ty,tx,14,map);
+      const key=tx+","+ty;
+      idata.farmPlots[key]={planted:false,crop:null,stage:-1,plantedAt:0,watered:false};
+      gardenCount++;
+    }
+    idata.scenicVillageSeeded=true;
+    console.log(`[${islandId}] Added scenic village: house, campfire, garden ${gardenCount} plots`);
+  }
+  ensureScenicVillage();
+
   function renderBuildings(){
     for(const o of buildingObjs) try{k.destroy(o)}catch(e){}
     buildingObjs.length=0;
