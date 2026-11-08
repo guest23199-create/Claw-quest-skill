@@ -2720,20 +2720,31 @@ let autoFarmLastPos = null;
 let _af_playerTileX = Math.floor(COLS/2);
 let _af_playerTileY = Math.floor(ROWS/2);
 let autoFarmNoResourceMsg = false;
+let autoFarmMode = 'gather';
+const AUTO_MODE_LABELS = {
+  gather:'Khai thác tài nguyên', explore:'Khám phá quanh đảo', attack:'Tự tấn công quái',
+  guard:'Bảo vệ khu nhà', dig:'Tự cuốc đất', plant:'Tự gieo hạt', water:'Tự tưới cây', harvest:'Tự thu hoạch'
+};
+
+function setAutoFarmMode(mode){
+  autoFarmMode=mode; autoFarmEnabled=true; autoFarmState='idle'; autoFarmTarget=null;
+  autoFarmPath=[]; autoFarmPathIndex=0; autoFarmCooldown=0; autoFarmNoResourceMsg=false;
+  window.cancelFarmModes?.();
+  const btn=document.getElementById('btn-autofarm'); if(btn) btn.classList.add('on');
+  showToast(`🤖 Auto: ${AUTO_MODE_LABELS[mode]||mode}`,1800);
+}
 
 window.toggleAutoFarm = function() {
-  autoFarmEnabled = !autoFarmEnabled;
-  const btn = document.getElementById('btn-autofarm');
-  if (btn) btn.classList.toggle('on');
-  if (!autoFarmEnabled) {
-    autoFarmState = 'idle';
-    autoFarmTarget = null;
-    autoFarmPath = [];
-    autoFarmCooldown = 0;
-  } else {
-    autoFarmState = 'idle';
-    showToast('🤖 Auto: dang tu dong kham pha...', 1500);
-  }
+  const items=Object.entries(AUTO_MODE_LABELS).map(([mode,label])=>({
+    icon:{gather:'⛏️',explore:'🗺️',attack:'⚔️',guard:'🛡️',dig:'🪓',plant:'🌱',water:'💧',harvest:'🧺'}[mode],
+    label, sublabel:mode==='guard'?'Chỉ đánh quái ở gần nhà':mode==='attack'?'Tìm và đánh quái trên đảo':'Tự tìm mục tiêu phù hợp',
+    enabled:true, action(){window.closeQuickPopup();setAutoFarmMode(mode);}
+  }));
+  items.unshift({icon:'⏹️',label:'Tắt Auto',sublabel:autoFarmEnabled?`Đang chạy: ${AUTO_MODE_LABELS[autoFarmMode]}`:'Đang tắt',enabled:autoFarmEnabled,action(){
+    window.closeQuickPopup();autoFarmEnabled=false;autoFarmState='idle';autoFarmTarget=null;autoFarmPath=[];autoFarmCooldown=0;
+    document.getElementById('btn-autofarm')?.classList.remove('on');showToast('⏹️ Đã tắt Auto',1000);
+  }});
+  openQuickPopup('🤖 Chọn nhiệm vụ Auto',items,'btn-autofarm');
 };
 
 function bfsPath(sx, sy, ex, ey) {
@@ -4768,6 +4779,68 @@ console.log("🎮 Đang khởi tạo...");
   }
   
   // ---- AUTO FARM UPDATE ----
+  function findNearestAutoTile(mode){
+    if(!playerObj) return null;
+    const px=Math.floor(playerObj.pos.x/TILE),py=Math.floor(playerObj.pos.y/TILE),mapData=getIslandData(GS.currentIsland).map;
+    let best=null,bestD=Infinity;
+    for(let ty=1;ty<ROWS-1;ty++) for(let tx=1;tx<COLS-1;tx++){
+      const tile=getTile(ty,tx,mapData); let ok=false;
+      if(mode==='dig') ok=[0,1,8,10,13].includes(tile)&&!getIslandData(GS.currentIsland).buildings.some(b=>b.tileX===tx&&b.tileY===ty)&&hasInvItem('shovel',1);
+      if(mode==='plant') ok=tile===14&&!getFarmPlot(tx,ty).planted&&[GS.activeSeedType,'seed_orange','seed_melon','seed_veggie','seed'].some(id=>id&&hasInvItem(id,1));
+      if(mode==='water') ok=tile===14&&getFarmPlot(tx,ty).planted&&!getFarmPlot(tx,ty).watered&&hasInvItem('water',1);
+      if(mode==='harvest') ok=tile===14&&getFarmPlot(tx,ty).planted&&computeCropStage(getFarmPlot(tx,ty))>=3;
+      if(!ok) continue;
+      const d=Math.abs(tx-px)+Math.abs(ty-py); if(d<bestD){bestD=d;best={tx,ty,type:tile};}
+    }
+    return best;
+  }
+
+  function autoTileTaskUpdate(mode){
+    if(autoFarmCooldown>0){autoFarmCooldown-=k.dt();return;}
+    if(autoFarmState==='idle'){
+      autoFarmTarget=findNearestAutoTile(mode);
+      if(!autoFarmTarget){
+        showToast(`🤖 Auto: không còn mục tiêu để ${AUTO_MODE_LABELS[mode].toLowerCase()}`,1800);
+        autoFarmEnabled=false;document.getElementById('btn-autofarm')?.classList.remove('on');return;
+      }
+      autoFarmPath=bfsPath(Math.floor(playerObj.pos.x/TILE),Math.floor(playerObj.pos.y/TILE),autoFarmTarget.tx,autoFarmTarget.ty);
+      if(autoFarmPath===null){autoFarmTarget=null;autoFarmState='idle';autoFarmCooldown=1;return;}
+      autoFarmPathIndex=0;autoFarmState=autoFarmPath.length?'moving':'working';
+    }
+    if(autoFarmState==='moving'){
+      const tx=Math.floor(playerObj.pos.x/TILE),ty=Math.floor(playerObj.pos.y/TILE);
+      if(autoFarmPathIndex>=autoFarmPath.length){autoFarmState='working';return;}
+      const step=autoFarmPath[autoFarmPathIndex];
+      if(tx===step.tx&&ty===step.ty){autoFarmPathIndex++;return;}
+      if(!isMoving) movePlayerTo(step.tx*TILE+TILE/2,step.ty*TILE+TILE/2);
+      return;
+    }
+    if(autoFarmState==='working'&&autoFarmTarget){
+      const tx=autoFarmTarget.tx,ty=autoFarmTarget.ty;
+      if(mode==='dig'&&digToFarm(tx,ty)) removeInvItem('shovel',1);
+      else if(mode==='plant'){_targetTile={tx,ty};performFarmAction();}
+      else if(mode==='water'||mode==='harvest'){_currentFarmTile={tx,ty};window.farmAction();}
+      autoFarmTarget=null;autoFarmState='idle';autoFarmCooldown=1.2;
+    }
+  }
+
+  function autoCombatUpdate(guardOnly){
+    if(autoFarmCooldown>0){autoFarmCooldown-=k.dt();return;}
+    const p=playerObj.pos; let target=null,best=Infinity;
+    for(const e of enemyObjs){if(!e||e.dead||!e.exists())continue;const d=e.pos.dist(p);if((!guardOnly||d<TILE*7)&&d<best){best=d;target=e;}}
+    if(activeBoss&&activeBoss.exists()){const d=activeBoss.pos.dist(p);if((!guardOnly||d<TILE*7)&&d<best){best=d;target=activeBoss;}}
+    if(!target){showToast('🛡️ Auto: chưa phát hiện quái gần đây',1200);autoFarmCooldown=3;return;}
+    if(best<TILE*2.3){if(target===activeBoss) attackBoss(target);else attackEnemy(target);autoFarmCooldown=.8;return;}
+    if(!autoFarmPath.length||autoFarmPathIndex>=autoFarmPath.length){
+      const tx=Math.floor(target.pos.x/TILE),ty=Math.floor(target.pos.y/TILE);
+      autoFarmPath=bfsPath(Math.floor(p.x/TILE),Math.floor(p.y/TILE),tx,ty);autoFarmPathIndex=0;
+      if(autoFarmPath===null){autoFarmPath=[];autoFarmCooldown=1;return;}
+    }
+    const step=autoFarmPath[autoFarmPathIndex];
+    if(step&&!isMoving) movePlayerTo(step.tx*TILE+TILE/2,step.ty*TILE+TILE/2);
+    if(step&&Math.floor(p.x/TILE)===step.tx&&Math.floor(p.y/TILE)===step.ty)autoFarmPathIndex++;
+  }
+
   function autoFarmUpdate(dt) {
     if (!playerObj) return;
     doAutoScan(dt);
@@ -4785,6 +4858,15 @@ console.log("🎮 Đang khởi tạo...");
         showToast('🍎 Auto ate food! +15 Đói', 1200);
         updateHUD();
       }
+    }
+
+    if(autoFarmMode==='attack'||autoFarmMode==='guard'){
+      autoCombatUpdate(autoFarmMode==='guard');
+      return;
+    }
+    if(autoFarmMode==='dig'||autoFarmMode==='plant'||autoFarmMode==='water'||autoFarmMode==='harvest'){
+      autoTileTaskUpdate(autoFarmMode);
+      return;
     }
 
     // ─── Auto-defense: attack nearby enemies ───
