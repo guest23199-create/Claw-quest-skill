@@ -3846,6 +3846,7 @@ console.log("🎮 Đang khởi tạo...");
   // ─═══ PLAYER HP BAR (below player character) ═══──
   const pHpBg=k.add([k.rect(22,4),k.pos(sx-11,sy+24),k.color(51,51,51),k.z(10)]);
   const pHpFill=k.add([k.rect(22,4),k.pos(sx-11,sy+24),k.color(46,204,113),k.z(11)]);
+  let playerAnimTime = 0;
 
   // Player parts list for updating positions
   const playerParts=[pĐầu,pHat,pHatBrim,pHatBand,pEyeL,pEyeR,pPupilL,pPupilR,pNose,pMouth,pPants,pArmL,pArmR,pArmor,pCape,pWeapon,pShield];
@@ -4038,7 +4039,10 @@ console.log("🎮 Đang khởi tạo...");
   // ─── PLAYER PARTS UPDATE HELPER ────────────────────
   // Called every frame the player moves (continuous or click-to-move)
   function updatePlayerParts(px, py, moving) {
-    const bob = moving ? Math.sin(Date.now() * 0.012) * 1.2 : 0;
+    playerAnimTime += k.dt() * (moving ? 10 : 2.5);
+    const walkWave = Math.sin(playerAnimTime * (moving ? 1.8 : 1));
+    const bob = moving ? Math.abs(walkWave) * 1.6 : Math.sin(playerAnimTime) * 0.7;
+    const armSwing = moving ? walkWave * 13 : Math.sin(playerAnimTime * 0.8) * 2;
     const bobY = py - 8 + bob;
     playerObj.pos = k.vec2(px, py + 4);
     playerObj._lastPx = px; playerObj._lastPy = py;
@@ -4046,9 +4050,12 @@ console.log("🎮 Đang khởi tạo...");
     pHat.pos = k.vec2(px, bobY - 2); pHatBrim.pos = k.vec2(px - 15, bobY - 8);
     pHatBand.pos = k.vec2(px - 9, bobY - 12);
     pPants.pos = k.vec2(px - 9, py + 30);
-    pArmL.pos = k.vec2(px - 14, py + 9); pArmR.pos = k.vec2(px + 8, py + 9);
+    pArmL.pos = k.vec2(px - 14, py + 9 + bob); pArmR.pos = k.vec2(px + 8, py + 9 + bob);
+    // Nhịp tay đối nhau tạo cảm giác bước đi; khi đứng yên chỉ có chuyển động thở nhẹ.
+    pArmL.angle = armSwing; pArmR.angle = -armSwing;
     pArmor.pos = k.vec2(px, py + 12); pCape.pos = k.vec2(px, py + 18);
-    pWeapon.pos = k.vec2(px + 14, py + 10); pShield.pos = k.vec2(px - 18, py + 12);
+    pWeapon.pos = k.vec2(px + 14, py + 10 + bob); pShield.pos = k.vec2(px - 18, py + 12 + bob);
+    pWeapon.angle = -armSwing * 0.45; pShield.angle = armSwing * 0.25;
     pEyeL.pos = k.vec2(px - 5, bobY - 2); pEyeR.pos = k.vec2(px + 5, bobY - 2);
     pPupilL.pos = k.vec2(px - 4, bobY - 1); pPupilR.pos = k.vec2(px + 6, bobY - 1);
     pNose.pos = k.vec2(px, bobY + 2);
@@ -5013,11 +5020,9 @@ console.log("🎮 Đang khởi tạo...");
       else{playerObj.pos.x+=(dx/d)*spd*k.dt();playerObj.pos.y+=(dy/d)*spd*k.dt();}
       updatePlayerParts(playerObj.pos.x, playerObj.pos.y, playerObj.moving);
     } else if (playerObj) {
-      // Still update HP bar position when stationary
+      // Cập nhật cả animation idle để nhân vật không bị đứng bất động.
       const px=playerObj.pos.x,py=playerObj.pos.y;
-      pHpBg.pos=k.vec2(px-11,py+26);
-      pHpFill.pos=k.vec2(px-11,py+26);
-      pHpFill.width=22*(GS.player.hp/GS.player.maxHp);
+      updatePlayerParts(px,py,false);
     }
 
     // ── Move PEBBLE (follower) — depends on phase ──
