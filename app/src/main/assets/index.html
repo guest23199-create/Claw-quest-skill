@@ -401,6 +401,7 @@ button,input{border:none;outline:none;cursor:pointer;font-family:inherit;color:i
   <h2>🐾 Quản Lý 10 Pebble</h2>
   <div class="modal-sub">Chạm vào 1 Pebble để giao việc</div>
   <button onclick="window.openPebbleChat()" style="width:100%;background:#315b83;border:1px solid #74b9ff;color:#fff;border-radius:5px;padding:7px;font-size:11px;cursor:pointer;margin-bottom:6px;">💬 Chat với 10 Pebble</button>
+  <button onclick="window.callPebbleCrew && window.callPebbleCrew()" style="width:100%;background:#2e9d59;border:1px solid #75e6a0;color:#fff;border-radius:5px;padding:7px;font-size:11px;cursor:pointer;margin-bottom:6px;">📣 Gọi tập hợp 10 Pebble đi theo</button>
   <div id="pebble-manager-list" style="max-height:60vh;overflow-y:auto;"></div>
 </div></div>
 
@@ -3483,6 +3484,49 @@ console.log("🎮 Đang khởi tạo...");
       fpCtx.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
       fpCtx.fillRect(i*colW, (H2-wallH)/2, colW+1, wallH);
     }
+    // Vẽ các vật thể trong tầm nhìn: cây, đá, vườn và nhà. Trước đây góc nhìn
+    // chỉ có mặt đất + tường màu nên người chơi không nhận ra cảnh vật.
+    const scenery=[];
+    const normAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
+    const addScenery=(tx,ty,type,kind)=>{
+      const ox=tx*TILE+TILE/2,oy=ty*TILE+TILE/2,dx=ox-px,dy=oy-py,dist=Math.hypot(dx,dy);
+      if(dist<TILE*.55||dist>FP_MAX_DIST) return;
+      const diff=normAngle(Math.atan2(dy,dx)-playerFacing);
+      if(Math.abs(diff)>FP_FOV*.62) return;
+      const wall=castRay(px,py,Math.atan2(dy,dx));
+      if(wall.dist<dist-TILE*.45) return;
+      scenery.push({tx,ty,type,kind,dist,diff});
+    };
+    const ptx=Math.floor(px/TILE),pty=Math.floor(py/TILE),range=Math.ceil(FP_MAX_DIST/TILE);
+    for(let dy=-range;dy<=range;dy++) for(let dx=-range;dx<=range;dx++){
+      const tx=ptx+dx,ty=pty+dy;if(tx<0||tx>=COLS||ty<0||ty>=ROWS)continue;
+      const t=getTile(ty,tx,map);
+      if([2,4,5,11,14,15].includes(t)) addScenery(tx,ty,t,"tile");
+    }
+    for(const b of idata.buildings||[]) addScenery(b.tileX,b.tileY,0,b.type);
+    scenery.sort((a,b)=>b.dist-a.dist);
+    for(const o of scenery){
+      const depth=Math.max(0.35,1-o.dist/FP_MAX_DIST), scale=(TILE*H2*0.62)/o.dist;
+      const sx=W2/2 + Math.tan(o.diff)/Math.tan(FP_FOV/2)*(W2/2), base=H2/2+scale*.42;
+      if(sx<-scale||sx>W2+scale) continue;
+      if(o.kind==='shelter'||o.kind==='campfire'||o.kind==='market'||o.kind==='merchant_house'){
+        const bw=scale*.72,bh=scale*.52;
+        fpCtx.fillStyle=`rgba(110,65,35,${depth})`;fpCtx.fillRect(sx-bw/2,base-bh,bw,bh);
+        fpCtx.fillStyle=`rgba(190,75,40,${depth})`;fpCtx.beginPath();fpCtx.moveTo(sx-bw*.62,base-bh);fpCtx.lineTo(sx,base-bh-scale*.32);fpCtx.lineTo(sx+bw*.62,base-bh);fpCtx.fill();
+        fpCtx.fillStyle=`rgba(70,38,20,${depth})`;fpCtx.fillRect(sx-scale*.09,base-scale*.25,scale*.18,scale*.25);
+        if(o.kind==='campfire'){fpCtx.fillStyle=`rgba(255,190,50,${depth})`;fpCtx.beginPath();fpCtx.arc(sx,base-scale*.18,Math.max(2,scale*.12),0,Math.PI*2);fpCtx.fill();}
+      }else if(o.type===4||o.type===11||o.type===15){
+        fpCtx.fillStyle=`rgba(100,65,35,${depth})`;fpCtx.fillRect(sx-scale*.06,base-scale*.5,scale*.12,scale*.5);
+        fpCtx.fillStyle=`rgba(${o.type===15?'45,150,55':'35,115,45'},${depth})`;
+        fpCtx.beginPath();fpCtx.arc(sx,base-scale*.72,Math.max(4,scale*.38),0,Math.PI*2);fpCtx.fill();
+        fpCtx.beginPath();fpCtx.arc(sx-scale*.23,base-scale*.58,Math.max(3,scale*.25),0,Math.PI*2);fpCtx.fill();
+      }else if(o.type===2||o.type===5){
+        fpCtx.fillStyle=`rgba(135,135,130,${depth})`;fpCtx.beginPath();fpCtx.ellipse(sx,base-scale*.12,Math.max(4,scale*.28),Math.max(3,scale*.18),0,0,Math.PI*2);fpCtx.fill();
+      }else if(o.type===14){
+        fpCtx.fillStyle=`rgba(125,80,40,${depth})`;fpCtx.fillRect(sx-scale*.35,base-scale*.1,scale*.7,Math.max(2,scale*.12));
+        fpCtx.strokeStyle=`rgba(210,160,75,${depth})`;fpCtx.lineWidth=Math.max(1,scale*.035);fpCtx.strokeRect(sx-scale*.35,base-scale*.1,scale*.7,Math.max(2,scale*.12));
+      }
+    }
     // La bàn góc nhìn nhỏ ở trên cùng
     fpCtx.fillStyle = "rgba(0,0,0,0.4)";
     fpCtx.fillRect(W2/2-40,6,80,14);
@@ -3886,6 +3930,7 @@ console.log("🎮 Đang khởi tạo...");
       const iconLabel = k.add([k.text(role.icon,{size:11}),k.pos(px,py),k.anchor("center"),k.z(9)]);
       const pc = {
         role, body, iconLabel,
+        followIndex:i,
         homeX: px, homeY: py,
         mode: (role.job==="mine_wood"||role.job==="mine_stone") ? "mine" : (role.job==="explore" ? "explore" : "wander"),
         targetX: null, targetY: null, _targetTile:null,
@@ -3897,7 +3942,14 @@ console.log("🎮 Đang khởi tạo...");
   }
   spawnPebbleCrew();
 
-  const PEBBLE_MODE_LABEL = {wander:"🌾 Tự do lang thang", mine:"⛏️ Đang khai thác", explore:"🗺️ Đang khám phá", stay:"📍 Đứng yên"};
+  window.callPebbleCrew=function(){
+    const alive=pebbleCrew.filter(pc=>pc.hp>0);
+    alive.forEach((pc,i)=>{pc.mode="follow";pc.followIndex=i;pc.targetX=null;pc.targetY=null;pc.stateTimer=0;});
+    window.closeModals();
+    showToast(`📣 Đã gọi ${alive.length}/10 Pebble tập hợp đi theo bạn!`,1800);
+  };
+
+  const PEBBLE_MODE_LABEL = {wander:"🌾 Tự do lang thang", mine:"⛏️ Đang khai thác", explore:"🗺️ Đang khám phá", stay:"📍 Đứng yên", follow:"📣 Đang đi theo đội"};
   window.openPebbleManager = function(){
     window.closeModals();
     document.getElementById("modal-pebble-manager").classList.add("show");
@@ -3932,7 +3984,14 @@ console.log("🎮 Đang khởi tạo...");
   function updatePebbleCrew(dt){
     for(const pc of pebbleCrew){
       if(pc.hp<=0) continue;
-      if(pc.mode === "stay"){
+      if(pc.mode === "follow"){
+        const angle=(pc.followIndex/Math.max(1,pebbleCrew.length))*Math.PI*2 + Math.PI/10;
+        const radius=48 + Math.floor(pc.followIndex/5)*24;
+        const targetX=Math.max(16,Math.min(WORLD_W-16,playerObj.pos.x+Math.cos(angle)*radius));
+        const targetY=Math.max(16,Math.min(WORLD_H-16,playerObj.pos.y+Math.sin(angle)*radius));
+        const dx=targetX-pc.body.pos.x,dy=targetY-pc.body.pos.y,d=Math.hypot(dx,dy);
+        if(d>5){pc.body.pos.x+=(dx/d)*78*dt;pc.body.pos.y+=(dy/d)*78*dt;}
+      } else if(pc.mode === "stay"){
         // đứng yên, không làm gì
       } else if(pc.mode === "mine"){
         if(pc.gatherCooldown > 0){
