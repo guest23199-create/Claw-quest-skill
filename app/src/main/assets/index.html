@@ -1928,6 +1928,8 @@ function invItemClick(id){
   if(!id) return;
   const info=ITEMS[id];
   if(!info) return;
+  // Chọn vật phẩm khác phải rời chế độ gieo hạt/đào để không khóa thao tác bản đồ.
+  if(info.type !== "seed") window.cancelFarmModes?.();
   // Any seed bag: enter planting mode and remember the selected seed type.
   // Older saves may still contain the generic `seed` item, so keep supporting it.
   if(info.type === "seed"){
@@ -2886,6 +2888,8 @@ window.quickDig = function(){
 
 // 🌾 TRỒNG
 window.quickPlant = function(){
+  // Bấm lại nút Trồng khi đang bật sẽ tắt hẳn chế độ, thay vì chỉ mở lại danh sách hạt.
+  if(GS.plantMode){ window.cancelFarmModes?.(); window.closeQuickPopup(); showToast("🌱 Đã tắt gieo hạt",1000); return; }
   const inv = GS.player.inventory;
   const hasShovel = hasInvItem("shovel",1);
   let hasFarmPlot = false;
@@ -4423,6 +4427,22 @@ console.log("🎮 Đang khởi tạo...");
   let _targetTile = null;
   let _cursorDragging = false;
   let _cursorManualTile = false;
+  // Tắt tập trung mọi trạng thái thao tác trên bản đồ (đào, gieo, tưới).
+  window.cancelFarmModes = function(){
+    GS.digMode=false; GS.plantMode=false; GS.waterMode=false;
+    _targetTile=null; _cursorManualTile=false;
+    document.getElementById("btn-dig")?.classList.remove("dig-active");
+    document.getElementById("btn-plant")?.classList.remove("plant-active");
+    window.refreshActionCursor?.();
+  };
+  // Mọi nút hành động khác tự thoát chế độ gieo hạt/đào trước khi chạy lệnh mới.
+  if(!window._farmModeGuardInstalled){
+    document.addEventListener("click",(ev)=>{
+      const actionBtn=ev.target.closest?.("#bottom-actions .bot-btn");
+      if(actionBtn && actionBtn.id!=="btn-plant") window.cancelFarmModes?.();
+    },true);
+    window._farmModeGuardInstalled=true;
+  }
 
   function setTargetTile(pos){
     if(!pos || (!GS.digMode && !GS.plantMode && !_cursorDragging)){ _targetTile=null; return; }
@@ -4468,7 +4488,11 @@ console.log("🎮 Đang khởi tạo...");
     removeInvItem(seedId,1);const seedInfo=ITEMS[seedId]||{};
     fp.planted=true;fp.seedType=seedId;fp.crop=seedInfo.cropIcon||"🌾";fp.cropSprite=seedInfo.cropSprite||"crop_sprout";fp.growTime=seedInfo.growTime||45;fp.plantedAt=Date.now();fp.watered=false;fp.stage=0;
     showToast(`🌱 Đã gieo ${seedInfo.icon||"🌱"} ${seedInfo.name||seedId}!`,1600);
-    renderCropVisuals();updateFarmButton();updateHUD();_targetTile=null;_cursorManualTile=false;setNearestActionTile();updateFarmActionButton();
+    renderCropVisuals();updateFarmButton();updateHUD();_targetTile=null;_cursorManualTile=false;
+    // Hết hạt thì tự thoát, tránh để nút gieo sáng mãi và chặn các thao tác khác.
+    if(!["seed","seed_orange","seed_melon","seed_veggie"].some(id=>hasInvItem(id,1))) window.cancelFarmModes?.();
+    else setNearestActionTile();
+    updateFarmActionButton();
   }
   window.confirmFarmAction=performFarmAction;
 
