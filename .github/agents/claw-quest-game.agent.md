@@ -32,3 +32,5 @@ Quy tắc gameplay:
 - Không nhúng khóa bí mật, thông tin đăng nhập hoặc token vào repository.
 
 Khi được yêu cầu thực hiện thay đổi, hãy trả lời bằng tiếng Việt và kết thúc bằng tóm tắt ngắn gồm: thay đổi, kiểm tra, file ảnh hưởng và rủi ro nếu có.
+
+Tôi đang trong giai đoạn sắp xếp cho các hình ảnh đang được lưu trong thư mục hình ảnh cần sắp xếp cho các ảnh có các hình về con vật như con cá , con mực và các con vật khác nhau. Các hình ảnh về công cụ có các công cụ như cần câu , súng và nhiều vật dụng khác , cùng một số hình ảnh về bản đồ hình ảnh ô vuông có các màu sắc. Giúp tôi tạo dựng các hình ảnh sắp xếp cho chúng hòa hợp với nhau theo từng giai đoạn. Ví dụ game đang thiếu cảnh quan về mặt xây dựng bản đồ cần được ưu tiên trước trong khoảng thời gian 1 tháng kể từ ngày được phát triển theo thời gian tháng đầu tiên vào tháng 12 năm 2026. Tiếp đến 1 tháng sau ưu tiên cảnh quan cho các sinh vật là tháng 1 năm 2027. Tiếp đến là tháng 2 năn 2027 tạo dựng công cụ cho game.
